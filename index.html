@@ -671,20 +671,14 @@ function demoProducts() {
 }
 
 async function loadProducts() {
-  if (CONFIG.apiUrl === 'https://script.google.com/macros/s/AKfycbzlYlpJpNKOOUki_TQ0gs9McSgDGFSw7n_H1RWPc-OX3biRoEajOl1bpBAW0i-bsKV2/exec') {
-    allProducts = demoProducts();
-    buildFilters();
-    filterAndRender();
-    showBanner('⚙️ Mode demo aktif — masukkan URL Web App (Google Apps Script) lo ke CONFIG.apiUrl.', '#fefce8', '#854d0e');
-    return;
-  }
-  
   try {
+    // Langsung tembak ke backend Google Apps Script lo
     const res = await fetch(CONFIG.apiUrl);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     
     const json = await res.json();
     
+    // Pastikan data berhasil ditarik dan tidak kosong
     if (json.status === "success" && json.data.length > 0) {
       allProducts = json.data;
       buildFilters();
@@ -693,6 +687,7 @@ async function loadProducts() {
       throw new Error('Database kosong atau format tidak sesuai.');
     }
   } catch(err) {
+    // Kalau API error, baru kita tampilkan data demo sebagai cadangan
     allProducts = demoProducts();
     buildFilters();
     filterAndRender();
