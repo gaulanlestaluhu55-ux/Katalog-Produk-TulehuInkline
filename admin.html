@@ -4,6 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="robots" content="noindex, nofollow" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#1a1a1a" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
 <title>Admin — Katalog Sablon</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -434,6 +438,16 @@ form.addEventListener('submit', async e => {
   saveBtn.disabled = false;
   saveBtn.textContent = 'Simpan';
 });
+
+/* ═══════════════════════════════════════════════════════
+   PWA — register service worker biar Chrome bisa full-install app ini
+═══════════════════════════════════════════════════════ */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
 </script>
 </body>
 </html>
