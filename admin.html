@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin — Katalog Sablon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #1a1a1a; --ink-soft: #555; --ink-muted: #999;
+    --bg: #f8f8f7; --surface: #fff; --border: #e4e4e0;
+    --accent-bg: #f0fdf4; --accent-border: #bbf7d0; --accent-text: #15803d;
+    --warn-bg: #fefce8; --warn-text: #854d0e;
+    --err-bg: #fef2f2; --err-text: #991b1b;
+    --radius: 12px; --radius-sm: 8px;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+  /* ── Login ── */
+  .login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+  .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; width: 100%; max-width: 360px; }
+  .login-card h1 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .login-card p { font-size: 13px; color: var(--ink-muted); margin-bottom: 1.25rem; }
+  .login-card input {
+    width: 100%; height: 42px; padding: 0 12px; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); font-family: inherit; font-size: 14px; margin-bottom: 10px; outline: none;
+  }
+  .login-card input:focus { border-color: var(--ink); }
+  .login-card button {
+    width: 100%; height: 42px; border: none; border-radius: var(--radius-sm);
+    background: var(--ink); color: #fff; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .login-error { font-size: 12px; color: var(--err-text); margin-top: 8px; display: none; }
+
+  /* ── Admin shell ── */
+  .admin-app { display: none; }
+  header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 1.5rem; position: sticky; top: 0; z-index: 100;
+  }
+  .header-inner { max-width: 900px; margin: 0 auto; height: 58px; display: flex; align-items: center; justify-content: space-between; }
+  .brand { font-size: 15px; font-weight: 600; }
+  .brand-sub { font-size: 11px; color: var(--ink-muted); font-weight: 400; }
+  .logout-btn {
+    height: 34px; padding: 0 14px; border: 1px solid var(--border); border-radius: 20px;
+    background: var(--surface); color: var(--ink-soft); font-family: inherit; font-size: 13px; cursor: pointer;
+  }
+  .logout-btn:hover { border-color: var(--ink); color: var(--ink); }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+  .toolbar-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 10px; flex-wrap: wrap; }
+  .toolbar-row h2 { font-size: 18px; font-weight: 600; }
+  .btn-primary {
+    height: 38px; padding: 0 16px; border: none; border-radius: var(--radius-sm);
+    background: var(--ink); color: #fff; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+
+  .status-msg { font-size: 13px; padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; display: none; }
+  .status-msg.show { display: block; }
+  .status-msg.ok { background: var(--accent-bg); border: 1px solid var(--accent-border); color: var(--accent-text); }
+  .status-msg.err { background: var(--err-bg); color: var(--err-text); }
+
+  /* ── Product list ── */
+  .product-row {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px 14px; margin-bottom: 10px; display: flex; gap: 12px; align-items: center;
+  }
+  .product-row.inactive { opacity: 0.55; }
+  .product-thumb { width: 52px; height: 52px; border-radius: 8px; background: var(--bg); object-fit: contain; flex-shrink: 0; }
+  .product-info { flex: 1; min-width: 0; }
+  .product-name { font-size: 14px; font-weight: 600; }
+  .product-meta { font-size: 12px; color: var(--ink-muted); }
+  .product-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .icon-btn {
+    height: 32px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface); color: var(--ink-soft); font-family: inherit; font-size: 12px; cursor: pointer;
+  }
+  .icon-btn:hover { border-color: var(--ink); color: var(--ink); }
+  .icon-btn.danger { color: var(--err-text); }
+  .icon-btn.danger:hover { border-color: var(--err-text); }
+  .badge-inactive { font-size: 10px; background: var(--warn-bg); color: var(--warn-text); padding: 2px 7px; border-radius: 8px; margin-left: 6px; }
+
+  /* ── Form modal ── */
+  .modal-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 300;
+    align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto;
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    background: var(--surface); border-radius: var(--radius); padding: 1.5rem; width: 100%; max-width: 480px;
+  }
+  .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 1rem; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--ink-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 14px; outline: none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--ink); }
+  .field textarea { resize: vertical; min-height: 60px; }
+  .field-hint { font-size: 11px; color: var(--ink-muted); margin-top: 4px; }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 1.25rem; }
+  .btn-secondary {
+    height: 40px; padding: 0 16px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--surface); color: var(--ink-soft); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; flex: 1;
+  }
+  .modal-actions .btn-primary { flex: 1; }
+
+  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--ink-muted); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <h1>Admin Katalog</h1>
+    <p>Masukkan token admin buat kelola produk.</p>
+    <input type="password" id="tokenInput" placeholder="Token admin" autocomplete="off" />
+    <button id="loginBtn">Masuk</button>
+    <div class="login-error" id="loginError">Token salah atau gagal konek ke server.</div>
+  </div>
+</div>
+
+<!-- ═══ ADMIN APP ═══ -->
+<div class="admin-app" id="adminApp">
+  <header>
+    <div class="header-inner">
+      <div class="brand">Admin Katalog<div class="brand-sub">Tulehu Inkline</div></div>
+      <button class="logout-btn" id="logoutBtn">Keluar</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="toolbar-row">
+      <h2>Produk</h2>
+      <button class="btn-primary" id="addBtn">+ Tambah Produk</button>
+    </div>
+
+    <div class="status-msg" id="statusMsg"></div>
+    <div id="productList"><div class="empty-state">Memuat produk...</div></div>
+  </div>
+</div>
+
+<!-- ═══ FORM MODAL ═══ -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h3 id="modalTitle">Tambah Produk</h3>
+    <form id="productForm">
+      <div class="field">
+        <label>Nama Produk</label>
+        <input type="text" id="f_nama" required />
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Kategori</label>
+          <input type="text" id="f_kategori" placeholder="Kaos / Jersey" />
+        </div>
+        <div class="field">
+          <label>Badge</label>
+          <input type="text" id="f_badge" placeholder="Best Seller" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Deskripsi</label>
+        <textarea id="f_deskripsi"></textarea>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Harga</label>
+          <input type="number" id="f_harga" required />
+        </div>
+        <div class="field">
+          <label>Satuan</label>
+          <input type="text" id="f_satuan" placeholder="/pcs" value="/pcs" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Gambar (pisah pakai | buat multi gambar)</label>
+        <textarea id="f_gambar" placeholder="https://.../1.jpg|https://.../2.jpg"></textarea>
+        <div class="field-hint">Contoh: link1.jpg|link2.jpg|link3.jpg</div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Harga Nama (jersey)</label>
+          <input type="number" id="f_harga_nama" />
+        </div>
+        <div class="field">
+          <label>Harga Angka (jersey)</label>
+          <input type="number" id="f_harga_angka" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Harga Nama+Angka (jersey)</label>
+        <input type="number" id="f_harga_nama_angka" />
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="cancelBtn">Batal</button>
+        <button type="submit" class="btn-primary" id="saveBtn">Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   KONFIGURASI — samain dengan index.html
+═══════════════════════════════════════════════════════ */
+const CONFIG = {
+  apiUrl: 'https://script.google.com/macros/s/AKfycbzlYlpJpNKOOUki_TQ0gs9McSgDGFSw7n_H1RWPc-OX3biRoEajOl1bpBAW0i-bsKV2/exec',
+};
+
+let adminToken = localStorage.getItem('adminToken') || '';
+let products = [];
+let editingId = null; // null = mode tambah
+
+/* ═══════════════════════════════════════════════════════
+   API HELPERS
+   Catatan: fetch pakai text/plain biar GAS gak minta CORS preflight
+═══════════════════════════════════════════════════════ */
+async function apiGet() {
+  const url = `${CONFIG.apiUrl}?token=${encodeURIComponent(adminToken)}`;
+  const res = await fetch(url);
+  return res.json();
+}
+
+async function apiPost(body) {
+  const res = await fetch(CONFIG.apiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+/* ═══════════════════════════════════════════════════════
+   AUTH / LOGIN
+═══════════════════════════════════════════════════════ */
+const loginScreen = document.getElementById('loginScreen');
+const adminApp    = document.getElementById('adminApp');
+const loginError  = document.getElementById('loginError');
+
+async function tryLogin(token) {
+  adminToken = token;
+  try {
+    const json = await apiGet();
+    if (json.status !== 'success') throw new Error(json.message || 'gagal');
+    localStorage.setItem('adminToken', token);
+    loginScreen.style.display = 'none';
+    adminApp.style.display = 'block';
+    products = json.data;
+    renderProducts();
+  } catch (err) {
+    adminToken = '';
+    localStorage.removeItem('adminToken');
+    loginError.style.display = 'block';
+  }
+}
+
+document.getElementById('loginBtn').addEventListener('click', () => {
+  const val = document.getElementById('tokenInput').value.trim();
+  if (val) tryLogin(val);
+});
+document.getElementById('tokenInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('loginBtn').click();
+});
+
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  localStorage.removeItem('adminToken');
+  adminToken = '';
+  adminApp.style.display = 'none';
+  loginScreen.style.display = 'flex';
+  document.getElementById('tokenInput').value = '';
+});
+
+/* Auto-login kalau token udah tersimpan dari sesi sebelumnya */
+if (adminToken) tryLogin(adminToken);
+
+/* ═══════════════════════════════════════════════════════
+   STATUS MESSAGE
+═══════════════════════════════════════════════════════ */
+function showStatus(msg, ok) {
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className = 'status-msg show ' + (ok ? 'ok' : 'err');
+  setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+/* ═══════════════════════════════════════════════════════
+   RENDER PRODUCT LIST
+═══════════════════════════════════════════════════════ */
+function firstImage(gambar) {
+  if (!gambar) return '';
+  return String(gambar).split('|')[0].trim();
+}
+
+function isActive(p) {
+  return !(p.aktif === false || String(p.aktif).toUpperCase() === 'FALSE');
+}
+
+function renderProducts() {
+  const wrap = document.getElementById('productList');
+  if (!products.length) {
+    wrap.innerHTML = '<div class="empty-state">Belum ada produk. Klik "+ Tambah Produk".</div>';
+    return;
+  }
+  wrap.innerHTML = products.map(p => {
+    const active = isActive(p);
+    const thumb = firstImage(p.gambar);
+    return `
+    <div class="product-row ${active ? '' : 'inactive'}">
+      ${thumb ? `<img class="product-thumb" src="${thumb}" onerror="this.style.visibility='hidden'">` : `<div class="product-thumb"></div>`}
+      <div class="product-info">
+        <div class="product-name">${p.nama}${active ? '' : '<span class="badge-inactive">Nonaktif</span>'}</div>
+        <div class="product-meta">${p.kategori || '-'} · Rp${Number(p.harga || 0).toLocaleString('id-ID')}${p.satuan || ''}</div>
+      </div>
+      <div class="product-actions">
+        <button class="icon-btn" data-action="edit" data-id="${p.id}">Edit</button>
+        <button class="icon-btn ${active ? 'danger' : ''}" data-action="toggle" data-id="${p.id}">${active ? 'Nonaktifkan' : 'Aktifkan'}</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('productList').addEventListener('click', async e => {
+  const btn = e.target.closest('.icon-btn');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  const p = products.find(x => String(x.id) === String(id));
+  if (!p) return;
+
+  if (btn.dataset.action === 'edit') {
+    openModal(p);
+  }
+
+  if (btn.dataset.action === 'toggle') {
+    const nextActive = !isActive(p);
+    btn.disabled = true;
+    const json = await apiPost({ token: adminToken, action: 'toggleActive', id, data: { aktif: nextActive } });
+    btn.disabled = false;
+    if (json.status === 'success') {
+      p.aktif = nextActive;
+      renderProducts();
+      showStatus(nextActive ? 'Produk diaktifkan.' : 'Produk dinonaktifkan.', true);
+    } else {
+      showStatus('Gagal: ' + json.message, false);
+    }
+  }
+});
+
+/* ═══════════════════════════════════════════════════════
+   MODAL FORM (tambah / edit)
+═══════════════════════════════════════════════════════ */
+const modalBackdrop = document.getElementById('modalBackdrop');
+const modalTitle = document.getElementById('modalTitle');
+const form = document.getElementById('productForm');
+
+function openModal(p) {
+  editingId = p ? p.id : null;
+  modalTitle.textContent = p ? 'Edit Produk' : 'Tambah Produk';
+
+  document.getElementById('f_nama').value = p ? p.nama || '' : '';
+  document.getElementById('f_kategori').value = p ? p.kategori || '' : '';
+  document.getElementById('f_badge').value = p ? p.badge || '' : '';
+  document.getElementById('f_deskripsi').value = p ? p.deskripsi || '' : '';
+  document.getElementById('f_harga').value = p ? p.harga || '' : '';
+  document.getElementById('f_satuan').value = p ? (p.satuan || '/pcs') : '/pcs';
+  document.getElementById('f_gambar').value = p ? p.gambar || '' : '';
+  document.getElementById('f_harga_nama').value = p ? p.harga_nama || '' : '';
+  document.getElementById('f_harga_angka').value = p ? p.harga_angka || '' : '';
+  document.getElementById('f_harga_nama_angka').value = p ? p.harga_nama_angka || '' : '';
+
+  modalBackdrop.classList.add('show');
+}
+
+function closeModal() {
+  modalBackdrop.classList.remove('show');
+  editingId = null;
+  form.reset();
+}
+
+document.getElementById('addBtn').addEventListener('click', () => openModal(null));
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+modalBackdrop.addEventListener('click', e => { if (e.target === modalBackdrop) closeModal(); });
+
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  const saveBtn = document.getElementById('saveBtn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Menyimpan...';
+
+  const data = {
+    nama: document.getElementById('f_nama').value.trim(),
+    kategori: document.getElementById('f_kategori').value.trim(),
+    badge: document.getElementById('f_badge').value.trim(),
+    deskripsi: document.getElementById('f_deskripsi').value.trim(),
+    harga: document.getElementById('f_harga').value,
+    satuan: document.getElementById('f_satuan').value.trim(),
+    gambar: document.getElementById('f_gambar').value.trim(),
+    harga_nama: document.getElementById('f_harga_nama').value,
+    harga_angka: document.getElementById('f_harga_angka').value,
+    harga_nama_angka: document.getElementById('f_harga_nama_angka').value,
+  };
+
+  try {
+    let json;
+    if (editingId) {
+      json = await apiPost({ token: adminToken, action: 'update', id: editingId, data });
+    } else {
+      json = await apiPost({ token: adminToken, action: 'create', data });
+    }
+
+    if (json.status === 'success') {
+      showStatus(editingId ? 'Produk diupdate.' : 'Produk ditambahkan.', true);
+      closeModal();
+      const refreshed = await apiGet();
+      products = refreshed.data;
+      renderProducts();
+    } else {
+      showStatus('Gagal: ' + json.message, false);
+    }
+  } catch (err) {
+    showStatus('Gagal konek ke server: ' + err.message, false);
+  }
+
+  saveBtn.disabled = false;
+  saveBtn.textContent = 'Simpan';
+});
+</script>
+</body>
+</html>
