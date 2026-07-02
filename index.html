@@ -242,9 +242,8 @@
    KONFIGURASI — edit sesuai kebutuhan
 ═══════════════════════════════════════════════════════ */
 const CONFIG = {
-  // Publish Google Sheet sebagai CSV:
-  // File → Share → Publish to web → Sheet1 → CSV → Copy link
-  sheetUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS4FP5OIu2igu8W2w2_Wc77627VX3KpjNruiiXoQiMxfDQQpGZ_v09iYAyQfjMecZz1UvBYH6rykj8M/pub?output=csv',
+  // Ganti dengan URL Web App dari Google Apps Script lo
+  apiUrl: 'https://script.google.com/macros/s/AKfycbzlYlpJpNKOOUki_TQ0gs9McSgDGFSw7n_H1RWPc-OX3biRoEajOl1bpBAW0i-bsKV2/exec',
 
   waNumber: '628218025886',
   waDefaultMsg: 'Halo Tulehu Inkline! Saya mau tanya tentang produk sablon.',
@@ -267,22 +266,6 @@ const CONFIG = {
   }
 };
 
-/*
-  ── STRUKTUR KOLOM GOOGLE SHEET ──────────────────────────────
-  Untuk KAOS (7 kolom):
-  A: nama | B: kategori | C: deskripsi | D: harga | E: satuan
-  F: gambar | G: badge
-
-  Untuk JERSEY (10 kolom — tambah 3 kolom name set):
-  A: nama | B: kategori | C: deskripsi | D: harga | E: satuan
-  F: gambar | G: badge | H: harga_nama | I: harga_angka | J: harga_nama_angka
-
-  Kolom gambar: support Google Drive, Imgur, Cloudinary
-  - Google Drive: paste link biasa → auto-convert
-    https://drive.google.com/file/d/FILE_ID/view
-  - Imgur / Cloudinary / lainnya: paste link langsung
-*/
-
 /* ═══════════════════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════════════════ */
@@ -304,7 +287,6 @@ function isJersey(p) {
   return (p.kategori || '').toLowerCase().includes('jersey');
 }
 
-// Auto-convert Google Drive share link → direct image URL
 function resolveImgUrl(url) {
   if (!url) return '';
   const driveMatch = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
@@ -324,7 +306,6 @@ function toNum(raw) {
   return isNaN(n) ? 0 : n;
 }
 
-// Hitung surcharge berdasarkan pilihan
 function getSurcharge(s) {
   let extra = 0;
   if (s.sleeve === 'Lengan Panjang') extra += CONFIG.surcharge.lenganPanjang;
@@ -333,13 +314,11 @@ function getSurcharge(s) {
   return extra;
 }
 
-// Harga satuan final kaos
 function getUnitPriceKaos(p, idx) {
   const base = toNum(p.harga);
   return base + getSurcharge(state[idx]);
 }
 
-// Harga name set jersey
 function getNameSetPrice(p, ns) {
   if (!ns) return 0;
   if (ns === 'Nama saja')    return toNum(p.harga_nama);
@@ -348,7 +327,6 @@ function getNameSetPrice(p, ns) {
   return 0;
 }
 
-// Harga satuan final jersey = base + name set
 function getUnitPriceJersey(p, idx) {
   const base   = toNum(p.harga);
   const nsPrice = getNameSetPrice(p, state[idx].nameset);
@@ -365,7 +343,6 @@ function getTotalPrice(p, idx) {
   return getUnitPrice(p, idx) * state[idx].qty;
 }
 
-// Cek apakah order siap
 function isOrderReady(p, idx) {
   const s = state[idx];
   if (isKaos(p))   return s.size && s.sleeve && s.color;
@@ -573,15 +550,10 @@ function renderCard(p, idx) {
     </div>`;
 }
 
-/* ═══════════════════════════════════════════════════════
-   UPDATE UI (tanpa re-render seluruh card)
-═══════════════════════════════════════════════════════ */
 function refreshCard(p, idx) {
-  // Update price block
   const pb = document.getElementById('price-block-' + idx);
   if (pb) pb.innerHTML = priceBlockHtml(p, idx);
 
-  // Update order button
   const btn = document.getElementById('order-btn-' + idx);
   if (btn) {
     if (isOrderReady(p, idx)) {
@@ -596,7 +568,6 @@ function refreshCard(p, idx) {
    EVENT DELEGATION
 ═══════════════════════════════════════════════════════ */
 document.getElementById('productGrid').addEventListener('click', e => {
-  // Pill
   const pill = e.target.closest('.pill');
   if (pill) {
     const idx   = +pill.dataset.idx;
@@ -609,7 +580,6 @@ document.getElementById('productGrid').addEventListener('click', e => {
     return;
   }
 
-  // Qty
   const qBtn = e.target.closest('.qty-btn');
   if (qBtn) {
     const idx    = +qBtn.dataset.idx;
@@ -623,7 +593,6 @@ document.getElementById('productGrid').addEventListener('click', e => {
     return;
   }
 
-  // Order button
   const oBtn = e.target.closest('.order-btn');
   if (oBtn && !oBtn.classList.contains('disabled')) {
     const idx = +oBtn.dataset.idx;
@@ -686,17 +655,6 @@ document.getElementById('searchInput').addEventListener('input', filterAndRender
 /* ═══════════════════════════════════════════════════════
    DATA LOADING
 ═══════════════════════════════════════════════════════ */
-function parseCSV(text) {
-  const lines = text.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g,'').trim().toLowerCase().replace(/ /g,'_'));
-  return lines.slice(1).map(line => {
-    const vals = line.match(/(".*?"|[^,\n]+)/g) || [];
-    const obj  = {};
-    headers.forEach((h, i) => { obj[h] = (vals[i]||'').replace(/^"|"$/g,'').trim(); });
-    return obj;
-  }).filter(p => p.nama);
-}
-
 function showBanner(msg, bg, color) {
   const b = document.getElementById('infoBanner');
   b.textContent = msg;
@@ -705,37 +663,40 @@ function showBanner(msg, bg, color) {
 
 function demoProducts() {
   return [
-    // Kaos
     { nama:'Kaos Sablon DTF Full Color',   kategori:'Kaos',   deskripsi:'Direct to Film, warna tajam & detail tinggi',       harga:'75000', satuan:'/pcs', gambar:'', badge:'Best Seller',  harga_nama:'', harga_angka:'', harga_nama_angka:'' },
     { nama:'Kaos Sablon Manual 1 Warna',   kategori:'Kaos',   deskripsi:'Sablon manual rubber/plastisol, tahan lama',        harga:'55000', satuan:'/pcs', gambar:'', badge:'',             harga_nama:'', harga_angka:'', harga_nama_angka:'' },
-    { nama:'Kaos Sablon Manual 2 Warna',   kategori:'Kaos',   deskripsi:'Cocok untuk desain multi-warna sederhana',          harga:'65000', satuan:'/pcs', gambar:'', badge:'',             harga_nama:'', harga_angka:'', harga_nama_angka:'' },
     { nama:'Polo Shirt Sablon Dada',       kategori:'Kaos',   deskripsi:'Bahan pique, sablon dada kiri/kanan',               harga:'90000', satuan:'/pcs', gambar:'', badge:'',             harga_nama:'', harga_angka:'', harga_nama_angka:'' },
-    // Jersey
-    { nama:'Jersey Sablon Sublimasi',      kategori:'Jersey', deskripsi:'Full body print, warna presisi — bahan dari customer', harga:'45000', satuan:'/pcs', gambar:'', badge:'Jasa Sablon', harga_nama:'5000', harga_angka:'3000', harga_nama_angka:'7000' },
-    { nama:'Jersey Sablon DTF Partial',    kategori:'Jersey', deskripsi:'Sablon area tertentu, DTF — bahan dari customer',   harga:'35000', satuan:'/pcs', gambar:'', badge:'Jasa Sablon', harga_nama:'5000', harga_angka:'3000', harga_nama_angka:'7000' },
+    { nama:'Jersey Sablon Sublimasi',      kategori:'Jersey', deskripsi:'Full body print, warna presisi — bahan dari customer', harga:'45000', satuan:'/pcs', gambar:'', badge:'Jasa Sablon', harga_nama:'5000', harga_angka:'3000', harga_nama_angka:'7000' }
   ];
 }
 
 async function loadProducts() {
-  if (CONFIG.sheetUrl.includes('YOUR_SHEET_ID')) {
+  if (CONFIG.apiUrl === 'https://script.google.com/macros/s/AKfycbzlYlpJpNKOOUki_TQ0gs9McSgDGFSw7n_H1RWPc-OX3biRoEajOl1bpBAW0i-bsKV2/exec') {
     allProducts = demoProducts();
     buildFilters();
     filterAndRender();
-    showBanner('⚙️ Mode demo aktif — ganti CONFIG.sheetUrl dengan URL Google Sheet lo untuk data asli.', '#fefce8', '#854d0e');
+    showBanner('⚙️ Mode demo aktif — masukkan URL Web App (Google Apps Script) lo ke CONFIG.apiUrl.', '#fefce8', '#854d0e');
     return;
   }
+  
   try {
-    const res = await fetch(CONFIG.sheetUrl);
+    const res = await fetch(CONFIG.apiUrl);
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    allProducts = parseCSV(await res.text());
-    if (!allProducts.length) throw new Error('Sheet kosong atau header kolom salah.');
-    buildFilters();
-    filterAndRender();
+    
+    const json = await res.json();
+    
+    if (json.status === "success" && json.data.length > 0) {
+      allProducts = json.data;
+      buildFilters();
+      filterAndRender();
+    } else {
+      throw new Error('Database kosong atau format tidak sesuai.');
+    }
   } catch(err) {
     allProducts = demoProducts();
     buildFilters();
     filterAndRender();
-    showBanner('⚠️ Gagal load Sheet: ' + err.message + ' — tampil data demo.', '#fef2f2', '#991b1b');
+    showBanner('⚠️ Gagal memuat API: ' + err.message + ' — menampilkan data demo.', '#fef2f2', '#991b1b');
   }
 }
 
