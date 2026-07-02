@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Katalog Sablon – Tulehu Inkline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #1a1a1a;
+      --ink-soft: #555;
+      --ink-muted: #999;
+      --bg: #f8f8f7;
+      --surface: #fff;
+      --border: #e4e4e0;
+      --wa: #25D366;
+      --wa-hover: #1ebe5d;
+      --accent-bg: #f0fdf4;
+      --accent-border: #bbf7d0;
+      --accent-text: #15803d;
+      --warn-bg: #fefce8;
+      --warn-text: #854d0e;
+      --err-bg: #fef2f2;
+      --err-text: #991b1b;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem; position: sticky; top: 0; z-index: 200;
+    }
+    .header-inner {
+      max-width: 1100px; margin: 0 auto;
+      height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .brand-icon { width: 34px; height: 34px; background: var(--ink); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+    .brand-name { font-size: 15px; font-weight: 600; color: var(--ink); letter-spacing: -0.2px; }
+    .brand-sub { font-size: 11px; color: var(--ink-muted); }
+    .header-wa {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--wa); color: #fff; font-size: 13px; font-weight: 500;
+      padding: 7px 14px; border-radius: 20px; text-decoration: none;
+      transition: background 0.15s; white-space: nowrap;
+    }
+    .header-wa:hover { background: var(--wa-hover); }
+
+    /* ── Hero ── */
+    .hero { max-width: 1100px; margin: 0 auto; padding: 3rem 1.5rem 2rem; }
+    .hero h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 600; letter-spacing: -0.5px; line-height: 1.2; margin-bottom: 0.5rem; }
+    .hero p { font-size: 15px; color: var(--ink-soft); max-width: 520px; }
+
+    /* ── Toolbar ── */
+    .toolbar { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 1.5rem; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .search-wrap { flex: 1; min-width: 200px; position: relative; }
+    .search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--ink-muted); pointer-events: none; }
+    .search-wrap input {
+      width: 100%; height: 38px; padding: 0 12px 0 36px;
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      font-family: inherit; font-size: 14px; background: var(--surface); color: var(--ink);
+      outline: none; transition: border-color 0.15s;
+    }
+    .search-wrap input:focus { border-color: var(--ink); }
+    .filter-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+    .filter-btn {
+      height: 38px; padding: 0 14px; border: 1px solid var(--border); border-radius: 20px;
+      background: var(--surface); color: var(--ink-soft);
+      font-family: inherit; font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all 0.12s; white-space: nowrap;
+    }
+    .filter-btn:hover { border-color: var(--ink); color: var(--ink); }
+    .filter-btn.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+    /* ── Grid ── */
+    .grid-wrap { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      overflow: hidden; display: flex; flex-direction: column;
+      transition: box-shadow 0.15s, transform 0.15s;
+    }
+    .card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); transform: translateY(-2px); }
+
+    .card-img-wrap { aspect-ratio: 4/3; background: var(--bg); overflow: hidden; position: relative; }
+    .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+    .card:hover .card-img-wrap img { transform: scale(1.04); }
+    .card-img-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--ink-muted); font-size: 13px; }
+    .card-badge {
+      position: absolute; top: 10px; left: 10px;
+      background: var(--ink); color: #fff;
+      font-size: 10px; font-weight: 600; padding: 3px 8px;
+      border-radius: 10px; letter-spacing: 0.3px; text-transform: uppercase;
+    }
+
+    .card-body { padding: 14px 14px 0; }
+    .card-name { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+    .card-desc { font-size: 12px; color: var(--ink-muted); line-height: 1.5; margin-bottom: 8px; }
+
+    /* ── Options ── */
+    .options-block { border-top: 1px solid var(--border); padding: 12px 14px 0; }
+    .opt-group { margin-bottom: 12px; }
+    .opt-label { font-size: 11px; font-weight: 600; color: var(--ink-muted); letter-spacing: 0.4px; text-transform: uppercase; margin-bottom: 6px; }
+
+    .pill-row { display: flex; flex-wrap: wrap; gap: 5px; }
+    .pill {
+      height: 28px; padding: 0 10px;
+      border: 1px solid var(--border); border-radius: 20px;
+      background: var(--surface); color: var(--ink-soft);
+      font-family: inherit; font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: all 0.1s; white-space: nowrap; user-select: none;
+    }
+    .pill:hover { border-color: var(--ink-soft); color: var(--ink); }
+    .pill.selected { background: var(--ink); border-color: var(--ink); color: #fff; }
+    .pill .pill-extra { font-size: 10px; opacity: 0.75; margin-left: 2px; }
+    .pill.selected .pill-extra { opacity: 0.85; }
+
+    /* Qty */
+    .qty-row { display: flex; align-items: center; gap: 8px; }
+    .qty-btn {
+      width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--surface); color: var(--ink); font-size: 16px; line-height: 1;
+      cursor: pointer; transition: all 0.1s; display: flex; align-items: center; justify-content: center;
+      font-family: inherit;
+    }
+    .qty-btn:hover { border-color: var(--ink); }
+    .qty-val { font-size: 14px; font-weight: 600; min-width: 24px; text-align: center; }
+
+    /* Jersey info */
+    .jersey-info {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--accent-bg); border: 1px solid var(--accent-border);
+      color: var(--accent-text); font-size: 11px; font-weight: 500;
+      padding: 4px 10px; border-radius: 8px; margin-bottom: 12px;
+    }
+
+    /* ── Price display ── */
+    .card-footer {
+      padding: 12px 14px 14px;
+      display: flex; align-items: flex-end; justify-content: space-between; gap: 8px;
+    }
+    .price-block { display: flex; flex-direction: column; gap: 1px; }
+    .price-unit { font-size: 11px; color: var(--ink-muted); }
+    .price-total { font-size: 16px; font-weight: 600; color: var(--ink); }
+    .price-breakdown { font-size: 10px; color: var(--ink-muted); margin-top: 1px; }
+
+    .order-btn {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--wa); color: #fff;
+      font-family: inherit; font-size: 12px; font-weight: 600;
+      padding: 8px 12px; border-radius: 8px; border: none;
+      cursor: pointer; transition: background 0.12s; white-space: nowrap; text-decoration: none;
+      flex-shrink: 0;
+    }
+    .order-btn:hover { background: var(--wa-hover); }
+    .order-btn.disabled { background: #d1d5db; cursor: not-allowed; }
+    .order-btn.disabled:hover { background: #d1d5db; }
+
+    /* ── Empty / Loading ── */
+    .empty-state { grid-column: 1/-1; text-align: center; padding: 4rem 1rem; color: var(--ink-muted); }
+    .empty-state svg { margin-bottom: 1rem; opacity: 0.3; }
+    .empty-state p { font-size: 14px; }
+    .loading { grid-column: 1/-1; text-align: center; padding: 4rem 1rem; color: var(--ink-muted); font-size: 14px; }
+
+    /* ── Banner ── */
+    .info-banner { max-width: 1100px; margin: 0 auto; padding: 10px 1.5rem; font-size: 13px; display: none; }
+
+    /* ── Footer ── */
+    footer { border-top: 1px solid var(--border); padding: 1.5rem; text-align: center; color: var(--ink-muted); font-size: 12px; }
+
+    @media (max-width: 500px) {
+      .header-wa span { display: none; }
+      .hero { padding: 2rem 1rem 1.5rem; }
+      .toolbar { padding: 0 1rem 1rem; }
+      .grid-wrap { padding: 0 1rem 3rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="#" class="brand">
+      <div class="brand-icon">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <rect x="2" y="2" width="6" height="6" rx="1.5" fill="white"/>
+          <rect x="10" y="2" width="6" height="6" rx="1.5" fill="white" opacity="0.5"/>
+          <rect x="2" y="10" width="6" height="6" rx="1.5" fill="white" opacity="0.5"/>
+          <rect x="10" y="10" width="6" height="6" rx="1.5" fill="white"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">Tulehu Inkline</div>
+        <div class="brand-sub">Custom Screen Printing</div>
+      </div>
+    </a>
+    <a class="header-wa" id="headerWaBtn" href="#" target="_blank" rel="noopener">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      <span>Konsultasi WA</span>
+    </a>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <h1>Katalog Produk Sablon</h1>
+    <p>Pilih produk, tentukan spesifikasi, lalu order langsung via WhatsApp.</p>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Cari produk..." />
+    </div>
+    <div class="filter-btns" id="filterBtns">
+      <button class="filter-btn active" data-cat="semua">Semua</button>
+    </div>
+  </div>
+
+  <div class="info-banner" id="infoBanner"></div>
+
+  <div class="grid-wrap">
+    <div class="product-grid" id="productGrid">
+      <div class="loading">Memuat katalog...</div>
+    </div>
+  </div>
+</main>
+
+<footer>&copy; 2025 Tulehu Inkline · Negeri Tulehu, Maluku Tengah</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   KONFIGURASI — edit sesuai kebutuhan
+═══════════════════════════════════════════════════════ */
+const CONFIG = {
+  // Publish Google Sheet sebagai CSV:
+  // File → Share → Publish to web → Sheet1 → CSV → Copy link
+  sheetUrl: 'https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv&gid=0',
+
+  waNumber: '6281234567890',
+  waDefaultMsg: 'Halo Tulehu Inkline! Saya mau tanya tentang produk sablon.',
+
+  // Surcharge kaos (Rp)
+  surcharge: {
+    lenganPanjang: 10000,
+    xxl: 10000,
+    xxxl: 20000,
+  },
+
+  kaos: {
+    sizes:   ['S','M','L','XL','XXL','3XL'],
+    sleeves: ['Lengan Pendek','Lengan Panjang'],
+    colors:  ['Putih','Hitam','Abu-abu','Navy','Maroon','Kuning','Hijau Botol','Baby Blue','Krem','Merah'],
+  },
+
+  jersey: {
+    nameSets: ['Nama saja','Angka saja','Nama + Angka'],
+  }
+};
+
+/*
+  ── STRUKTUR KOLOM GOOGLE SHEET ──────────────────────────────
+  Untuk KAOS (7 kolom):
+  A: nama | B: kategori | C: deskripsi | D: harga | E: satuan
+  F: gambar | G: badge
+
+  Untuk JERSEY (10 kolom — tambah 3 kolom name set):
+  A: nama | B: kategori | C: deskripsi | D: harga | E: satuan
+  F: gambar | G: badge | H: harga_nama | I: harga_angka | J: harga_nama_angka
+
+  Kolom gambar: support Google Drive, Imgur, Cloudinary
+  - Google Drive: paste link biasa → auto-convert
+    https://drive.google.com/file/d/FILE_ID/view
+  - Imgur / Cloudinary / lainnya: paste link langsung
+*/
+
+/* ═══════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════ */
+let allProducts = [];
+const state = {};
+
+function initState(idx) {
+  state[idx] = { size: null, sleeve: null, color: null, nameset: null, qty: 1 };
+}
+
+/* ═══════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════ */
+function isKaos(p) {
+  return (p.kategori || '').toLowerCase().includes('kaos');
+}
+
+function isJersey(p) {
+  return (p.kategori || '').toLowerCase().includes('jersey');
+}
+
+// Auto-convert Google Drive share link → direct image URL
+function resolveImgUrl(url) {
+  if (!url) return '';
+  const driveMatch = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+  if (driveMatch) {
+    return `https://drive.google.com/uc?export=view&id=${driveMatch[1]}`;
+  }
+  return url;
+}
+
+function fmt(n) {
+  if (isNaN(n) || n === null) return '–';
+  return 'Rp\u00a0' + Math.round(n).toLocaleString('id-ID');
+}
+
+function toNum(raw) {
+  const n = parseInt(String(raw || '0').replace(/\D/g, ''), 10);
+  return isNaN(n) ? 0 : n;
+}
+
+// Hitung surcharge berdasarkan pilihan
+function getSurcharge(s) {
+  let extra = 0;
+  if (s.sleeve === 'Lengan Panjang') extra += CONFIG.surcharge.lenganPanjang;
+  if (s.size === 'XXL') extra += CONFIG.surcharge.xxl;
+  if (s.size === '3XL') extra += CONFIG.surcharge.xxxl;
+  return extra;
+}
+
+// Harga satuan final kaos
+function getUnitPriceKaos(p, idx) {
+  const base = toNum(p.harga);
+  return base + getSurcharge(state[idx]);
+}
+
+// Harga name set jersey
+function getNameSetPrice(p, ns) {
+  if (!ns) return 0;
+  if (ns === 'Nama saja')    return toNum(p.harga_nama);
+  if (ns === 'Angka saja')   return toNum(p.harga_angka);
+  if (ns === 'Nama + Angka') return toNum(p.harga_nama_angka);
+  return 0;
+}
+
+// Harga satuan final jersey = base + name set
+function getUnitPriceJersey(p, idx) {
+  const base   = toNum(p.harga);
+  const nsPrice = getNameSetPrice(p, state[idx].nameset);
+  return base + nsPrice;
+}
+
+function getUnitPrice(p, idx) {
+  if (isKaos(p))   return getUnitPriceKaos(p, idx);
+  if (isJersey(p)) return getUnitPriceJersey(p, idx);
+  return toNum(p.harga);
+}
+
+function getTotalPrice(p, idx) {
+  return getUnitPrice(p, idx) * state[idx].qty;
+}
+
+// Cek apakah order siap
+function isOrderReady(p, idx) {
+  const s = state[idx];
+  if (isKaos(p))   return s.size && s.sleeve && s.color;
+  if (isJersey(p)) return !!s.nameset;
+  return true;
+}
+
+/* ═══════════════════════════════════════════════════════
+   WA MESSAGE
+═══════════════════════════════════════════════════════ */
+function buildOrderMsg(p, idx) {
+  const s = state[idx];
+  const unitPrice  = getUnitPrice(p, idx);
+  const totalPrice = getTotalPrice(p, idx);
+
+  const lines = [
+    '🛒 *PESANAN SABLON*',
+    '─────────────────────',
+    `Produk   : *${p.nama}*`,
+  ];
+
+  if (isKaos(p)) {
+    const surcharge = getSurcharge(s);
+    const base = toNum(p.harga);
+    lines.push(`Ukuran   : ${s.size}`);
+    lines.push(`Lengan   : ${s.sleeve}`);
+    lines.push(`Warna    : ${s.color}`);
+    lines.push(`Qty      : ${s.qty} pcs`);
+    lines.push('─────────────────────');
+    lines.push(`Harga dasar : ${fmt(base)}${p.satuan||'/pcs'}`);
+    if (surcharge > 0) {
+      if (s.sleeve === 'Lengan Panjang') lines.push(`+ Lengan panjang : ${fmt(CONFIG.surcharge.lenganPanjang)}`);
+      if (s.size === 'XXL')  lines.push(`+ Oversize XXL   : ${fmt(CONFIG.surcharge.xxl)}`);
+      if (s.size === '3XL')  lines.push(`+ Oversize 3XL   : ${fmt(CONFIG.surcharge.xxxl)}`);
+      lines.push(`Harga satuan : ${fmt(unitPrice)}${p.satuan||'/pcs'}`);
+    }
+    lines.push(`*Total (${s.qty} pcs) : ${fmt(totalPrice)}*`);
+  }
+
+  if (isJersey(p)) {
+    const nsPrice = getNameSetPrice(p, s.nameset);
+    const base = toNum(p.harga);
+    lines.push(`Name set : ${s.nameset}`);
+    lines.push(`Qty      : ${s.qty} pcs`);
+    lines.push('─────────────────────');
+    lines.push(`Jasa sablon  : ${fmt(base)}${p.satuan||'/pcs'}`);
+    if (nsPrice > 0) lines.push(`+ Name set   : ${fmt(nsPrice)}/pcs`);
+    lines.push(`Harga satuan : ${fmt(unitPrice)}/pcs`);
+    lines.push(`*Total (${s.qty} pcs) : ${fmt(totalPrice)}*`);
+    lines.push('📌 Bahan jersey dibawa customer');
+  }
+
+  lines.push('─────────────────────');
+  lines.push('Mohon konfirmasi pesanan. Terima kasih! 🙏');
+  return lines.join('\n');
+}
+
+/* ═══════════════════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════════════════ */
+function waIconSVG() {
+  return `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
+}
+
+function pillsHtml(items, group, idx, labelFn) {
+  return items.map(val => {
+    const extra = labelFn ? labelFn(val) : '';
+    return `<button class="pill" data-group="${group}" data-idx="${idx}" data-val="${val}">
+      ${val}${extra ? `<span class="pill-extra">${extra}</span>` : ''}
+    </button>`;
+  }).join('');
+}
+
+function sizeSurchargeLabel(val) {
+  if (val === 'XXL') return `+${fmt(CONFIG.surcharge.xxl).replace('Rp\u00a0','')}`;
+  if (val === '3XL') return `+${fmt(CONFIG.surcharge.xxxl).replace('Rp\u00a0','')}`;
+  return '';
+}
+
+function sleeveSurchargeLabel(val) {
+  if (val === 'Lengan Panjang') return `+${fmt(CONFIG.surcharge.lenganPanjang).replace('Rp\u00a0','')}`;
+  return '';
+}
+
+function nameSetLabel(p) {
+  return val => {
+    let price = 0;
+    if (val === 'Nama saja')    price = toNum(p.harga_nama);
+    if (val === 'Angka saja')   price = toNum(p.harga_angka);
+    if (val === 'Nama + Angka') price = toNum(p.harga_nama_angka);
+    return price > 0 ? `+${price.toLocaleString('id-ID')}` : '';
+  };
+}
+
+function priceBlockHtml(p, idx) {
+  const s = state[idx];
+  const unit  = getUnitPrice(p, idx);
+  const total = getTotalPrice(p, idx);
+  const base  = toNum(p.harga);
+
+  if (!isOrderReady(p, idx) && isKaos(p)) {
+    return `<div class="price-block">
+      <span class="price-unit">Mulai dari</span>
+      <span class="price-total">${fmt(base)}<span style="font-size:11px;font-weight:400;color:var(--ink-muted)">${p.satuan||'/pcs'}</span></span>
+      <span class="price-breakdown">Pilih ukuran, lengan & warna</span>
+    </div>`;
+  }
+
+  if (!isOrderReady(p, idx) && isJersey(p)) {
+    return `<div class="price-block">
+      <span class="price-unit">Mulai dari</span>
+      <span class="price-total">${fmt(base)}<span style="font-size:11px;font-weight:400;color:var(--ink-muted)">${p.satuan||'/pcs'}</span></span>
+      <span class="price-breakdown">Pilih jenis name set</span>
+    </div>`;
+  }
+
+  const surcharge = isKaos(p) ? getSurcharge(s) : 0;
+  const breakdown = surcharge > 0
+    ? `${fmt(base)} + surcharge ${fmt(surcharge)} = ${fmt(unit)}/pcs`
+    : `${fmt(unit)}${p.satuan||'/pcs'}`;
+
+  return `<div class="price-block">
+    <span class="price-unit">${s.qty} pcs × ${fmt(unit)}</span>
+    <span class="price-total">${fmt(total)}</span>
+    ${surcharge > 0 ? `<span class="price-breakdown">${breakdown}</span>` : ''}
+  </div>`;
+}
+
+function renderCard(p, idx) {
+  initState(idx);
+
+  const imgUrl = resolveImgUrl(p.gambar);
+  const imgHtml = imgUrl
+    ? `<img src="${imgUrl}" alt="${p.nama}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=card-img-placeholder>No Image</div>'">`
+    : `<div class="card-img-placeholder">No Image</div>`;
+
+  const badgeHtml = p.badge ? `<span class="card-badge">${p.badge}</span>` : '';
+
+  let optionsHtml = '';
+
+  if (isKaos(p)) {
+    optionsHtml = `
+      <div class="options-block">
+        <div class="opt-group">
+          <div class="opt-label">Ukuran</div>
+          <div class="pill-row">${pillsHtml(CONFIG.kaos.sizes, 'size', idx, sizeSurchargeLabel)}</div>
+        </div>
+        <div class="opt-group">
+          <div class="opt-label">Jenis Lengan</div>
+          <div class="pill-row">${pillsHtml(CONFIG.kaos.sleeves, 'sleeve', idx, sleeveSurchargeLabel)}</div>
+        </div>
+        <div class="opt-group">
+          <div class="opt-label">Warna</div>
+          <div class="pill-row">${pillsHtml(CONFIG.kaos.colors, 'color', idx, null)}</div>
+        </div>
+        <div class="opt-group">
+          <div class="opt-label">Jumlah</div>
+          <div class="qty-row">
+            <button class="qty-btn" data-action="minus" data-idx="${idx}">−</button>
+            <span class="qty-val" id="qty-val-${idx}">1</span>
+            <button class="qty-btn" data-action="plus" data-idx="${idx}">+</button>
+            <span style="font-size:12px;color:var(--ink-muted)">pcs</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  if (isJersey(p)) {
+    optionsHtml = `
+      <div class="options-block">
+        <div class="jersey-info">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Bahan jersey dibawa sendiri oleh customer
+        </div>
+        <div class="opt-group">
+          <div class="opt-label">Name Set</div>
+          <div class="pill-row">${pillsHtml(CONFIG.jersey.nameSets, 'nameset', idx, nameSetLabel(p))}</div>
+        </div>
+        <div class="opt-group">
+          <div class="opt-label">Jumlah</div>
+          <div class="qty-row">
+            <button class="qty-btn" data-action="minus" data-idx="${idx}">−</button>
+            <span class="qty-val" id="qty-val-${idx}">1</span>
+            <button class="qty-btn" data-action="plus" data-idx="${idx}">+</button>
+            <span style="font-size:12px;color:var(--ink-muted)">pcs</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="card">
+      <div class="card-img-wrap">${imgHtml}${badgeHtml}</div>
+      <div class="card-body">
+        <div class="card-name">${p.nama}</div>
+        ${p.deskripsi ? `<div class="card-desc">${p.deskripsi}</div>` : ''}
+      </div>
+      ${optionsHtml}
+      <div class="card-footer" id="footer-${idx}">
+        <div id="price-block-${idx}">${priceBlockHtml(p, idx)}</div>
+        <button class="order-btn disabled" id="order-btn-${idx}" data-idx="${idx}">
+          ${waIconSVG()} Order WA
+        </button>
+      </div>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════
+   UPDATE UI (tanpa re-render seluruh card)
+═══════════════════════════════════════════════════════ */
+function refreshCard(p, idx) {
+  // Update price block
+  const pb = document.getElementById('price-block-' + idx);
+  if (pb) pb.innerHTML = priceBlockHtml(p, idx);
+
+  // Update order button
+  const btn = document.getElementById('order-btn-' + idx);
+  if (btn) {
+    if (isOrderReady(p, idx)) {
+      btn.classList.remove('disabled');
+    } else {
+      btn.classList.add('disabled');
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   EVENT DELEGATION
+═══════════════════════════════════════════════════════ */
+document.getElementById('productGrid').addEventListener('click', e => {
+  // Pill
+  const pill = e.target.closest('.pill');
+  if (pill) {
+    const idx   = +pill.dataset.idx;
+    const group = pill.dataset.group;
+    const val   = pill.dataset.val;
+    pill.closest('.pill-row').querySelectorAll('.pill').forEach(p => p.classList.remove('selected'));
+    pill.classList.add('selected');
+    state[idx][group] = val;
+    refreshCard(allProducts[idx], idx);
+    return;
+  }
+
+  // Qty
+  const qBtn = e.target.closest('.qty-btn');
+  if (qBtn) {
+    const idx    = +qBtn.dataset.idx;
+    const action = qBtn.dataset.action;
+    let qty = state[idx].qty;
+    if (action === 'minus' && qty > 1)  qty--;
+    if (action === 'plus'  && qty < 999) qty++;
+    state[idx].qty = qty;
+    document.getElementById('qty-val-' + idx).textContent = qty;
+    refreshCard(allProducts[idx], idx);
+    return;
+  }
+
+  // Order button
+  const oBtn = e.target.closest('.order-btn');
+  if (oBtn && !oBtn.classList.contains('disabled')) {
+    const idx = +oBtn.dataset.idx;
+    const msg = buildOrderMsg(allProducts[idx], idx);
+    window.open(`https://wa.me/${CONFIG.waNumber}?text=${encodeURIComponent(msg)}`, '_blank');
+  }
+});
+
+/* ═══════════════════════════════════════════════════════
+   FILTER & SEARCH
+═══════════════════════════════════════════════════════ */
+let activeCategory = 'semua';
+
+function filterAndRender() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  const filtered = allProducts.reduce((acc, p, i) => {
+    const matchCat = activeCategory === 'semua' || (p.kategori||'').toLowerCase() === activeCategory;
+    const matchQ   = !q
+      || p.nama.toLowerCase().includes(q)
+      || (p.deskripsi||'').toLowerCase().includes(q)
+      || (p.kategori||'').toLowerCase().includes(q);
+    if (matchCat && matchQ) acc.push({ p, i });
+    return acc;
+  }, []);
+
+  const grid = document.getElementById('productGrid');
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="empty-state">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <p>Produk tidak ditemukan.<br/>Coba kata kunci atau kategori lain.</p>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = filtered.map(({ p, i }) => renderCard(p, i)).join('');
+}
+
+function buildFilters() {
+  const cats = [...new Set(allProducts.map(p => (p.kategori||'').toLowerCase()).filter(Boolean))];
+  const wrap = document.getElementById('filterBtns');
+  wrap.innerHTML = '<button class="filter-btn active" data-cat="semua">Semua</button>';
+  cats.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn';
+    btn.dataset.cat = cat;
+    btn.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+    wrap.appendChild(btn);
+  });
+  wrap.addEventListener('click', e => {
+    const btn = e.target.closest('.filter-btn');
+    if (!btn) return;
+    wrap.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeCategory = btn.dataset.cat;
+    filterAndRender();
+  });
+}
+
+document.getElementById('searchInput').addEventListener('input', filterAndRender);
+
+/* ═══════════════════════════════════════════════════════
+   DATA LOADING
+═══════════════════════════════════════════════════════ */
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g,'').trim().toLowerCase().replace(/ /g,'_'));
+  return lines.slice(1).map(line => {
+    const vals = line.match(/(".*?"|[^,\n]+)/g) || [];
+    const obj  = {};
+    headers.forEach((h, i) => { obj[h] = (vals[i]||'').replace(/^"|"$/g,'').trim(); });
+    return obj;
+  }).filter(p => p.nama);
+}
+
+function showBanner(msg, bg, color) {
+  const b = document.getElementById('infoBanner');
+  b.textContent = msg;
+  Object.assign(b.style, { background: bg, color, borderBottom: `1px solid ${color}44`, display: 'block' });
+}
+
+function demoProducts() {
+  return [
+    // Kaos
+    { nama:'Kaos Sablon DTF Full Color',   kategori:'Kaos',   deskripsi:'Direct to Film, warna tajam & detail tinggi',       harga:'75000', satuan:'/pcs', gambar:'', badge:'Best Seller',  harga_nama:'', harga_angka:'', harga_nama_angka:'' },
+    { nama:'Kaos Sablon Manual 1 Warna',   kategori:'Kaos',   deskripsi:'Sablon manual rubber/plastisol, tahan lama',        harga:'55000', satuan:'/pcs', gambar:'', badge:'',             harga_nama:'', harga_angka:'', harga_nama_angka:'' },
+    { nama:'Kaos Sablon Manual 2 Warna',   kategori:'Kaos',   deskripsi:'Cocok untuk desain multi-warna sederhana',          harga:'65000', satuan:'/pcs', gambar:'', badge:'',             harga_nama:'', harga_angka:'', harga_nama_angka:'' },
+    { nama:'Polo Shirt Sablon Dada',       kategori:'Kaos',   deskripsi:'Bahan pique, sablon dada kiri/kanan',               harga:'90000', satuan:'/pcs', gambar:'', badge:'',             harga_nama:'', harga_angka:'', harga_nama_angka:'' },
+    // Jersey
+    { nama:'Jersey Sablon Sublimasi',      kategori:'Jersey', deskripsi:'Full body print, warna presisi — bahan dari customer', harga:'45000', satuan:'/pcs', gambar:'', badge:'Jasa Sablon', harga_nama:'5000', harga_angka:'3000', harga_nama_angka:'7000' },
+    { nama:'Jersey Sablon DTF Partial',    kategori:'Jersey', deskripsi:'Sablon area tertentu, DTF — bahan dari customer',   harga:'35000', satuan:'/pcs', gambar:'', badge:'Jasa Sablon', harga_nama:'5000', harga_angka:'3000', harga_nama_angka:'7000' },
+  ];
+}
+
+async function loadProducts() {
+  if (CONFIG.sheetUrl.includes('YOUR_SHEET_ID')) {
+    allProducts = demoProducts();
+    buildFilters();
+    filterAndRender();
+    showBanner('⚙️ Mode demo aktif — ganti CONFIG.sheetUrl dengan URL Google Sheet lo untuk data asli.', '#fefce8', '#854d0e');
+    return;
+  }
+  try {
+    const res = await fetch(CONFIG.sheetUrl);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    allProducts = parseCSV(await res.text());
+    if (!allProducts.length) throw new Error('Sheet kosong atau header kolom salah.');
+    buildFilters();
+    filterAndRender();
+  } catch(err) {
+    allProducts = demoProducts();
+    buildFilters();
+    filterAndRender();
+    showBanner('⚠️ Gagal load Sheet: ' + err.message + ' — tampil data demo.', '#fef2f2', '#991b1b');
+  }
+}
+
+document.getElementById('headerWaBtn').href =
+  `https://wa.me/${CONFIG.waNumber}?text=${encodeURIComponent(CONFIG.waDefaultMsg)}`;
+
+loadProducts();
+</script>
+</body>
+</html>
