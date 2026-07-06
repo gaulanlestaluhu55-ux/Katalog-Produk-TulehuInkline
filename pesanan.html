@@ -133,6 +133,23 @@
   .status-badge.diambil    { background: var(--accent-bg); color: var(--accent-text); }
   .status-badge.batal      { background: var(--err-bg); color: var(--err-text); }
 
+  .status-badge.belum-bayar { background: var(--err-bg); color: var(--err-text); }
+  .status-badge.dp          { background: var(--warn-bg); color: var(--warn-text); }
+  .status-badge.lunas       { background: var(--accent-bg); color: var(--accent-text); }
+
+  .payment-row {
+    display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border);
+  }
+  .payment-info { font-size: 12px; color: var(--ink-soft); }
+  .payment-info b { color: var(--ink); }
+  .payment-update { display: flex; gap: 6px; align-items: center; }
+  .payment-update input {
+    width: 110px; height: 30px; padding: 0 9px; border: 1px solid var(--border); border-radius: 8px;
+    font-family: inherit; font-size: 12px; outline: none;
+  }
+  .payment-update input:focus { border-color: var(--ink); }
+
   .icon-btn {
     height: 30px; padding: 0 11px; border: 1px solid var(--border); border-radius: 8px;
     background: var(--surface); color: var(--ink-soft); font-family: inherit; font-size: 12px; cursor: pointer;
@@ -168,6 +185,7 @@
       <div class="brand">Daftar Pesanan<div class="brand-sub">Tulehu Inkline</div></div>
       <div class="header-actions">
         <a class="link-btn" href="admin.html">Admin Produk</a>
+        <a class="link-btn" href="keuangan.html">Keuangan</a>
         <button class="logout-btn" id="logoutBtn">Keluar</button>
       </div>
     </div>
@@ -209,6 +227,10 @@
           <div class="field">
             <label>Qty</label>
             <input type="number" id="f_qty" min="1" value="1" required />
+          </div>
+          <div class="field">
+            <label>DP Awal (opsional)</label>
+            <input type="number" id="f_dp" min="0" value="0" />
           </div>
         </div>
 
@@ -447,6 +469,7 @@ document.getElementById('orderForm').addEventListener('submit', async e => {
   const qty = Math.max(1, parseInt(document.getElementById('f_qty').value || '1', 10));
   const unit = getUnitPrice(p, selectedOpts);
   const total = unit * qty;
+  const dp = Math.max(0, parseInt(document.getElementById('f_dp').value || '0', 10));
 
   const data = {
     id_produk: p.id || '',
@@ -460,6 +483,7 @@ document.getElementById('orderForm').addEventListener('submit', async e => {
     kontak: document.getElementById('f_kontak').value.trim(),
     catatan: document.getElementById('f_catatan').value.trim(),
     status: 'Baru',
+    nominal_dibayar: dp,
   };
 
   const btn = document.getElementById('saveOrderBtn');
@@ -472,6 +496,7 @@ document.getElementById('orderForm').addEventListener('submit', async e => {
       document.getElementById('orderForm').reset();
       document.getElementById('optionsWrap').innerHTML = '';
       document.getElementById('f_qty').value = 1;
+      document.getElementById('f_dp').value = 0;
       document.getElementById('priceSummary').textContent = 'Pilih produk dulu buat lihat harga.';
       await refreshOrders();
     } else {
@@ -520,6 +545,14 @@ function renderOrders() {
   wrap.innerHTML = filtered.map(o => {
     const statusClass = (o.status || 'baru').toLowerCase();
     const ts = o.timestamp ? new Date(o.timestamp).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '';
+
+    const total = Number(o.total || 0);
+    const dibayar = Number(o.nominal_dibayar || 0);
+    const sisa = o.sisa !== undefined && o.sisa !== '' ? Number(o.sisa) : (total - dibayar);
+    const statusBayar = o.status_bayar || 'Belum Bayar';
+    const bayarClass = statusBayar.toLowerCase().replace(/\s+/g, '-');
+    const isBatal = o.status === 'Batal';
+
     return `
     <div class="order-row" data-id="${o.id}">
       <div class="order-top">
@@ -527,7 +560,7 @@ function renderOrders() {
           <div class="order-name">${o.nama_produk || '-'}</div>
           <div class="order-meta">${o.opsi || ''} · Qty ${o.qty || 0} · ${ts}</div>
         </div>
-        <div class="order-total">${fmt(Number(o.total || 0))}</div>
+        <div class="order-total">${fmt(total)}</div>
       </div>
       <div class="order-customer">👤 ${o.nama_customer || '-'}${o.kontak ? ' · ' + o.kontak : ''}</div>
       ${o.catatan ? `<div class="order-note">📝 ${o.catatan}</div>` : ''}
@@ -539,6 +572,17 @@ function renderOrders() {
           </select>
           <button class="icon-btn danger" data-action="delete" data-id="${o.id}">Hapus</button>
         </div>
+      </div>
+      <div class="payment-row">
+        <div class="payment-info">
+          <span class="status-badge ${bayarClass}">${statusBayar}</span>
+          Dibayar: <b>${fmt(dibayar)}</b> · Sisa: <b>${fmt(Math.max(0, sisa))}</b>
+        </div>
+        ${isBatal ? '' : `
+        <div class="payment-update">
+          <input type="number" min="0" placeholder="Total dibayar" data-id="${o.id}" class="payment-input" />
+          <button class="icon-btn" data-action="update-payment" data-id="${o.id}">Update Bayar</button>
+        </div>`}
       </div>
     </div>`;
   }).join('');
@@ -553,29 +597,56 @@ document.getElementById('orderList').addEventListener('change', async e => {
   const json = await apiPost({ token: adminToken, action: 'updateOrderStatus', id, data: { status: newStatus } });
   sel.disabled = false;
   if (json.status === 'success') {
-    const o = orders.find(x => String(x.id) === String(id));
-    if (o) o.status = newStatus;
-    renderOrders();
-    showStatus('Status pesanan diupdate.', true);
+    // Refresh penuh, karena status "Batal" bisa reversal nominal pembayaran di backend
+    await refreshOrders();
+    showStatus(newStatus === 'Batal' ? 'Pesanan dibatalkan, pembayaran otomatis di-reversal di Keuangan.' : 'Status pesanan diupdate.', true);
   } else {
     showStatus('Gagal: ' + json.message, false);
   }
 });
 
 document.getElementById('orderList').addEventListener('click', async e => {
-  const btn = e.target.closest('.icon-btn[data-action="delete"]');
-  if (!btn) return;
-  const id = btn.dataset.id;
-  if (!confirm('Hapus pesanan ini? Tindakan tidak bisa dibatalkan.')) return;
-  btn.disabled = true;
-  const json = await apiPost({ token: adminToken, action: 'deleteOrder', id });
-  btn.disabled = false;
-  if (json.status === 'success') {
-    orders = orders.filter(o => String(o.id) !== String(id));
-    renderOrders();
-    showStatus('Pesanan dihapus.', true);
-  } else {
-    showStatus('Gagal: ' + json.message, false);
+  const delBtn = e.target.closest('.icon-btn[data-action="delete"]');
+  if (delBtn) {
+    const id = delBtn.dataset.id;
+    if (!confirm('Hapus pesanan ini? Tindakan tidak bisa dibatalkan.')) return;
+    delBtn.disabled = true;
+    const json = await apiPost({ token: adminToken, action: 'deleteOrder', id });
+    delBtn.disabled = false;
+    if (json.status === 'success') {
+      orders = orders.filter(o => String(o.id) !== String(id));
+      renderOrders();
+      showStatus('Pesanan dihapus.', true);
+    } else {
+      showStatus('Gagal: ' + json.message, false);
+    }
+    return;
+  }
+
+  const payBtn = e.target.closest('.icon-btn[data-action="update-payment"]');
+  if (payBtn) {
+    const id = payBtn.dataset.id;
+    const input = document.querySelector(`.payment-input[data-id="${id}"]`);
+    const val = input ? input.value.trim() : '';
+    if (val === '') { showStatus('Isi dulu total nominal yang sudah dibayar.', false); return; }
+    const nominal = Math.max(0, parseInt(val, 10) || 0);
+
+    payBtn.disabled = true;
+    const json = await apiPost({ token: adminToken, action: 'updatePayment', id, data: { nominal_dibayar: nominal } });
+    payBtn.disabled = false;
+
+    if (json.status === 'success') {
+      const o = orders.find(x => String(x.id) === String(id));
+      if (o) {
+        o.nominal_dibayar = json.data.nominal_dibayar;
+        o.sisa = json.data.sisa;
+        o.status_bayar = json.data.status_bayar;
+      }
+      renderOrders();
+      showStatus('Pembayaran diupdate. Saldo otomatis tercatat di Keuangan.', true);
+    } else {
+      showStatus('Gagal: ' + json.message, false);
+    }
   }
 });
 
