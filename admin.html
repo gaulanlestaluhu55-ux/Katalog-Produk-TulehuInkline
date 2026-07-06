@@ -49,11 +49,13 @@
   .header-inner { max-width: 900px; margin: 0 auto; height: 58px; display: flex; align-items: center; justify-content: space-between; }
   .brand { font-size: 15px; font-weight: 600; }
   .brand-sub { font-size: 11px; color: var(--ink-muted); font-weight: 400; }
-  .logout-btn {
+  .header-actions { display: flex; align-items: center; gap: 8px; }
+  .logout-btn, .link-btn {
     height: 34px; padding: 0 14px; border: 1px solid var(--border); border-radius: 20px;
     background: var(--surface); color: var(--ink-soft); font-family: inherit; font-size: 13px; cursor: pointer;
+    text-decoration: none; display: inline-flex; align-items: center;
   }
-  .logout-btn:hover { border-color: var(--ink); color: var(--ink); }
+  .logout-btn:hover, .link-btn:hover { border-color: var(--ink); color: var(--ink); }
 
   .container { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
   .toolbar-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 10px; flex-wrap: wrap; }
@@ -138,7 +140,10 @@
   <header>
     <div class="header-inner">
       <div class="brand">Admin Katalog<div class="brand-sub">Tulehu Inkline</div></div>
-      <button class="logout-btn" id="logoutBtn">Keluar</button>
+      <div class="header-actions">
+        <a class="link-btn" href="pesanan.html">Daftar Pesanan</a>
+        <button class="logout-btn" id="logoutBtn">Keluar</button>
+      </div>
     </div>
   </header>
 
