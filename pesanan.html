@@ -186,6 +186,7 @@
       <div class="header-actions">
         <a class="link-btn" href="admin.html">Admin Produk</a>
         <a class="link-btn" href="keuangan.html">Keuangan</a>
+        <a class="link-btn" href="stok.html">Stok Vendor</a>
         <button class="logout-btn" id="logoutBtn">Keluar</button>
       </div>
     </div>
@@ -232,6 +233,10 @@
             <label>DP Awal (opsional)</label>
             <input type="number" id="f_dp" min="0" value="0" />
           </div>
+          <div class="field">
+            <label>Masuk Akun</label>
+            <select id="f_akun_dp"><option value="Kas">Kas</option></select>
+          </div>
         </div>
 
         <div class="price-summary" id="priceSummary">Pilih produk dulu buat lihat harga.</div>
@@ -276,6 +281,7 @@ const CONFIG = {
 let adminToken = localStorage.getItem('adminToken') || '';
 let products = [];
 let orders = [];
+let accounts = [];
 let currentFilter = 'semua';
 let selectedOpts = { size: null, sleeve: null, color: null, nameset: null };
 
@@ -288,6 +294,10 @@ async function apiGetProducts() {
 }
 async function apiGetOrders() {
   const res = await fetch(`${CONFIG.apiUrl}?resource=pesanan&token=${encodeURIComponent(adminToken)}`);
+  return res.json();
+}
+async function apiGetAccounts() {
+  const res = await fetch(`${CONFIG.apiUrl}?resource=akun&token=${encodeURIComponent(adminToken)}`);
   return res.json();
 }
 async function apiPost(body) {
@@ -316,6 +326,11 @@ async function tryLogin(token) {
     adminApp.style.display = 'block';
     products = json.data;
     populateProductSelect();
+
+    const accJson = await apiGetAccounts();
+    if (accJson.status === 'success') accounts = accJson.data;
+    populateAccountSelects();
+
     await refreshOrders();
   } catch (err) {
     adminToken = '';
@@ -353,7 +368,7 @@ function showStatus(msg, ok) {
 /* ═══════════════════════════════════════════════════════
    HELPERS — harga (logic sama kayak katalog helpers.js)
 ═══════════════════════════════════════════════════════ */
-function isKaos(p)   { return (p.kategori || '').toLowerCase().includes('kaos'); }
+function isKaos(p)   { return !isJersey(p); } // apparel non-jersey: Reguler/Oversize/Singlet/Polo Tshirt/dll — ditentukan dari kategori produk
 function isJersey(p) { return (p.kategori || '').toLowerCase().includes('jersey'); }
 function fmt(n) { return isNaN(n) ? '–' : 'Rp\u00a0' + Math.round(n).toLocaleString('id-ID'); }
 function toNum(raw) { const n = parseInt(String(raw || '0').replace(/\D/g, ''), 10); return isNaN(n) ? 0 : n; }
@@ -395,6 +410,15 @@ function populateProductSelect() {
   const sel = document.getElementById('f_produk');
   sel.innerHTML = '<option value="">— Pilih produk —</option>' +
     products.map((p, i) => `<option value="${i}">${p.nama} (${p.kategori || '-'})</option>`).join('');
+}
+
+function accountOptionsHtml(selectedVal) {
+  if (!accounts.length) return `<option value="Kas">Kas</option>`;
+  return accounts.map(a => `<option value="${a.nama}" ${a.nama === selectedVal ? 'selected' : ''}>${a.nama}</option>`).join('');
+}
+
+function populateAccountSelects() {
+  document.getElementById('f_akun_dp').innerHTML = accountOptionsHtml('Kas');
 }
 
 function pillRow(group, options, selectedVal) {
@@ -470,12 +494,16 @@ document.getElementById('orderForm').addEventListener('submit', async e => {
   const unit = getUnitPrice(p, selectedOpts);
   const total = unit * qty;
   const dp = Math.max(0, parseInt(document.getElementById('f_dp').value || '0', 10));
+  const akunDp = document.getElementById('f_akun_dp').value || 'Kas';
 
   const data = {
     id_produk: p.id || '',
     nama_produk: p.nama,
     kategori: p.kategori || '',
     opsi: optsSummary(p, selectedOpts),
+    size: selectedOpts.size || '',
+    warna: selectedOpts.color || '',
+    lengan: selectedOpts.sleeve || '',
     qty: qty,
     harga_satuan: unit,
     total: total,
@@ -484,6 +512,7 @@ document.getElementById('orderForm').addEventListener('submit', async e => {
     catatan: document.getElementById('f_catatan').value.trim(),
     status: 'Baru',
     nominal_dibayar: dp,
+    akun: akunDp,
   };
 
   const btn = document.getElementById('saveOrderBtn');
@@ -497,6 +526,7 @@ document.getElementById('orderForm').addEventListener('submit', async e => {
       document.getElementById('optionsWrap').innerHTML = '';
       document.getElementById('f_qty').value = 1;
       document.getElementById('f_dp').value = 0;
+      populateAccountSelects();
       document.getElementById('priceSummary').textContent = 'Pilih produk dulu buat lihat harga.';
       await refreshOrders();
     } else {
@@ -581,6 +611,7 @@ function renderOrders() {
         ${isBatal ? '' : `
         <div class="payment-update">
           <input type="number" min="0" placeholder="Total dibayar" data-id="${o.id}" class="payment-input" />
+          <select class="status-select payment-akun" data-id="${o.id}">${accountOptionsHtml('Kas')}</select>
           <button class="icon-btn" data-action="update-payment" data-id="${o.id}">Update Bayar</button>
         </div>`}
       </div>
@@ -627,12 +658,14 @@ document.getElementById('orderList').addEventListener('click', async e => {
   if (payBtn) {
     const id = payBtn.dataset.id;
     const input = document.querySelector(`.payment-input[data-id="${id}"]`);
+    const akunSel = document.querySelector(`.payment-akun[data-id="${id}"]`);
     const val = input ? input.value.trim() : '';
     if (val === '') { showStatus('Isi dulu total nominal yang sudah dibayar.', false); return; }
     const nominal = Math.max(0, parseInt(val, 10) || 0);
+    const akun = akunSel ? akunSel.value : 'Kas';
 
     payBtn.disabled = true;
-    const json = await apiPost({ token: adminToken, action: 'updatePayment', id, data: { nominal_dibayar: nominal } });
+    const json = await apiPost({ token: adminToken, action: 'updatePayment', id, data: { nominal_dibayar: nominal, akun } });
     payBtn.disabled = false;
 
     if (json.status === 'success') {
