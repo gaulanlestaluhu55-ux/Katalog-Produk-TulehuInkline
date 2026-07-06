@@ -176,9 +176,25 @@
   <div class="container">
     <div class="status-msg" id="statusMsg"></div>
 
+    <!-- ── List pesanan ── -->
+    <div class="toolbar-row">
+      <h2>Pesanan Masuk</h2>
+      <div class="filter-btns" id="filterBtns">
+        <button class="filter-btn active" data-status="semua">Semua</button>
+        <button class="filter-btn" data-status="Baru">Baru</button>
+        <button class="filter-btn" data-status="Diproses">Diproses</button>
+        <button class="filter-btn" data-status="Selesai">Selesai</button>
+        <button class="filter-btn" data-status="Diambil">Diambil</button>
+        <button class="filter-btn" data-status="Batal">Batal</button>
+      </div>
+    </div>
+    <div id="orderList"><div class="empty-state">Memuat pesanan...</div></div>
+
     <!-- ── Form catat pesanan baru ── -->
+    <div class="toolbar-row" style="margin-top: 1.75rem;">
+      <h2>Catat Pesanan Baru</h2>
+    </div>
     <div class="form-card">
-      <h3>Catat Pesanan Baru</h3>
       <form id="orderForm">
         <div class="field">
           <label>Produk</label>
@@ -217,20 +233,6 @@
         <button type="submit" class="btn-primary" id="saveOrderBtn">Simpan Pesanan</button>
       </form>
     </div>
-
-    <!-- ── List pesanan ── -->
-    <div class="toolbar-row">
-      <h2>Pesanan Masuk</h2>
-      <div class="filter-btns" id="filterBtns">
-        <button class="filter-btn active" data-status="semua">Semua</button>
-        <button class="filter-btn" data-status="Baru">Baru</button>
-        <button class="filter-btn" data-status="Diproses">Diproses</button>
-        <button class="filter-btn" data-status="Selesai">Selesai</button>
-        <button class="filter-btn" data-status="Diambil">Diambil</button>
-        <button class="filter-btn" data-status="Batal">Batal</button>
-      </div>
-    </div>
-    <div id="orderList"><div class="empty-state">Memuat pesanan...</div></div>
   </div>
 </div>
 
