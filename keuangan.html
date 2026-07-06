@@ -47,10 +47,10 @@
     background: var(--surface); border-bottom: 1px solid var(--border);
     padding: 0 1.5rem; position: sticky; top: 0; z-index: 100;
   }
-  .header-inner { max-width: 900px; margin: 0 auto; height: 58px; display: flex; align-items: center; justify-content: space-between; }
+  .header-inner { max-width: 900px; margin: 0 auto; height: 58px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
   .brand { font-size: 15px; font-weight: 600; }
   .brand-sub { font-size: 11px; color: var(--ink-muted); font-weight: 400; }
-  .header-actions { display: flex; align-items: center; gap: 8px; }
+  .header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .logout-btn, .link-btn {
     height: 34px; padding: 0 14px; border: 1px solid var(--border); border-radius: 20px;
     background: var(--surface); color: var(--ink-soft); font-family: inherit; font-size: 13px; cursor: pointer;
@@ -74,7 +74,7 @@
   .status-msg.err { background: var(--err-bg); color: var(--err-text); }
 
   /* ── Saldo summary ── */
-  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1rem; }
   .summary-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem;
   }
@@ -85,7 +85,15 @@
   .summary-card.keluar .value { color: var(--err-text); }
   @media (max-width: 600px) { .summary-grid { grid-template-columns: 1fr; } }
 
-  /* ── Form transaksi manual ── */
+  /* ── Per-akun saldo ── */
+  .account-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .account-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem 1rem;
+  }
+  .account-card .label { font-size: 11px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px; }
+  .account-card .value { font-size: 16px; font-weight: 600; }
+
+  /* ── Form card ── */
   .form-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
     padding: 1.25rem; margin-bottom: 1.5rem;
@@ -109,6 +117,28 @@
   .pill.selected.masuk  { background: var(--accent-text); border-color: var(--accent-text); color: #fff; }
   .pill.selected.keluar { background: var(--err-text); border-color: var(--err-text); color: #fff; }
 
+  /* ── Kelola akun (inline, ringkas) ── */
+  .account-manage { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+  .account-tag {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 4px 6px 4px 12px;
+  }
+  .account-tag button {
+    border: none; background: none; color: var(--ink-muted); cursor: pointer; font-size: 13px; line-height: 1;
+    padding: 2px 6px; border-radius: 50%;
+  }
+  .account-tag button:hover { color: var(--err-text); background: var(--err-bg); }
+  .account-add-row { display: flex; gap: 6px; margin-top: 8px; }
+  .account-add-row input {
+    flex: 1; height: 34px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 13px; outline: none;
+  }
+  .account-add-row input:focus { border-color: var(--ink); }
+  .account-add-row button {
+    height: 34px; padding: 0 14px; border: none; border-radius: var(--radius-sm);
+    background: var(--ink); color: #fff; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+
   /* ── Filter ── */
   .filter-btns { display: flex; gap: 6px; flex-wrap: wrap; }
   .filter-btn {
@@ -125,6 +155,7 @@
   .tx-left { min-width: 0; }
   .tx-desc { font-size: 14px; font-weight: 600; }
   .tx-meta { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+  .tx-akun { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
   .tx-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
   .tx-amount { font-size: 14px; font-weight: 600; white-space: nowrap; }
   .tx-amount.masuk { color: var(--accent-text); }
@@ -168,6 +199,7 @@
       <div class="header-actions">
         <a class="link-btn" href="admin.html">Admin Produk</a>
         <a class="link-btn" href="pesanan.html">Daftar Pesanan</a>
+        <a class="link-btn" href="stok.html">Stok Vendor</a>
         <button class="logout-btn" id="logoutBtn">Keluar</button>
       </div>
     </div>
@@ -176,10 +208,10 @@
   <div class="container">
     <div class="status-msg" id="statusMsg"></div>
 
-    <!-- ── Ringkasan saldo ── -->
+    <!-- ── Ringkasan saldo total ── -->
     <div class="summary-grid">
       <div class="summary-card saldo">
-        <div class="label">Total Saldo</div>
+        <div class="label">Total Saldo (Semua Akun)</div>
         <div class="value" id="sumSaldo">Rp 0</div>
       </div>
       <div class="summary-card masuk">
@@ -189,6 +221,20 @@
       <div class="summary-card keluar">
         <div class="label">Total Pengeluaran</div>
         <div class="value" id="sumKeluar">Rp 0</div>
+      </div>
+    </div>
+
+    <!-- ── Saldo per akun ── -->
+    <div class="toolbar-row"><h2>Saldo per Akun</h2></div>
+    <div class="account-grid" id="accountGrid"></div>
+
+    <!-- ── Kelola akun ── -->
+    <div class="form-card">
+      <h3>Kelola Akun</h3>
+      <div class="account-manage" id="accountTags"></div>
+      <div class="account-add-row">
+        <input type="text" id="f_akun_baru" placeholder="Nama akun baru, misal: Bank BCA, Bank Mandiri, Dompet Digital" />
+        <button type="button" id="addAccountBtn">+ Tambah Akun</button>
       </div>
     </div>
 
@@ -213,9 +259,15 @@
             <input type="number" id="f_nominal" min="1" required />
           </div>
         </div>
-        <div class="field">
-          <label>Keterangan</label>
-          <input type="text" id="f_keterangan" placeholder="Detail transaksi (opsional)" />
+        <div class="field-row">
+          <div class="field">
+            <label>Akun</label>
+            <select id="f_akun_tx"></select>
+          </div>
+          <div class="field">
+            <label>Keterangan</label>
+            <input type="text" id="f_keterangan" placeholder="Detail transaksi (opsional)" />
+          </div>
         </div>
         <button type="submit" class="btn-primary" id="saveTxBtn">Simpan Transaksi</button>
       </form>
@@ -244,6 +296,7 @@ const CONFIG = {
 
 let adminToken = localStorage.getItem('adminToken') || '';
 let transactions = [];
+let accounts = [];
 let currentFilter = 'semua';
 let selectedTipe = 'Masuk';
 
@@ -252,6 +305,10 @@ let selectedTipe = 'Masuk';
 ═══════════════════════════════════════════════════════ */
 async function apiGetTransactions() {
   const res = await fetch(`${CONFIG.apiUrl}?resource=keuangan&token=${encodeURIComponent(adminToken)}`);
+  return res.json();
+}
+async function apiGetAccounts() {
+  const res = await fetch(`${CONFIG.apiUrl}?resource=akun&token=${encodeURIComponent(adminToken)}`);
   return res.json();
 }
 async function apiPost(body) {
@@ -279,6 +336,10 @@ async function tryLogin(token) {
     loginScreen.style.display = 'none';
     adminApp.style.display = 'block';
     transactions = json.data;
+
+    const accJson = await apiGetAccounts();
+    if (accJson.status === 'success') accounts = accJson.data;
+
     renderAll();
   } catch (err) {
     adminToken = '';
@@ -316,6 +377,60 @@ function showStatus(msg, ok) {
 function fmt(n) { return isNaN(n) ? 'Rp\u00a00' : 'Rp\u00a0' + Math.round(n).toLocaleString('id-ID'); }
 
 /* ═══════════════════════════════════════════════════════
+   KELOLA AKUN
+═══════════════════════════════════════════════════════ */
+function renderAccountTags() {
+  const wrap = document.getElementById('accountTags');
+  if (!accounts.length) { wrap.innerHTML = '<span style="font-size:12px;color:var(--ink-muted);">Belum ada akun.</span>'; return; }
+  wrap.innerHTML = accounts.map(a => `
+    <span class="account-tag">
+      ${a.nama}
+      <button type="button" data-action="delete-account" data-id="${a.id}" title="Hapus akun">✕</button>
+    </span>
+  `).join('');
+}
+
+function populateAccountSelect(selectEl, selectedVal) {
+  selectEl.innerHTML = accounts.length
+    ? accounts.map(a => `<option value="${a.nama}" ${a.nama === selectedVal ? 'selected' : ''}>${a.nama}</option>`).join('')
+    : '<option value="Kas">Kas</option>';
+}
+
+document.getElementById('addAccountBtn').addEventListener('click', async () => {
+  const input = document.getElementById('f_akun_baru');
+  const nama = input.value.trim();
+  if (!nama) { showStatus('Isi dulu nama akunnya.', false); return; }
+
+  const json = await apiPost({ token: adminToken, action: 'createAccount', data: { nama } });
+  if (json.status === 'success') {
+    accounts.push({ id: json.data.id, nama: json.data.nama });
+    renderAccountTags();
+    populateAccountSelect(document.getElementById('f_akun_tx'), null);
+    input.value = '';
+    showStatus('Akun ditambahkan.', true);
+  } else {
+    showStatus('Gagal: ' + json.message, false);
+  }
+});
+
+document.getElementById('accountTags').addEventListener('click', async e => {
+  const btn = e.target.closest('[data-action="delete-account"]');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  if (!confirm('Hapus akun ini? Transaksi lama yang udah tercatat pakai akun ini gak akan ikut terhapus.')) return;
+
+  const json = await apiPost({ token: adminToken, action: 'deleteAccount', id });
+  if (json.status === 'success') {
+    accounts = accounts.filter(a => String(a.id) !== String(id));
+    renderAccountTags();
+    populateAccountSelect(document.getElementById('f_akun_tx'), null);
+    showStatus('Akun dihapus.', true);
+  } else {
+    showStatus('Gagal: ' + json.message, false);
+  }
+});
+
+/* ═══════════════════════════════════════════════════════
    FORM — pilih tipe transaksi
 ═══════════════════════════════════════════════════════ */
 document.getElementById('tipePillRow').addEventListener('click', e => {
@@ -334,6 +449,7 @@ document.getElementById('txForm').addEventListener('submit', async e => {
     kategori: document.getElementById('f_kategori').value.trim(),
     keterangan: document.getElementById('f_keterangan').value.trim(),
     nominal: parseInt(document.getElementById('f_nominal').value || '0', 10),
+    akun: document.getElementById('f_akun_tx').value || 'Kas',
   };
 
   if (!data.nominal || data.nominal <= 0) { showStatus('Nominal harus lebih dari 0.', false); return; }
@@ -346,6 +462,7 @@ document.getElementById('txForm').addEventListener('submit', async e => {
     if (json.status === 'success') {
       showStatus('Transaksi tersimpan.', true);
       document.getElementById('txForm').reset();
+      populateAccountSelect(document.getElementById('f_akun_tx'), null);
       await refreshTransactions();
     } else {
       showStatus('Gagal: ' + json.message, false);
@@ -371,7 +488,10 @@ async function refreshTransactions() {
 }
 
 function renderAll() {
+  renderAccountTags();
+  populateAccountSelect(document.getElementById('f_akun_tx'), null);
   renderSummary();
+  renderAccountBalances();
   renderTransactions();
 }
 
@@ -385,6 +505,32 @@ function renderSummary() {
   document.getElementById('sumMasuk').textContent = fmt(masuk);
   document.getElementById('sumKeluar').textContent = fmt(keluar);
   document.getElementById('sumSaldo').textContent = fmt(masuk - keluar);
+}
+
+function renderAccountBalances() {
+  const wrap = document.getElementById('accountGrid');
+
+  // Kumpulin semua nama akun yang muncul (dari daftar akun + dari transaksi lama yang mungkin
+  // pakai akun yang udah dihapus dari daftar, biar saldonya tetap kelihatan)
+  const names = new Set(accounts.map(a => a.nama));
+  transactions.forEach(t => { if (t.akun) names.add(t.akun); });
+
+  if (!names.size) { wrap.innerHTML = '<div class="empty-state">Belum ada akun.</div>'; return; }
+
+  const balances = {};
+  names.forEach(n => balances[n] = 0);
+  transactions.forEach(t => {
+    const akun = t.akun || 'Kas';
+    if (!(akun in balances)) balances[akun] = 0;
+    balances[akun] += (t.tipe === 'Keluar' ? -1 : 1) * Number(t.nominal || 0);
+  });
+
+  wrap.innerHTML = Object.keys(balances).map(n => `
+    <div class="account-card">
+      <div class="label">${n}</div>
+      <div class="value">${fmt(balances[n])}</div>
+    </div>
+  `).join('');
 }
 
 document.getElementById('filterBtns').addEventListener('click', e => {
@@ -415,6 +561,7 @@ function renderTransactions() {
       <div class="tx-left">
         <div class="tx-desc">${t.kategori || '-'}</div>
         <div class="tx-meta">${t.keterangan ? t.keterangan + ' · ' : ''}${ts}</div>
+        <div class="tx-akun">🏦 ${t.akun || 'Kas'}</div>
       </div>
       <div class="tx-right">
         <div class="tx-amount ${isMasuk ? 'masuk' : 'keluar'}">${isMasuk ? '+' : '−'} ${fmt(Number(t.nominal || 0))}</div>
