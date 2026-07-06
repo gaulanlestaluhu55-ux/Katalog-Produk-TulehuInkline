@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#1a1a1a" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<title>Keuangan — Katalog Sablon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #1a1a1a; --ink-soft: #555; --ink-muted: #999;
+    --bg: #f8f8f7; --surface: #fff; --border: #e4e4e0;
+    --accent-bg: #f0fdf4; --accent-border: #bbf7d0; --accent-text: #15803d;
+    --warn-bg: #fefce8; --warn-text: #854d0e;
+    --err-bg: #fef2f2; --err-text: #991b1b;
+    --info-bg: #eff6ff; --info-text: #1d4ed8;
+    --radius: 12px; --radius-sm: 8px;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+  /* ── Login ── */
+  .login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+  .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; width: 100%; max-width: 360px; }
+  .login-card h1 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .login-card p { font-size: 13px; color: var(--ink-muted); margin-bottom: 1.25rem; }
+  .login-card input {
+    width: 100%; height: 42px; padding: 0 12px; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); font-family: inherit; font-size: 14px; margin-bottom: 10px; outline: none;
+  }
+  .login-card input:focus { border-color: var(--ink); }
+  .login-card button {
+    width: 100%; height: 42px; border: none; border-radius: var(--radius-sm);
+    background: var(--ink); color: #fff; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .login-error { font-size: 12px; color: var(--err-text); margin-top: 8px; display: none; }
+
+  /* ── Shell ── */
+  .admin-app { display: none; }
+  header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 1.5rem; position: sticky; top: 0; z-index: 100;
+  }
+  .header-inner { max-width: 900px; margin: 0 auto; height: 58px; display: flex; align-items: center; justify-content: space-between; }
+  .brand { font-size: 15px; font-weight: 600; }
+  .brand-sub { font-size: 11px; color: var(--ink-muted); font-weight: 400; }
+  .header-actions { display: flex; align-items: center; gap: 8px; }
+  .logout-btn, .link-btn {
+    height: 34px; padding: 0 14px; border: 1px solid var(--border); border-radius: 20px;
+    background: var(--surface); color: var(--ink-soft); font-family: inherit; font-size: 13px; cursor: pointer;
+    text-decoration: none; display: inline-flex; align-items: center;
+  }
+  .logout-btn:hover, .link-btn:hover { border-color: var(--ink); color: var(--ink); }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+  .toolbar-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 10px; flex-wrap: wrap; }
+  .toolbar-row h2 { font-size: 18px; font-weight: 600; }
+  .btn-primary {
+    height: 38px; padding: 0 16px; border: none; border-radius: var(--radius-sm);
+    background: var(--ink); color: #fff; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .status-msg { font-size: 13px; padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; display: none; }
+  .status-msg.show { display: block; }
+  .status-msg.ok { background: var(--accent-bg); border: 1px solid var(--accent-border); color: var(--accent-text); }
+  .status-msg.err { background: var(--err-bg); color: var(--err-text); }
+
+  /* ── Saldo summary ── */
+  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+  .summary-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem;
+  }
+  .summary-card .label { font-size: 11px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px; }
+  .summary-card .value { font-size: 20px; font-weight: 600; }
+  .summary-card.saldo .value { color: var(--ink); }
+  .summary-card.masuk .value { color: var(--accent-text); }
+  .summary-card.keluar .value { color: var(--err-text); }
+  @media (max-width: 600px) { .summary-grid { grid-template-columns: 1fr; } }
+
+  /* ── Form transaksi manual ── */
+  .form-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1.25rem; margin-bottom: 1.5rem;
+  }
+  .form-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 1rem; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--ink-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 14px; outline: none; background: var(--surface); color: var(--ink);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--ink); }
+  .field-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .field-row .field { flex: 1; min-width: 140px; }
+
+  .pill-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill {
+    padding: 8px 16px; border: 1px solid var(--border); border-radius: 20px;
+    background: var(--surface); font-size: 13px; font-weight: 600; cursor: pointer; color: var(--ink-soft);
+  }
+  .pill.selected.masuk  { background: var(--accent-text); border-color: var(--accent-text); color: #fff; }
+  .pill.selected.keluar { background: var(--err-text); border-color: var(--err-text); color: #fff; }
+
+  /* ── Filter ── */
+  .filter-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .filter-btn {
+    padding: 6px 14px; border: 1px solid var(--border); border-radius: 20px;
+    background: var(--surface); font-family: inherit; font-size: 12px; cursor: pointer; color: var(--ink-soft);
+  }
+  .filter-btn.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  /* ── Transaction list ── */
+  .tx-row {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+  }
+  .tx-left { min-width: 0; }
+  .tx-desc { font-size: 14px; font-weight: 600; }
+  .tx-meta { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+  .tx-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+  .tx-amount { font-size: 14px; font-weight: 600; white-space: nowrap; }
+  .tx-amount.masuk { color: var(--accent-text); }
+  .tx-amount.keluar { color: var(--err-text); }
+
+  .source-badge {
+    font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; white-space: nowrap;
+  }
+  .source-badge.pesanan { background: var(--info-bg); color: var(--info-text); }
+  .source-badge.manual  { background: var(--bg); color: var(--ink-soft); border: 1px solid var(--border); }
+
+  .icon-btn {
+    height: 28px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface); color: var(--ink-soft); font-family: inherit; font-size: 11px; cursor: pointer;
+  }
+  .icon-btn:hover { border-color: var(--ink); color: var(--ink); }
+  .icon-btn.danger { color: var(--err-text); }
+  .icon-btn.danger:hover { border-color: var(--err-text); }
+
+  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--ink-muted); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <h1>Keuangan</h1>
+    <p>Masukkan token admin buat lihat & kelola saldo.</p>
+    <input type="password" id="tokenInput" placeholder="Token admin" autocomplete="off" />
+    <button id="loginBtn">Masuk</button>
+    <div class="login-error" id="loginError">Token salah atau gagal konek ke server.</div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div class="admin-app" id="adminApp">
+  <header>
+    <div class="header-inner">
+      <div class="brand">Keuangan<div class="brand-sub">Tulehu Inkline</div></div>
+      <div class="header-actions">
+        <a class="link-btn" href="admin.html">Admin Produk</a>
+        <a class="link-btn" href="pesanan.html">Daftar Pesanan</a>
+        <button class="logout-btn" id="logoutBtn">Keluar</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="status-msg" id="statusMsg"></div>
+
+    <!-- ── Ringkasan saldo ── -->
+    <div class="summary-grid">
+      <div class="summary-card saldo">
+        <div class="label">Total Saldo</div>
+        <div class="value" id="sumSaldo">Rp 0</div>
+      </div>
+      <div class="summary-card masuk">
+        <div class="label">Total Pemasukan</div>
+        <div class="value" id="sumMasuk">Rp 0</div>
+      </div>
+      <div class="summary-card keluar">
+        <div class="label">Total Pengeluaran</div>
+        <div class="value" id="sumKeluar">Rp 0</div>
+      </div>
+    </div>
+
+    <!-- ── Form transaksi manual ── -->
+    <div class="form-card">
+      <h3>Catat Transaksi Manual</h3>
+      <form id="txForm">
+        <div class="field">
+          <label>Jenis</label>
+          <div class="pill-row" id="tipePillRow">
+            <button type="button" class="pill selected masuk" data-tipe="Masuk">💰 Pemasukan</button>
+            <button type="button" class="pill keluar" data-tipe="Keluar">📤 Pengeluaran</button>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Kategori</label>
+            <input type="text" id="f_kategori" placeholder="Bahan baku, Ongkos kirim, Modal, dll" required />
+          </div>
+          <div class="field">
+            <label>Nominal</label>
+            <input type="number" id="f_nominal" min="1" required />
+          </div>
+        </div>
+        <div class="field">
+          <label>Keterangan</label>
+          <input type="text" id="f_keterangan" placeholder="Detail transaksi (opsional)" />
+        </div>
+        <button type="submit" class="btn-primary" id="saveTxBtn">Simpan Transaksi</button>
+      </form>
+    </div>
+
+    <!-- ── List transaksi ── -->
+    <div class="toolbar-row">
+      <h2>Riwayat Transaksi</h2>
+      <div class="filter-btns" id="filterBtns">
+        <button class="filter-btn active" data-tipe="semua">Semua</button>
+        <button class="filter-btn" data-tipe="Masuk">Pemasukan</button>
+        <button class="filter-btn" data-tipe="Keluar">Pengeluaran</button>
+      </div>
+    </div>
+    <div id="txList"><div class="empty-state">Memuat transaksi...</div></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   KONFIGURASI — samain dengan admin.html / pesanan.html
+═══════════════════════════════════════════════════════ */
+const CONFIG = {
+  apiUrl: 'https://script.google.com/macros/s/AKfycbzlYlpJpNKOOUki_TQ0gs9McSgDGFSw7n_H1RWPc-OX3biRoEajOl1bpBAW0i-bsKV2/exec',
+};
+
+let adminToken = localStorage.getItem('adminToken') || '';
+let transactions = [];
+let currentFilter = 'semua';
+let selectedTipe = 'Masuk';
+
+/* ═══════════════════════════════════════════════════════
+   API HELPERS
+═══════════════════════════════════════════════════════ */
+async function apiGetTransactions() {
+  const res = await fetch(`${CONFIG.apiUrl}?resource=keuangan&token=${encodeURIComponent(adminToken)}`);
+  return res.json();
+}
+async function apiPost(body) {
+  const res = await fetch(CONFIG.apiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+/* ═══════════════════════════════════════════════════════
+   AUTH / LOGIN
+═══════════════════════════════════════════════════════ */
+const loginScreen = document.getElementById('loginScreen');
+const adminApp    = document.getElementById('adminApp');
+const loginError  = document.getElementById('loginError');
+
+async function tryLogin(token) {
+  adminToken = token;
+  try {
+    const json = await apiGetTransactions();
+    if (json.status !== 'success') throw new Error(json.message || 'gagal');
+    localStorage.setItem('adminToken', token);
+    loginScreen.style.display = 'none';
+    adminApp.style.display = 'block';
+    transactions = json.data;
+    renderAll();
+  } catch (err) {
+    adminToken = '';
+    localStorage.removeItem('adminToken');
+    loginError.style.display = 'block';
+  }
+}
+
+document.getElementById('loginBtn').addEventListener('click', () => {
+  const val = document.getElementById('tokenInput').value.trim();
+  if (val) tryLogin(val);
+});
+document.getElementById('tokenInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('loginBtn').click();
+});
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  localStorage.removeItem('adminToken');
+  adminToken = '';
+  adminApp.style.display = 'none';
+  loginScreen.style.display = 'flex';
+  document.getElementById('tokenInput').value = '';
+});
+if (adminToken) tryLogin(adminToken);
+
+/* ═══════════════════════════════════════════════════════
+   STATUS MESSAGE
+═══════════════════════════════════════════════════════ */
+function showStatus(msg, ok) {
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className = 'status-msg show ' + (ok ? 'ok' : 'err');
+  setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+function fmt(n) { return isNaN(n) ? 'Rp\u00a00' : 'Rp\u00a0' + Math.round(n).toLocaleString('id-ID'); }
+
+/* ═══════════════════════════════════════════════════════
+   FORM — pilih tipe transaksi
+═══════════════════════════════════════════════════════ */
+document.getElementById('tipePillRow').addEventListener('click', e => {
+  const pill = e.target.closest('.pill');
+  if (!pill) return;
+  document.querySelectorAll('#tipePillRow .pill').forEach(p => p.classList.remove('selected'));
+  pill.classList.add('selected');
+  selectedTipe = pill.dataset.tipe;
+});
+
+document.getElementById('txForm').addEventListener('submit', async e => {
+  e.preventDefault();
+
+  const data = {
+    tipe: selectedTipe,
+    kategori: document.getElementById('f_kategori').value.trim(),
+    keterangan: document.getElementById('f_keterangan').value.trim(),
+    nominal: parseInt(document.getElementById('f_nominal').value || '0', 10),
+  };
+
+  if (!data.nominal || data.nominal <= 0) { showStatus('Nominal harus lebih dari 0.', false); return; }
+
+  const btn = document.getElementById('saveTxBtn');
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+
+  try {
+    const json = await apiPost({ token: adminToken, action: 'createTransaction', data });
+    if (json.status === 'success') {
+      showStatus('Transaksi tersimpan.', true);
+      document.getElementById('txForm').reset();
+      await refreshTransactions();
+    } else {
+      showStatus('Gagal: ' + json.message, false);
+    }
+  } catch (err) {
+    showStatus('Gagal konek ke server: ' + err.message, false);
+  }
+
+  btn.disabled = false; btn.textContent = 'Simpan Transaksi';
+});
+
+/* ═══════════════════════════════════════════════════════
+   LIST & RINGKASAN
+═══════════════════════════════════════════════════════ */
+async function refreshTransactions() {
+  const json = await apiGetTransactions();
+  if (json.status === 'success') {
+    transactions = json.data;
+    renderAll();
+  } else {
+    document.getElementById('txList').innerHTML = `<div class="empty-state">Gagal memuat: ${json.message}</div>`;
+  }
+}
+
+function renderAll() {
+  renderSummary();
+  renderTransactions();
+}
+
+function renderSummary() {
+  let masuk = 0, keluar = 0;
+  transactions.forEach(t => {
+    const nominal = Number(t.nominal || 0);
+    if (t.tipe === 'Keluar') keluar += nominal;
+    else masuk += nominal;
+  });
+  document.getElementById('sumMasuk').textContent = fmt(masuk);
+  document.getElementById('sumKeluar').textContent = fmt(keluar);
+  document.getElementById('sumSaldo').textContent = fmt(masuk - keluar);
+}
+
+document.getElementById('filterBtns').addEventListener('click', e => {
+  const btn = e.target.closest('.filter-btn');
+  if (!btn) return;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentFilter = btn.dataset.tipe;
+  renderTransactions();
+});
+
+function renderTransactions() {
+  const wrap = document.getElementById('txList');
+  const filtered = currentFilter === 'semua' ? transactions : transactions.filter(t => t.tipe === currentFilter);
+
+  if (!filtered.length) {
+    wrap.innerHTML = '<div class="empty-state">Belum ada transaksi.</div>';
+    return;
+  }
+
+  wrap.innerHTML = filtered.map(t => {
+    const ts = t.timestamp ? new Date(t.timestamp).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '';
+    const isMasuk = t.tipe !== 'Keluar';
+    const sumber = (t.sumber || 'Manual').toLowerCase();
+    const isManual = sumber === 'manual';
+    return `
+    <div class="tx-row" data-id="${t.id}">
+      <div class="tx-left">
+        <div class="tx-desc">${t.kategori || '-'}</div>
+        <div class="tx-meta">${t.keterangan ? t.keterangan + ' · ' : ''}${ts}</div>
+      </div>
+      <div class="tx-right">
+        <div class="tx-amount ${isMasuk ? 'masuk' : 'keluar'}">${isMasuk ? '+' : '−'} ${fmt(Number(t.nominal || 0))}</div>
+        <span class="source-badge ${sumber}">${t.sumber || 'Manual'}</span>
+        ${isManual ? `<button class="icon-btn danger" data-action="delete" data-id="${t.id}">Hapus</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('txList').addEventListener('click', async e => {
+  const btn = e.target.closest('.icon-btn[data-action="delete"]');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  if (!confirm('Hapus transaksi ini? Tindakan tidak bisa dibatalkan.')) return;
+  btn.disabled = true;
+  const json = await apiPost({ token: adminToken, action: 'deleteTransaction', id });
+  btn.disabled = false;
+  if (json.status === 'success') {
+    transactions = transactions.filter(t => String(t.id) !== String(id));
+    renderAll();
+    showStatus('Transaksi dihapus.', true);
+  } else {
+    showStatus('Gagal: ' + json.message, false);
+  }
+});
+
+/* ═══════════════════════════════════════════════════════
+   PWA — register service worker
+═══════════════════════════════════════════════════════ */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
