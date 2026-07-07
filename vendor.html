@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#1a1a1a" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<title>Vendor — Katalog Sablon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #1a1a1a; --ink-soft: #555; --ink-muted: #999;
+    --bg: #f8f8f7; --surface: #fff; --border: #e4e4e0;
+    --accent-bg: #f0fdf4; --accent-border: #bbf7d0; --accent-text: #15803d;
+    --warn-bg: #fefce8; --warn-text: #854d0e;
+    --err-bg: #fef2f2; --err-text: #991b1b;
+    --radius: 12px; --radius-sm: 8px;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+  .login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+  .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; width: 100%; max-width: 360px; }
+  .login-card h1 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .login-card p { font-size: 13px; color: var(--ink-muted); margin-bottom: 1.25rem; }
+  .login-card input {
+    width: 100%; height: 42px; padding: 0 12px; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); font-family: inherit; font-size: 14px; margin-bottom: 10px; outline: none;
+  }
+  .login-card input:focus { border-color: var(--ink); }
+  .login-card button {
+    width: 100%; height: 42px; border: none; border-radius: var(--radius-sm);
+    background: var(--ink); color: #fff; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .login-error { font-size: 12px; color: var(--err-text); margin-top: 8px; display: none; }
+
+  .admin-app { display: none; }
+  header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 1.5rem; position: sticky; top: 0; z-index: 100;
+  }
+  .header-inner { max-width: 900px; margin: 0 auto; height: 58px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .brand { font-size: 15px; font-weight: 600; }
+  .brand-sub { font-size: 11px; color: var(--ink-muted); font-weight: 400; }
+  .header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .logout-btn, .link-btn {
+    height: 34px; padding: 0 14px; border: 1px solid var(--border); border-radius: 20px;
+    background: var(--surface); color: var(--ink-soft); font-family: inherit; font-size: 13px; cursor: pointer;
+    text-decoration: none; display: inline-flex; align-items: center;
+  }
+  .logout-btn:hover, .link-btn:hover { border-color: var(--ink); color: var(--ink); }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+  .toolbar-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 10px; flex-wrap: wrap; }
+  .toolbar-row h2 { font-size: 18px; font-weight: 600; }
+  .btn-primary {
+    height: 38px; padding: 0 16px; border: none; border-radius: var(--radius-sm);
+    background: var(--ink); color: #fff; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+
+  .status-msg { font-size: 13px; padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; display: none; }
+  .status-msg.show { display: block; }
+  .status-msg.ok { background: var(--accent-bg); border: 1px solid var(--accent-border); color: var(--accent-text); }
+  .status-msg.err { background: var(--err-bg); color: var(--err-text); }
+
+  .vendor-row {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px 14px; margin-bottom: 10px; display: flex; gap: 12px; align-items: center;
+  }
+  .vendor-info { flex: 1; min-width: 0; }
+  .vendor-name { font-size: 14px; font-weight: 600; }
+  .vendor-meta { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+  .vendor-note { font-size: 12px; color: var(--ink-soft); margin-top: 2px; font-style: italic; }
+  .vendor-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .icon-btn {
+    height: 32px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface); color: var(--ink-soft); font-family: inherit; font-size: 12px; cursor: pointer;
+  }
+  .icon-btn:hover { border-color: var(--ink); color: var(--ink); }
+  .icon-btn.danger { color: var(--err-text); }
+  .icon-btn.danger:hover { border-color: var(--err-text); }
+
+  .modal-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 300;
+    align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto;
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal { background: var(--surface); border-radius: var(--radius); padding: 1.5rem; width: 100%; max-width: 440px; }
+  .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 1rem; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--ink-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .field input, .field textarea {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 14px; outline: none;
+  }
+  .field input:focus, .field textarea:focus { border-color: var(--ink); }
+  .field textarea { resize: vertical; min-height: 50px; }
+  .field-hint { font-size: 11px; color: var(--ink-muted); margin-top: 4px; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 1.25rem; }
+  .btn-secondary {
+    height: 40px; padding: 0 16px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--surface); color: var(--ink-soft); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; flex: 1;
+  }
+  .modal-actions .btn-primary { flex: 1; }
+
+  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--ink-muted); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <h1>Daftar Vendor</h1>
+    <p>Masukkan token admin buat kelola vendor.</p>
+    <input type="password" id="tokenInput" placeholder="Token admin" autocomplete="off" />
+    <button id="loginBtn">Masuk</button>
+    <div class="login-error" id="loginError">Token salah atau gagal konek ke server.</div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div class="admin-app" id="adminApp">
+  <header>
+    <div class="header-inner">
+      <div class="brand">Daftar Vendor<div class="brand-sub">Tulehu Inkline</div></div>
+      <div class="header-actions">
+        <a class="link-btn" href="admin.html">Admin Produk</a>
+        <a class="link-btn" href="pesanan.html">Daftar Pesanan</a>
+        <a class="link-btn" href="keuangan.html">Keuangan</a>
+        <a class="link-btn" href="stok.html">Stok Vendor</a>
+        <button class="logout-btn" id="logoutBtn">Keluar</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="toolbar-row">
+      <h2>Vendor</h2>
+      <button class="btn-primary" id="addBtn">+ Tambah Vendor</button>
+    </div>
+
+    <div class="status-msg" id="statusMsg"></div>
+    <div id="vendorList"><div class="empty-state">Memuat vendor...</div></div>
+  </div>
+</div>
+
+<!-- ═══ FORM MODAL ═══ -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h3 id="modalTitle">Tambah Vendor</h3>
+    <form id="vendorForm">
+      <div class="field">
+        <label>Nama Vendor</label>
+        <input type="text" id="f_nama" required />
+      </div>
+      <div class="field">
+        <label>Nomor WA</label>
+        <input type="text" id="f_no_wa" placeholder="08xxxxxxxxxx atau 62xxxxxxxxxx" required />
+        <div class="field-hint">Boleh format 08xx atau 62xx, nanti otomatis dirapikan pas kirim WA.</div>
+      </div>
+      <div class="field">
+        <label>Catatan (opsional)</label>
+        <textarea id="f_catatan" placeholder="Spesialisasi, harga langganan, dll"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="cancelBtn">Batal</button>
+        <button type="submit" class="btn-primary" id="saveBtn">Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const CONFIG = {
+  apiUrl: 'https://script.google.com/macros/s/AKfycbzlYlpJpNKOOUki_TQ0gs9McSgDGFSw7n_H1RWPc-OX3biRoEajOl1bpBAW0i-bsKV2/exec',
+};
+
+let adminToken = localStorage.getItem('adminToken') || '';
+let vendors = [];
+let editingId = null;
+
+async function apiGetVendors() {
+  const res = await fetch(`${CONFIG.apiUrl}?resource=vendor&token=${encodeURIComponent(adminToken)}`);
+  return res.json();
+}
+async function apiPost(body) {
+  const res = await fetch(CONFIG.apiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+/* ── AUTH ── */
+const loginScreen = document.getElementById('loginScreen');
+const adminApp    = document.getElementById('adminApp');
+const loginError  = document.getElementById('loginError');
+
+async function tryLogin(token) {
+  adminToken = token;
+  try {
+    const json = await apiGetVendors();
+    if (json.status !== 'success') throw new Error(json.message || 'gagal');
+    localStorage.setItem('adminToken', token);
+    loginScreen.style.display = 'none';
+    adminApp.style.display = 'block';
+    vendors = json.data;
+    renderVendors();
+  } catch (err) {
+    adminToken = '';
+    localStorage.removeItem('adminToken');
+    loginError.style.display = 'block';
+  }
+}
+
+document.getElementById('loginBtn').addEventListener('click', () => {
+  const val = document.getElementById('tokenInput').value.trim();
+  if (val) tryLogin(val);
+});
+document.getElementById('tokenInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('loginBtn').click();
+});
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  localStorage.removeItem('adminToken');
+  adminToken = '';
+  adminApp.style.display = 'none';
+  loginScreen.style.display = 'flex';
+  document.getElementById('tokenInput').value = '';
+});
+if (adminToken) tryLogin(adminToken);
+
+function showStatus(msg, ok) {
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className = 'status-msg show ' + (ok ? 'ok' : 'err');
+  setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+/* ── RENDER LIST ── */
+function renderVendors() {
+  const wrap = document.getElementById('vendorList');
+  if (!vendors.length) {
+    wrap.innerHTML = '<div class="empty-state">Belum ada vendor. Klik "+ Tambah Vendor".</div>';
+    return;
+  }
+  wrap.innerHTML = vendors.map(v => `
+    <div class="vendor-row">
+      <div class="vendor-info">
+        <div class="vendor-name">${v.nama}</div>
+        <div class="vendor-meta">📱 ${v.no_wa || '-'}</div>
+        ${v.catatan ? `<div class="vendor-note">${v.catatan}</div>` : ''}
+      </div>
+      <div class="vendor-actions">
+        <button class="icon-btn" data-action="edit" data-id="${v.id}">Edit</button>
+        <button class="icon-btn danger" data-action="delete" data-id="${v.id}">Hapus</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('vendorList').addEventListener('click', async e => {
+  const btn = e.target.closest('.icon-btn');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  const v = vendors.find(x => String(x.id) === String(id));
+  if (!v) return;
+
+  if (btn.dataset.action === 'edit') openModal(v);
+
+  if (btn.dataset.action === 'delete') {
+    if (!confirm(`Hapus vendor "${v.nama}"?`)) return;
+    btn.disabled = true;
+    const json = await apiPost({ token: adminToken, action: 'deleteVendor', id });
+    btn.disabled = false;
+    if (json.status === 'success') {
+      vendors = vendors.filter(x => String(x.id) !== String(id));
+      renderVendors();
+      showStatus('Vendor dihapus.', true);
+    } else {
+      showStatus('Gagal: ' + json.message, false);
+    }
+  }
+});
+
+/* ── MODAL FORM ── */
+const modalBackdrop = document.getElementById('modalBackdrop');
+const modalTitle = document.getElementById('modalTitle');
+const form = document.getElementById('vendorForm');
+
+function openModal(v) {
+  editingId = v ? v.id : null;
+  modalTitle.textContent = v ? 'Edit Vendor' : 'Tambah Vendor';
+  document.getElementById('f_nama').value = v ? v.nama || '' : '';
+  document.getElementById('f_no_wa').value = v ? v.no_wa || '' : '';
+  document.getElementById('f_catatan').value = v ? v.catatan || '' : '';
+  modalBackdrop.classList.add('show');
+}
+function closeModal() {
+  modalBackdrop.classList.remove('show');
+  editingId = null;
+  form.reset();
+}
+
+document.getElementById('addBtn').addEventListener('click', () => openModal(null));
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+modalBackdrop.addEventListener('click', e => { if (e.target === modalBackdrop) closeModal(); });
+
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  const saveBtn = document.getElementById('saveBtn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Menyimpan...';
+
+  const data = {
+    nama: document.getElementById('f_nama').value.trim(),
+    no_wa: document.getElementById('f_no_wa').value.trim(),
+    catatan: document.getElementById('f_catatan').value.trim(),
+  };
+
+  try {
+    let json;
+    if (editingId) {
+      json = await apiPost({ token: adminToken, action: 'updateVendor', id: editingId, data });
+    } else {
+      json = await apiPost({ token: adminToken, action: 'createVendor', data });
+    }
+
+    if (json.status === 'success') {
+      showStatus(editingId ? 'Vendor diupdate.' : 'Vendor ditambahkan.', true);
+      closeModal();
+      const refreshed = await apiGetVendors();
+      vendors = refreshed.data;
+      renderVendors();
+    } else {
+      showStatus('Gagal: ' + json.message, false);
+    }
+  } catch (err) {
+    showStatus('Gagal konek ke server: ' + err.message, false);
+  }
+
+  saveBtn.disabled = false;
+  saveBtn.textContent = 'Simpan';
+});
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
