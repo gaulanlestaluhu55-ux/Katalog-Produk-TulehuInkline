@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#1a1a1a" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<title>Stok Vendor — Katalog Sablon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #1a1a1a; --ink-soft: #555; --ink-muted: #999;
+    --bg: #f8f8f7; --surface: #fff; --border: #e4e4e0;
+    --accent-bg: #f0fdf4; --accent-border: #bbf7d0; --accent-text: #15803d;
+    --warn-bg: #fefce8; --warn-text: #854d0e;
+    --err-bg: #fef2f2; --err-text: #991b1b;
+    --radius: 12px; --radius-sm: 8px;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+  /* ── Login ── */
+  .login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+  .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; width: 100%; max-width: 360px; }
+  .login-card h1 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .login-card p { font-size: 13px; color: var(--ink-muted); margin-bottom: 1.25rem; }
+  .login-card input {
+    width: 100%; height: 42px; padding: 0 12px; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); font-family: inherit; font-size: 14px; margin-bottom: 10px; outline: none;
+  }
+  .login-card input:focus { border-color: var(--ink); }
+  .login-card button {
+    width: 100%; height: 42px; border: none; border-radius: var(--radius-sm);
+    background: var(--ink); color: #fff; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .login-error { font-size: 12px; color: var(--err-text); margin-top: 8px; display: none; }
+
+  /* ── Shell ── */
+  .admin-app { display: none; }
+  header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 1.5rem; position: sticky; top: 0; z-index: 100;
+  }
+  .header-inner { max-width: 900px; margin: 0 auto; height: 58px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .brand { font-size: 15px; font-weight: 600; }
+  .brand-sub { font-size: 11px; color: var(--ink-muted); font-weight: 400; }
+  .header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .logout-btn, .link-btn {
+    height: 34px; padding: 0 14px; border: 1px solid var(--border); border-radius: 20px;
+    background: var(--surface); color: var(--ink-soft); font-family: inherit; font-size: 13px; cursor: pointer;
+    text-decoration: none; display: inline-flex; align-items: center;
+  }
+  .logout-btn:hover, .link-btn:hover { border-color: var(--ink); color: var(--ink); }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+  .toolbar-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 10px; flex-wrap: wrap; }
+  .toolbar-row h2 { font-size: 18px; font-weight: 600; }
+
+  .status-msg { font-size: 13px; padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; display: none; }
+  .status-msg.show { display: block; }
+  .status-msg.ok { background: var(--accent-bg); border: 1px solid var(--accent-border); color: var(--accent-text); }
+  .status-msg.err { background: var(--err-bg); color: var(--err-text); }
+
+  .info-note {
+    font-size: 12px; color: var(--ink-muted); background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 1.25rem;
+  }
+
+  /* ── Filter ── */
+  .filter-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .filter-btn {
+    padding: 6px 14px; border: 1px solid var(--border); border-radius: 20px;
+    background: var(--surface); font-family: inherit; font-size: 12px; cursor: pointer; color: var(--ink-soft);
+  }
+  .filter-btn.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  /* ── Stock item card ── */
+  .stock-row {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .stock-row.done { opacity: 0.6; }
+  .stock-left { min-width: 0; }
+  .stock-jenis { font-size: 14px; font-weight: 600; }
+  .stock-meta { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+  .stock-qty { font-size: 22px; font-weight: 700; }
+  .stock-qty-label { font-size: 11px; color: var(--ink-muted); text-transform: uppercase; }
+
+  .status-badge {
+    font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; white-space: nowrap;
+  }
+  .status-badge.belum-dipesan { background: var(--warn-bg); color: var(--warn-text); }
+  .status-badge.sudah-dipesan { background: var(--accent-bg); color: var(--accent-text); }
+
+  .icon-btn {
+    height: 32px; padding: 0 14px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface); color: var(--ink-soft); font-family: inherit; font-size: 12px; cursor: pointer; font-weight: 600;
+  }
+  .icon-btn:hover { border-color: var(--ink); color: var(--ink); }
+  .icon-btn.primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .icon-btn.primary:hover { opacity: 0.85; color: #fff; }
+
+  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--ink-muted); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <h1>Stok Vendor</h1>
+    <p>Masukkan token admin buat lihat rekap kebutuhan stok.</p>
+    <input type="password" id="tokenInput" placeholder="Token admin" autocomplete="off" />
+    <button id="loginBtn">Masuk</button>
+    <div class="login-error" id="loginError">Token salah atau gagal konek ke server.</div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div class="admin-app" id="adminApp">
+  <header>
+    <div class="header-inner">
+      <div class="brand">Stok Vendor<div class="brand-sub">Tulehu Inkline</div></div>
+      <div class="header-actions">
+        <a class="link-btn" href="admin.html">Admin Produk</a>
+        <a class="link-btn" href="pesanan.html">Daftar Pesanan</a>
+        <a class="link-btn" href="keuangan.html">Keuangan</a>
+        <button class="logout-btn" id="logoutBtn">Keluar</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="status-msg" id="statusMsg"></div>
+
+    <div class="info-note">
+      Rekap ini otomatis ngitung total kebutuhan kaos polos dari pesanan yang statusnya masih
+      <b>Baru</b> atau <b>Diproses</b> (belum Selesai/Diambil/Batal), dikelompokkan per jenis + ukuran + warna.
+      Tandai "Sudah Dipesan" kalau lo udah order ke vendor buat kombinasi itu.
+    </div>
+
+    <div class="toolbar-row">
+      <h2>Kebutuhan Stok</h2>
+      <div class="filter-btns" id="filterBtns">
+        <button class="filter-btn active" data-status="semua">Semua</button>
+        <button class="filter-btn" data-status="Belum Dipesan">Belum Dipesan</button>
+        <button class="filter-btn" data-status="Sudah Dipesan">Sudah Dipesan</button>
+      </div>
+    </div>
+    <div id="stockList"><div class="empty-state">Memuat rekap stok...</div></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   KONFIGURASI — samain dengan admin.html / pesanan.html / keuangan.html
+═══════════════════════════════════════════════════════ */
+const CONFIG = {
+  apiUrl: 'https://script.google.com/macros/s/AKfycbzlYlpJpNKOOUki_TQ0gs9McSgDGFSw7n_H1RWPc-OX3biRoEajOl1bpBAW0i-bsKV2/exec',
+};
+
+let adminToken = localStorage.getItem('adminToken') || '';
+let stockNeeds = [];
+let currentFilter = 'semua';
+
+/* ═══════════════════════════════════════════════════════
+   API HELPERS
+═══════════════════════════════════════════════════════ */
+async function apiGetStock() {
+  const res = await fetch(`${CONFIG.apiUrl}?resource=stok&token=${encodeURIComponent(adminToken)}`);
+  return res.json();
+}
+async function apiPost(body) {
+  const res = await fetch(CONFIG.apiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+/* ═══════════════════════════════════════════════════════
+   AUTH / LOGIN
+═══════════════════════════════════════════════════════ */
+const loginScreen = document.getElementById('loginScreen');
+const adminApp    = document.getElementById('adminApp');
+const loginError  = document.getElementById('loginError');
+
+async function tryLogin(token) {
+  adminToken = token;
+  try {
+    const json = await apiGetStock();
+    if (json.status !== 'success') throw new Error(json.message || 'gagal');
+    localStorage.setItem('adminToken', token);
+    loginScreen.style.display = 'none';
+    adminApp.style.display = 'block';
+    stockNeeds = json.data;
+    renderStock();
+  } catch (err) {
+    adminToken = '';
+    localStorage.removeItem('adminToken');
+    loginError.style.display = 'block';
+  }
+}
+
+document.getElementById('loginBtn').addEventListener('click', () => {
+  const val = document.getElementById('tokenInput').value.trim();
+  if (val) tryLogin(val);
+});
+document.getElementById('tokenInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('loginBtn').click();
+});
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  localStorage.removeItem('adminToken');
+  adminToken = '';
+  adminApp.style.display = 'none';
+  loginScreen.style.display = 'flex';
+  document.getElementById('tokenInput').value = '';
+});
+if (adminToken) tryLogin(adminToken);
+
+/* ═══════════════════════════════════════════════════════
+   STATUS MESSAGE
+═══════════════════════════════════════════════════════ */
+function showStatus(msg, ok) {
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className = 'status-msg show ' + (ok ? 'ok' : 'err');
+  setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+/* ═══════════════════════════════════════════════════════
+   LIST & FILTER
+═══════════════════════════════════════════════════════ */
+async function refreshStock() {
+  const json = await apiGetStock();
+  if (json.status === 'success') {
+    stockNeeds = json.data;
+    renderStock();
+  } else {
+    document.getElementById('stockList').innerHTML = `<div class="empty-state">Gagal memuat: ${json.message}</div>`;
+  }
+}
+
+document.getElementById('filterBtns').addEventListener('click', e => {
+  const btn = e.target.closest('.filter-btn');
+  if (!btn) return;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentFilter = btn.dataset.status;
+  renderStock();
+});
+
+function renderStock() {
+  const wrap = document.getElementById('stockList');
+  const filtered = currentFilter === 'semua' ? stockNeeds : stockNeeds.filter(s => s.status === currentFilter);
+
+  if (!filtered.length) {
+    wrap.innerHTML = '<div class="empty-state">Gak ada kebutuhan stok saat ini. Semua pesanan aktif sudah beres atau belum ada pesanan kaos.</div>';
+    return;
+  }
+
+  wrap.innerHTML = filtered.map(s => {
+    const isDone = s.status === 'Sudah Dipesan';
+    const badgeClass = isDone ? 'sudah-dipesan' : 'belum-dipesan';
+    return `
+    <div class="stock-row ${isDone ? 'done' : ''}" data-key="${s.key}">
+      <div class="stock-left">
+        <div class="stock-jenis">${s.jenis || '-'}</div>
+        <div class="stock-meta">Ukuran: <b>${s.size || '-'}</b> · Warna: <b>${s.warna || '-'}</b></div>
+      </div>
+      <div style="text-align:center;">
+        <div class="stock-qty">${s.qty}</div>
+        <div class="stock-qty-label">pcs dibutuhkan</div>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+        <span class="status-badge ${badgeClass}">${s.status}</span>
+        <button class="icon-btn ${isDone ? '' : 'primary'}" data-action="toggle" data-key="${s.key}" data-jenis="${s.jenis}" data-size="${s.size}" data-warna="${s.warna}" data-next="${isDone ? 'Belum Dipesan' : 'Sudah Dipesan'}">
+          ${isDone ? 'Tandai Belum Dipesan' : 'Tandai Sudah Dipesan'}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('stockList').addEventListener('click', async e => {
+  const btn = e.target.closest('.icon-btn[data-action="toggle"]');
+  if (!btn) return;
+
+  const key = btn.dataset.key;
+  const nextStatus = btn.dataset.next;
+
+  btn.disabled = true;
+  const json = await apiPost({
+    token: adminToken,
+    action: 'updateStockStatus',
+    data: { key, jenis: btn.dataset.jenis, size: btn.dataset.size, warna: btn.dataset.warna, status: nextStatus }
+  });
+  btn.disabled = false;
+
+  if (json.status === 'success') {
+    const item = stockNeeds.find(s => s.key === key);
+    if (item) item.status = nextStatus;
+    renderStock();
+    showStatus(nextStatus === 'Sudah Dipesan' ? 'Ditandai sudah dipesan ke vendor.' : 'Ditandai belum dipesan.', true);
+  } else {
+    showStatus('Gagal: ' + json.message, false);
+  }
+});
+
+/* ═══════════════════════════════════════════════════════
+   PWA — register service worker
+═══════════════════════════════════════════════════════ */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
