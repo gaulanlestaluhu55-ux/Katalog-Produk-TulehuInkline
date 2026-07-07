@@ -122,6 +122,23 @@
   }
 
   .empty-state { text-align: center; padding: 3rem 1rem; color: var(--ink-muted); font-size: 14px; }
+
+  /* ── Panel kirim pesan konsolidasi ── */
+  .form-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1.25rem; margin-bottom: 1.5rem;
+  }
+  .form-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 1rem; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--ink-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 14px; outline: none; background: var(--surface); color: var(--ink);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--ink); }
+  .field textarea { resize: vertical; min-height: 160px; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.5; }
+  .send-panel-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .send-panel-empty { font-size: 13px; color: var(--ink-muted); padding: 10px 0; }
 </style>
 </head>
 <body>
@@ -157,8 +174,29 @@
 
     <div class="info-note">
       Rekap ini otomatis ngitung total kebutuhan kaos polos dari pesanan yang statusnya masih
-      <b>Baru</b> atau <b>Diproses</b> (belum Selesai/Diambil/Batal), dikelompokkan per jenis + ukuran + warna.
+      <b>Baru</b> atau <b>Diproses</b> (belum Selesai/Diambil/Batal), dikelompokkan per jenis + ukuran + warna + lengan.
       Tandai "Sudah Dipesan" kalau lo udah order ke vendor buat kombinasi itu.
+    </div>
+
+    <!-- ── Panel kirim pesan konsolidasi ke vendor ── -->
+    <div class="form-card">
+      <h3>Kirim Pesan ke Vendor</h3>
+      <div class="field">
+        <label>Kalimat Pembuka</label>
+        <input type="text" id="f_pembuka" placeholder="Kak, mau pesan kaos, ini listnya:" />
+      </div>
+      <div class="field">
+        <label>Kirim Ke Vendor</label>
+        <select id="f_vendor_kirim"><option value="">— Pilih vendor —</option></select>
+      </div>
+      <div class="field">
+        <label>Preview Pesan (bisa diedit manual sebelum dikirim)</label>
+        <textarea id="previewPesan" placeholder="Pilih vendor dulu buat lihat preview pesan..."></textarea>
+      </div>
+      <div class="send-panel-actions">
+        <button type="button" class="icon-btn" id="copyPesanBtn">📋 Salin Teks</button>
+        <button type="button" class="icon-btn wa" id="sendWaBtn">💬 Kirim WA</button>
+      </div>
     </div>
 
     <div class="toolbar-row">
@@ -226,6 +264,9 @@ async function tryLogin(token) {
     const vendorJson = await apiGetVendors();
     if (vendorJson.status === 'success') vendors = vendorJson.data;
 
+    document.getElementById('f_pembuka').value = localStorage.getItem(PEMBUKA_STORAGE_KEY) || 'Kak, mau pesan kaos, ini listnya:';
+    populateVendorKirimSelect();
+
     renderStock();
   } catch (err) {
     adminToken = '';
@@ -282,6 +323,37 @@ document.getElementById('filterBtns').addEventListener('click', e => {
   renderStock();
 });
 
+/* ═══════════════════════════════════════════════════════
+   PANEL KIRIM PESAN KE VENDOR
+═══════════════════════════════════════════════════════ */
+document.getElementById('f_vendor_kirim').addEventListener('change', updatePreview);
+
+document.getElementById('f_pembuka').addEventListener('input', e => {
+  localStorage.setItem(PEMBUKA_STORAGE_KEY, e.target.value);
+  updatePreview();
+});
+
+document.getElementById('copyPesanBtn').addEventListener('click', async () => {
+  const text = document.getElementById('previewPesan').value.trim();
+  if (!text) { showStatus('Belum ada pesan buat disalin.', false); return; }
+  try {
+    await navigator.clipboard.writeText(text);
+    showStatus('Teks disalin ke clipboard.', true);
+  } catch (err) {
+    showStatus('Gagal menyalin teks: ' + err.message, false);
+  }
+});
+
+document.getElementById('sendWaBtn').addEventListener('click', () => {
+  const vendorId = document.getElementById('f_vendor_kirim').value;
+  const v = vendors.find(x => String(x.id) === String(vendorId));
+  const text = document.getElementById('previewPesan').value.trim();
+  if (!v || !v.no_wa) { showStatus('Pilih vendor yang punya nomor WA dulu.', false); return; }
+  if (!text) { showStatus('Belum ada pesan buat dikirim.', false); return; }
+  const nomor = normalizeWaNumber(v.no_wa);
+  window.open(`https://wa.me/${nomor}?text=${encodeURIComponent(text)}`, '_blank');
+});
+
 function buildVendorOptionsHtml(selectedId) {
   const opts = ['<option value="">— Pilih vendor —</option>']
     .concat(vendors.map(v => `<option value="${v.id}" ${v.id === selectedId ? 'selected' : ''}>${v.nama}</option>`));
@@ -296,14 +368,64 @@ function normalizeWaNumber(raw) {
   return n;
 }
 
-function buildStockMessage(s) {
-  return `Halo, mau pesan kaos polos:\n` +
-    `- Jenis: ${s.jenis || '-'}\n` +
-    `- Ukuran: ${s.size || '-'}\n` +
-    `- Warna: ${s.warna || '-'}\n` +
-    `- Lengan: ${s.lengan || '-'}\n` +
-    `- Qty: ${s.qty} pcs\n\n` +
-    `Ready berapa lama ya? Makasih 🙏`;
+const SIZE_ORDER = ['3XL', 'XXL', 'XL', 'L', 'M', 'S'];
+function sizeSortIndex(size) {
+  const i = SIZE_ORDER.indexOf(size);
+  return i === -1 ? 999 : i;
+}
+
+const PEMBUKA_STORAGE_KEY = 'stok_pesan_pembuka';
+
+function getPembukaText() {
+  return document.getElementById('f_pembuka').value.trim() || 'Kak, mau pesan kaos, ini listnya:';
+}
+
+// Gabungin semua kebutuhan yang di-assign ke vendor tertentu & belum "Sudah Dipesan",
+// dikelompokkan per Jenis + Warna + Lengan, tiap grup listnya urut ukuran besar -> kecil.
+function buildVendorMessage(vendorId) {
+  const items = stockNeeds.filter(s => String(s.vendor_id) === String(vendorId) && s.status !== 'Sudah Dipesan');
+  if (!items.length) return '';
+
+  const groups = {};
+  items.forEach(s => {
+    const gKey = `${s.jenis}|${s.warna}|${s.lengan}`;
+    if (!groups[gKey]) groups[gKey] = { jenis: s.jenis, warna: s.warna, lengan: s.lengan, sizes: [] };
+    groups[gKey].sizes.push({ size: s.size || '-', qty: s.qty });
+  });
+
+  const sections = Object.values(groups).map(g => {
+    g.sizes.sort((a, b) => sizeSortIndex(a.size) - sizeSortIndex(b.size));
+    const header = `${g.jenis || 'Kaos'} ${g.warna || '-'} lengan ${(g.lengan || '-').toLowerCase()} :`;
+    const lines = g.sizes.map(x => `${x.size} = ${x.qty}`).join('\n');
+    return `${header}\n${lines}`;
+  });
+
+  return `${getPembukaText()}\n\n${sections.join('\n\n')}`;
+}
+
+function updatePreview() {
+  const vendorId = document.getElementById('f_vendor_kirim').value;
+  const preview = document.getElementById('previewPesan');
+  const waBtn = document.getElementById('sendWaBtn');
+
+  if (!vendorId) {
+    preview.value = '';
+    waBtn.disabled = true;
+    return;
+  }
+
+  const msg = buildVendorMessage(vendorId);
+  preview.value = msg || 'Belum ada kebutuhan stok yang di-assign ke vendor ini (atau semua sudah ditandai "Sudah Dipesan").';
+
+  const v = vendors.find(x => String(x.id) === String(vendorId));
+  waBtn.disabled = !msg || !v || !v.no_wa;
+}
+
+function populateVendorKirimSelect() {
+  const sel = document.getElementById('f_vendor_kirim');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— Pilih vendor —</option>' +
+    vendors.map(v => `<option value="${v.id}" ${v.id === current ? 'selected' : ''}>${v.nama}</option>`).join('');
 }
 
 function renderStock() {
@@ -318,7 +440,6 @@ function renderStock() {
   wrap.innerHTML = filtered.map(s => {
     const isDone = s.status === 'Sudah Dipesan';
     const badgeClass = isDone ? 'sudah-dipesan' : 'belum-dipesan';
-    const hasVendor = !!s.vendor_id && !!s.vendor_wa;
 
     return `
     <div class="stock-row ${isDone ? 'done' : ''}" data-key="${s.key}">
@@ -340,8 +461,6 @@ function renderStock() {
           </select>
         </div>
         <div class="stock-actions">
-          <button class="icon-btn" data-action="copy" data-key="${s.key}">📋 Salin Teks</button>
-          <button class="icon-btn wa" data-action="send-wa" data-key="${s.key}" ${hasVendor ? '' : 'disabled title="Pilih vendor dulu"'}>💬 Kirim WA</button>
           <button class="icon-btn ${isDone ? '' : 'primary'}" data-action="toggle" data-key="${s.key}" data-jenis="${s.jenis}" data-size="${s.size}" data-warna="${s.warna}" data-lengan="${s.lengan}" data-next="${isDone ? 'Belum Dipesan' : 'Sudah Dipesan'}">
             ${isDone ? 'Tandai Belum Dipesan' : 'Tandai Sudah Dipesan'}
           </button>
@@ -349,6 +468,8 @@ function renderStock() {
       </div>
     </div>`;
   }).join('');
+
+  updatePreview(); // qty/status bisa berubah, refresh preview biar sinkron
 }
 
 document.getElementById('stockList').addEventListener('change', async e => {
@@ -379,31 +500,6 @@ document.getElementById('stockList').addEventListener('change', async e => {
 });
 
 document.getElementById('stockList').addEventListener('click', async e => {
-  const copyBtn = e.target.closest('.icon-btn[data-action="copy"]');
-  if (copyBtn) {
-    const key = copyBtn.dataset.key;
-    const item = stockNeeds.find(s => s.key === key);
-    if (!item) return;
-    try {
-      await navigator.clipboard.writeText(buildStockMessage(item));
-      showStatus('Teks disalin ke clipboard.', true);
-    } catch (err) {
-      showStatus('Gagal menyalin teks: ' + err.message, false);
-    }
-    return;
-  }
-
-  const waBtn = e.target.closest('.icon-btn[data-action="send-wa"]');
-  if (waBtn) {
-    const key = waBtn.dataset.key;
-    const item = stockNeeds.find(s => s.key === key);
-    if (!item || !item.vendor_wa) { showStatus('Pilih vendor dulu buat item ini.', false); return; }
-    const nomor = normalizeWaNumber(item.vendor_wa);
-    const text = encodeURIComponent(buildStockMessage(item));
-    window.open(`https://wa.me/${nomor}?text=${text}`, '_blank');
-    return;
-  }
-
   const toggleBtn = e.target.closest('.icon-btn[data-action="toggle"]');
   if (toggleBtn) {
     const key = toggleBtn.dataset.key;
