@@ -82,14 +82,20 @@
   /* ── Stock item card ── */
   .stock-row {
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 14px; margin-bottom: 10px;
   }
   .stock-row.done { opacity: 0.6; }
+  .stock-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
   .stock-left { min-width: 0; }
   .stock-jenis { font-size: 14px; font-weight: 600; }
   .stock-meta { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
   .stock-qty { font-size: 22px; font-weight: 700; }
   .stock-qty-label { font-size: 11px; color: var(--ink-muted); text-transform: uppercase; }
+  .stock-bottom {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);
+  }
+  .stock-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
   .status-badge {
     font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; white-space: nowrap;
@@ -104,6 +110,16 @@
   .icon-btn:hover { border-color: var(--ink); color: var(--ink); }
   .icon-btn.primary { background: var(--ink); border-color: var(--ink); color: #fff; }
   .icon-btn.primary:hover { opacity: 0.85; color: #fff; }
+  .icon-btn.wa { background: var(--accent-text); border-color: var(--accent-text); color: #fff; }
+  .icon-btn.wa:hover { opacity: 0.85; color: #fff; }
+
+  .vendor-row-select {
+    display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 6px;
+  }
+  .vendor-row-select select {
+    height: 32px; padding: 0 9px; border: 1px solid var(--border); border-radius: 8px;
+    font-family: inherit; font-size: 12px; background: var(--surface); color: var(--ink); max-width: 180px;
+  }
 
   .empty-state { text-align: center; padding: 3rem 1rem; color: var(--ink-muted); font-size: 14px; }
 </style>
@@ -130,6 +146,7 @@
         <a class="link-btn" href="admin.html">Admin Produk</a>
         <a class="link-btn" href="pesanan.html">Daftar Pesanan</a>
         <a class="link-btn" href="keuangan.html">Keuangan</a>
+        <a class="link-btn" href="vendor.html">Daftar Vendor</a>
         <button class="logout-btn" id="logoutBtn">Keluar</button>
       </div>
     </div>
@@ -166,6 +183,7 @@ const CONFIG = {
 
 let adminToken = localStorage.getItem('adminToken') || '';
 let stockNeeds = [];
+let vendors = [];
 let currentFilter = 'semua';
 
 /* ═══════════════════════════════════════════════════════
@@ -173,6 +191,10 @@ let currentFilter = 'semua';
 ═══════════════════════════════════════════════════════ */
 async function apiGetStock() {
   const res = await fetch(`${CONFIG.apiUrl}?resource=stok&token=${encodeURIComponent(adminToken)}`);
+  return res.json();
+}
+async function apiGetVendors() {
+  const res = await fetch(`${CONFIG.apiUrl}?resource=vendor&token=${encodeURIComponent(adminToken)}`);
   return res.json();
 }
 async function apiPost(body) {
@@ -200,6 +222,10 @@ async function tryLogin(token) {
     loginScreen.style.display = 'none';
     adminApp.style.display = 'block';
     stockNeeds = json.data;
+
+    const vendorJson = await apiGetVendors();
+    if (vendorJson.status === 'success') vendors = vendorJson.data;
+
     renderStock();
   } catch (err) {
     adminToken = '';
@@ -256,6 +282,30 @@ document.getElementById('filterBtns').addEventListener('click', e => {
   renderStock();
 });
 
+function buildVendorOptionsHtml(selectedId) {
+  const opts = ['<option value="">— Pilih vendor —</option>']
+    .concat(vendors.map(v => `<option value="${v.id}" ${v.id === selectedId ? 'selected' : ''}>${v.nama}</option>`));
+  return opts.join('');
+}
+
+function normalizeWaNumber(raw) {
+  let n = String(raw || '').replace(/[^\d+]/g, '');
+  if (n.startsWith('+')) n = n.slice(1);
+  if (n.startsWith('0')) n = '62' + n.slice(1);
+  if (!n.startsWith('62')) n = '62' + n;
+  return n;
+}
+
+function buildStockMessage(s) {
+  return `Halo, mau pesan kaos polos:\n` +
+    `- Jenis: ${s.jenis || '-'}\n` +
+    `- Ukuran: ${s.size || '-'}\n` +
+    `- Warna: ${s.warna || '-'}\n` +
+    `- Lengan: ${s.lengan || '-'}\n` +
+    `- Qty: ${s.qty} pcs\n\n` +
+    `Ready berapa lama ya? Makasih 🙏`;
+}
+
 function renderStock() {
   const wrap = document.getElementById('stockList');
   const filtered = currentFilter === 'semua' ? stockNeeds : stockNeeds.filter(s => s.status === currentFilter);
@@ -268,48 +318,113 @@ function renderStock() {
   wrap.innerHTML = filtered.map(s => {
     const isDone = s.status === 'Sudah Dipesan';
     const badgeClass = isDone ? 'sudah-dipesan' : 'belum-dipesan';
+    const hasVendor = !!s.vendor_id && !!s.vendor_wa;
+
     return `
     <div class="stock-row ${isDone ? 'done' : ''}" data-key="${s.key}">
-      <div class="stock-left">
-        <div class="stock-jenis">${s.jenis || '-'}</div>
-        <div class="stock-meta">Ukuran: <b>${s.size || '-'}</b> · Warna: <b>${s.warna || '-'}</b></div>
-      </div>
-      <div style="text-align:center;">
-        <div class="stock-qty">${s.qty}</div>
-        <div class="stock-qty-label">pcs dibutuhkan</div>
-      </div>
-      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+      <div class="stock-top">
+        <div class="stock-left">
+          <div class="stock-jenis">${s.jenis || '-'}</div>
+          <div class="stock-meta">Ukuran: <b>${s.size || '-'}</b> · Warna: <b>${s.warna || '-'}</b> · Lengan: <b>${s.lengan || '-'}</b></div>
+        </div>
+        <div style="text-align:center;">
+          <div class="stock-qty">${s.qty}</div>
+          <div class="stock-qty-label">pcs dibutuhkan</div>
+        </div>
         <span class="status-badge ${badgeClass}">${s.status}</span>
-        <button class="icon-btn ${isDone ? '' : 'primary'}" data-action="toggle" data-key="${s.key}" data-jenis="${s.jenis}" data-size="${s.size}" data-warna="${s.warna}" data-next="${isDone ? 'Belum Dipesan' : 'Sudah Dipesan'}">
-          ${isDone ? 'Tandai Belum Dipesan' : 'Tandai Sudah Dipesan'}
-        </button>
+      </div>
+      <div class="stock-bottom">
+        <div class="vendor-row-select">
+          <select data-key="${s.key}" data-jenis="${s.jenis}" data-size="${s.size}" data-warna="${s.warna}" data-lengan="${s.lengan}" class="vendor-select">
+            ${buildVendorOptionsHtml(s.vendor_id)}
+          </select>
+        </div>
+        <div class="stock-actions">
+          <button class="icon-btn" data-action="copy" data-key="${s.key}">📋 Salin Teks</button>
+          <button class="icon-btn wa" data-action="send-wa" data-key="${s.key}" ${hasVendor ? '' : 'disabled title="Pilih vendor dulu"'}>💬 Kirim WA</button>
+          <button class="icon-btn ${isDone ? '' : 'primary'}" data-action="toggle" data-key="${s.key}" data-jenis="${s.jenis}" data-size="${s.size}" data-warna="${s.warna}" data-lengan="${s.lengan}" data-next="${isDone ? 'Belum Dipesan' : 'Sudah Dipesan'}">
+            ${isDone ? 'Tandai Belum Dipesan' : 'Tandai Sudah Dipesan'}
+          </button>
+        </div>
       </div>
     </div>`;
   }).join('');
 }
 
-document.getElementById('stockList').addEventListener('click', async e => {
-  const btn = e.target.closest('.icon-btn[data-action="toggle"]');
-  if (!btn) return;
+document.getElementById('stockList').addEventListener('change', async e => {
+  const sel = e.target.closest('.vendor-select');
+  if (!sel) return;
+  const key = sel.dataset.key;
+  const vendorId = sel.value;
 
-  const key = btn.dataset.key;
-  const nextStatus = btn.dataset.next;
-
-  btn.disabled = true;
   const json = await apiPost({
     token: adminToken,
     action: 'updateStockStatus',
-    data: { key, jenis: btn.dataset.jenis, size: btn.dataset.size, warna: btn.dataset.warna, status: nextStatus }
+    data: { key, jenis: sel.dataset.jenis, size: sel.dataset.size, warna: sel.dataset.warna, lengan: sel.dataset.lengan, vendor_id: vendorId }
   });
-  btn.disabled = false;
 
   if (json.status === 'success') {
     const item = stockNeeds.find(s => s.key === key);
-    if (item) item.status = nextStatus;
+    if (item) {
+      item.vendor_id = vendorId;
+      const v = vendors.find(x => String(x.id) === String(vendorId));
+      item.vendor_nama = v ? v.nama : '';
+      item.vendor_wa = v ? v.no_wa : '';
+    }
     renderStock();
-    showStatus(nextStatus === 'Sudah Dipesan' ? 'Ditandai sudah dipesan ke vendor.' : 'Ditandai belum dipesan.', true);
+    showStatus('Vendor buat item ini disimpan.', true);
   } else {
     showStatus('Gagal: ' + json.message, false);
+  }
+});
+
+document.getElementById('stockList').addEventListener('click', async e => {
+  const copyBtn = e.target.closest('.icon-btn[data-action="copy"]');
+  if (copyBtn) {
+    const key = copyBtn.dataset.key;
+    const item = stockNeeds.find(s => s.key === key);
+    if (!item) return;
+    try {
+      await navigator.clipboard.writeText(buildStockMessage(item));
+      showStatus('Teks disalin ke clipboard.', true);
+    } catch (err) {
+      showStatus('Gagal menyalin teks: ' + err.message, false);
+    }
+    return;
+  }
+
+  const waBtn = e.target.closest('.icon-btn[data-action="send-wa"]');
+  if (waBtn) {
+    const key = waBtn.dataset.key;
+    const item = stockNeeds.find(s => s.key === key);
+    if (!item || !item.vendor_wa) { showStatus('Pilih vendor dulu buat item ini.', false); return; }
+    const nomor = normalizeWaNumber(item.vendor_wa);
+    const text = encodeURIComponent(buildStockMessage(item));
+    window.open(`https://wa.me/${nomor}?text=${text}`, '_blank');
+    return;
+  }
+
+  const toggleBtn = e.target.closest('.icon-btn[data-action="toggle"]');
+  if (toggleBtn) {
+    const key = toggleBtn.dataset.key;
+    const nextStatus = toggleBtn.dataset.next;
+
+    toggleBtn.disabled = true;
+    const json = await apiPost({
+      token: adminToken,
+      action: 'updateStockStatus',
+      data: { key, jenis: toggleBtn.dataset.jenis, size: toggleBtn.dataset.size, warna: toggleBtn.dataset.warna, lengan: toggleBtn.dataset.lengan, status: nextStatus }
+    });
+    toggleBtn.disabled = false;
+
+    if (json.status === 'success') {
+      const item = stockNeeds.find(s => s.key === key);
+      if (item) item.status = nextStatus;
+      renderStock();
+      showStatus(nextStatus === 'Sudah Dipesan' ? 'Ditandai sudah dipesan ke vendor.' : 'Ditandai belum dipesan.', true);
+    } else {
+      showStatus('Gagal: ' + json.message, false);
+    }
   }
 });
 
