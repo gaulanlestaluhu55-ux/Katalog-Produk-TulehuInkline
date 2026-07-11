@@ -2,8 +2,8 @@
    KONFIGURASI — edit sesuai kebutuhan
 ═══════════════════════════════════════════════════════ */
 const CONFIG = {
-  // Ganti dengan URL Web App dari Google Apps Script lo
-  apiUrl: 'https://script.google.com/macros/s/AKfycbzlYlpJpNKOOUki_TQ0gs9McSgDGFSw7n_H1RWPc-OX3biRoEajOl1bpBAW0i-bsKV2/exec',
+  // Ganti "https://xxxxx.vercel.app" sesuai URL project Vercel lo (tanpa trailing slash)
+  apiUrl: 'https://xxxxx.vercel.app/api/products',
 
   waNumber: '628218025886',
   waDefaultMsg: 'Halo Tulehu Inkline! Saya mau tanya tentang produk sablon.',

@@ -31,13 +31,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Siapin folder buat di-deploy (exclude backend/, punya Vercel bukan buat Pages)
+        run: |
+          mkdir -p _pages_output
+          rsync -a --exclude='backend' --exclude='.git' --exclude='.github' --exclude='_pages_output' ./ _pages_output/
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-          path: '.'
+          path: _pages_output/
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5

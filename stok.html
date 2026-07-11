@@ -216,7 +216,8 @@
    KONFIGURASI — samain dengan admin.html / pesanan.html / keuangan.html
 ═══════════════════════════════════════════════════════ */
 const CONFIG = {
-  apiUrl: 'https://script.google.com/macros/s/AKfycbzlYlpJpNKOOUki_TQ0gs9McSgDGFSw7n_H1RWPc-OX3biRoEajOl1bpBAW0i-bsKV2/exec',
+  // Ganti sesuai URL project Vercel lo (tanpa trailing slash)
+  apiUrl: 'https://xxxxx.vercel.app',
 };
 
 let adminToken = localStorage.getItem('adminToken') || '';
@@ -225,22 +226,23 @@ let vendors = [];
 let currentFilter = 'semua';
 
 /* ═══════════════════════════════════════════════════════
-   API HELPERS
+   API HELPERS — REST ke backend Vercel, auth pakai Bearer token
 ═══════════════════════════════════════════════════════ */
+function authHeaders(json) {
+  const h = { Authorization: `Bearer ${adminToken}` };
+  if (json) h['Content-Type'] = 'application/json';
+  return h;
+}
 async function apiGetStock() {
-  const res = await fetch(`${CONFIG.apiUrl}?resource=stok&token=${encodeURIComponent(adminToken)}`);
+  const res = await fetch(`${CONFIG.apiUrl}/api/stock`, { headers: authHeaders() });
   return res.json();
 }
 async function apiGetVendors() {
-  const res = await fetch(`${CONFIG.apiUrl}?resource=vendor&token=${encodeURIComponent(adminToken)}`);
+  const res = await fetch(`${CONFIG.apiUrl}/api/vendors`, { headers: authHeaders() });
   return res.json();
 }
-async function apiPost(body) {
-  const res = await fetch(CONFIG.apiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(body),
-  });
+async function apiUpdateStockStatus(data) {
+  const res = await fetch(`${CONFIG.apiUrl}/api/stock/status`, { method: 'POST', headers: authHeaders(true), body: JSON.stringify(data) });
   return res.json();
 }
 
@@ -254,14 +256,14 @@ const loginError  = document.getElementById('loginError');
 async function tryLogin(token) {
   adminToken = token;
   try {
-    const json = await apiGetStock();
-    if (json.status !== 'success') throw new Error(json.message || 'gagal');
+    const [stockJson, vendorJson] = await Promise.all([apiGetStock(), apiGetVendors()]);
+    if (stockJson.status !== 'success') throw new Error(stockJson.message || 'gagal');
+
     localStorage.setItem('adminToken', token);
     loginScreen.style.display = 'none';
     adminApp.style.display = 'block';
-    stockNeeds = json.data;
+    stockNeeds = stockJson.data;
 
-    const vendorJson = await apiGetVendors();
     if (vendorJson.status === 'success') vendors = vendorJson.data;
 
     document.getElementById('f_pembuka').value = localStorage.getItem(PEMBUKA_STORAGE_KEY) || 'Kak, mau pesan kaos, ini listnya:';
@@ -478,11 +480,7 @@ document.getElementById('stockList').addEventListener('change', async e => {
   const key = sel.dataset.key;
   const vendorId = sel.value;
 
-  const json = await apiPost({
-    token: adminToken,
-    action: 'updateStockStatus',
-    data: { key, jenis: sel.dataset.jenis, size: sel.dataset.size, warna: sel.dataset.warna, lengan: sel.dataset.lengan, vendor_id: vendorId }
-  });
+  const json = await apiUpdateStockStatus({ key, jenis: sel.dataset.jenis, size: sel.dataset.size, warna: sel.dataset.warna, lengan: sel.dataset.lengan, vendor_id: vendorId });
 
   if (json.status === 'success') {
     const item = stockNeeds.find(s => s.key === key);
@@ -506,11 +504,7 @@ document.getElementById('stockList').addEventListener('click', async e => {
     const nextStatus = toggleBtn.dataset.next;
 
     toggleBtn.disabled = true;
-    const json = await apiPost({
-      token: adminToken,
-      action: 'updateStockStatus',
-      data: { key, jenis: toggleBtn.dataset.jenis, size: toggleBtn.dataset.size, warna: toggleBtn.dataset.warna, lengan: toggleBtn.dataset.lengan, status: nextStatus }
-    });
+    const json = await apiUpdateStockStatus({ key, jenis: toggleBtn.dataset.jenis, size: toggleBtn.dataset.size, warna: toggleBtn.dataset.warna, lengan: toggleBtn.dataset.lengan, status: nextStatus });
     toggleBtn.disabled = false;
 
     if (json.status === 'success') {

@@ -227,7 +227,8 @@
    KONFIGURASI — samain dengan index.html
 ═══════════════════════════════════════════════════════ */
 const CONFIG = {
-  apiUrl: 'https://script.google.com/macros/s/AKfycbzlYlpJpNKOOUki_TQ0gs9McSgDGFSw7n_H1RWPc-OX3biRoEajOl1bpBAW0i-bsKV2/exec',
+  // Ganti sesuai URL project Vercel lo (tanpa trailing slash)
+  apiUrl: 'https://xxxxx.vercel.app',
 };
 
 let adminToken = localStorage.getItem('adminToken') || '';
@@ -235,20 +236,38 @@ let products = [];
 let editingId = null; // null = mode tambah
 
 /* ═══════════════════════════════════════════════════════
-   API HELPERS
-   Catatan: fetch pakai text/plain biar GAS gak minta CORS preflight
+   API HELPERS — REST ke backend Vercel, auth pakai Bearer token
 ═══════════════════════════════════════════════════════ */
 async function apiGet() {
-  const url = `${CONFIG.apiUrl}?token=${encodeURIComponent(adminToken)}`;
-  const res = await fetch(url);
+  const res = await fetch(`${CONFIG.apiUrl}/api/products?token=${encodeURIComponent(adminToken)}`, {
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
   return res.json();
 }
 
-async function apiPost(body) {
-  const res = await fetch(CONFIG.apiUrl, {
+async function apiCreateProduct(data) {
+  const res = await fetch(`${CONFIG.apiUrl}/api/products`, {
     method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+async function apiUpdateProduct(id, data) {
+  const res = await fetch(`${CONFIG.apiUrl}/api/products/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+async function apiToggleActive(id, aktif) {
+  const res = await fetch(`${CONFIG.apiUrl}/api/products/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({ aktif }),
   });
   return res.json();
 }
@@ -356,7 +375,7 @@ document.getElementById('productList').addEventListener('click', async e => {
   if (btn.dataset.action === 'toggle') {
     const nextActive = !isActive(p);
     btn.disabled = true;
-    const json = await apiPost({ token: adminToken, action: 'toggleActive', id, data: { aktif: nextActive } });
+    const json = await apiToggleActive(id, nextActive);
     btn.disabled = false;
     if (json.status === 'success') {
       p.aktif = nextActive;
@@ -425,9 +444,9 @@ form.addEventListener('submit', async e => {
   try {
     let json;
     if (editingId) {
-      json = await apiPost({ token: adminToken, action: 'update', id: editingId, data });
+      json = await apiUpdateProduct(editingId, data);
     } else {
-      json = await apiPost({ token: adminToken, action: 'create', data });
+      json = await apiCreateProduct(data);
     }
 
     if (json.status === 'success') {

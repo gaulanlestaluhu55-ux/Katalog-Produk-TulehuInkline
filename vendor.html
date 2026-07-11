@@ -179,23 +179,33 @@
 
 <script>
 const CONFIG = {
-  apiUrl: 'https://script.google.com/macros/s/AKfycbzlYlpJpNKOOUki_TQ0gs9McSgDGFSw7n_H1RWPc-OX3biRoEajOl1bpBAW0i-bsKV2/exec',
+  // Ganti sesuai URL project Vercel lo (tanpa trailing slash)
+  apiUrl: 'https://xxxxx.vercel.app',
 };
 
 let adminToken = localStorage.getItem('adminToken') || '';
 let vendors = [];
 let editingId = null;
 
+function authHeaders(json) {
+  const h = { Authorization: `Bearer ${adminToken}` };
+  if (json) h['Content-Type'] = 'application/json';
+  return h;
+}
 async function apiGetVendors() {
-  const res = await fetch(`${CONFIG.apiUrl}?resource=vendor&token=${encodeURIComponent(adminToken)}`);
+  const res = await fetch(`${CONFIG.apiUrl}/api/vendors`, { headers: authHeaders() });
   return res.json();
 }
-async function apiPost(body) {
-  const res = await fetch(CONFIG.apiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(body),
-  });
+async function apiCreateVendor(data) {
+  const res = await fetch(`${CONFIG.apiUrl}/api/vendors`, { method: 'POST', headers: authHeaders(true), body: JSON.stringify(data) });
+  return res.json();
+}
+async function apiUpdateVendor(id, data) {
+  const res = await fetch(`${CONFIG.apiUrl}/api/vendors/${id}`, { method: 'PUT', headers: authHeaders(true), body: JSON.stringify(data) });
+  return res.json();
+}
+async function apiDeleteVendor(id) {
+  const res = await fetch(`${CONFIG.apiUrl}/api/vendors/${id}`, { method: 'DELETE', headers: authHeaders() });
   return res.json();
 }
 
@@ -278,7 +288,7 @@ document.getElementById('vendorList').addEventListener('click', async e => {
   if (btn.dataset.action === 'delete') {
     if (!confirm(`Hapus vendor "${v.nama}"?`)) return;
     btn.disabled = true;
-    const json = await apiPost({ token: adminToken, action: 'deleteVendor', id });
+    const json = await apiDeleteVendor(id);
     btn.disabled = false;
     if (json.status === 'success') {
       vendors = vendors.filter(x => String(x.id) !== String(id));
@@ -328,9 +338,9 @@ form.addEventListener('submit', async e => {
   try {
     let json;
     if (editingId) {
-      json = await apiPost({ token: adminToken, action: 'updateVendor', id: editingId, data });
+      json = await apiUpdateVendor(editingId, data);
     } else {
-      json = await apiPost({ token: adminToken, action: 'createVendor', data });
+      json = await apiCreateVendor(data);
     }
 
     if (json.status === 'success') {

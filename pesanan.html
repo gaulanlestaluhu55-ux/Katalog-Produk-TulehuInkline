@@ -269,7 +269,8 @@
    KONFIGURASI — samain dengan index.html / admin.html
 ═══════════════════════════════════════════════════════ */
 const CONFIG = {
-  apiUrl: 'https://script.google.com/macros/s/AKfycbzlYlpJpNKOOUki_TQ0gs9McSgDGFSw7n_H1RWPc-OX3biRoEajOl1bpBAW0i-bsKV2/exec',
+  // Ganti sesuai URL project Vercel lo (tanpa trailing slash)
+  apiUrl: 'https://xxxxx.vercel.app',
   surcharge: { lenganPanjang: 10000, xxl: 10000, xxxl: 20000 },
   kaos: {
     sizes:   ['S','M','L','XL','XXL','3XL'],
@@ -287,26 +288,39 @@ let currentFilter = 'semua';
 let selectedOpts = { size: null, sleeve: null, color: null, nameset: null };
 
 /* ═══════════════════════════════════════════════════════
-   API HELPERS (pola sama kayak admin.html: text/plain biar no-preflight)
+   API HELPERS — REST ke backend Vercel, auth pakai Bearer token
 ═══════════════════════════════════════════════════════ */
+function authHeaders(json) {
+  const h = { Authorization: `Bearer ${adminToken}` };
+  if (json) h['Content-Type'] = 'application/json';
+  return h;
+}
 async function apiGetProducts() {
-  const res = await fetch(`${CONFIG.apiUrl}?token=${encodeURIComponent(adminToken)}`);
+  const res = await fetch(`${CONFIG.apiUrl}/api/products`, { headers: authHeaders() });
   return res.json();
 }
 async function apiGetOrders() {
-  const res = await fetch(`${CONFIG.apiUrl}?resource=pesanan&token=${encodeURIComponent(adminToken)}`);
+  const res = await fetch(`${CONFIG.apiUrl}/api/orders`, { headers: authHeaders() });
   return res.json();
 }
 async function apiGetAccounts() {
-  const res = await fetch(`${CONFIG.apiUrl}?resource=akun&token=${encodeURIComponent(adminToken)}`);
+  const res = await fetch(`${CONFIG.apiUrl}/api/accounts`, { headers: authHeaders() });
   return res.json();
 }
-async function apiPost(body) {
-  const res = await fetch(CONFIG.apiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(body),
-  });
+async function apiCreateOrder(data) {
+  const res = await fetch(`${CONFIG.apiUrl}/api/orders`, { method: 'POST', headers: authHeaders(true), body: JSON.stringify(data) });
+  return res.json();
+}
+async function apiUpdateOrderStatus(id, data) {
+  const res = await fetch(`${CONFIG.apiUrl}/api/orders/${id}`, { method: 'PUT', headers: authHeaders(true), body: JSON.stringify(data) });
+  return res.json();
+}
+async function apiUpdatePayment(id, data) {
+  const res = await fetch(`${CONFIG.apiUrl}/api/orders/${id}?action=payment`, { method: 'PUT', headers: authHeaders(true), body: JSON.stringify(data) });
+  return res.json();
+}
+async function apiDeleteOrder(id) {
+  const res = await fetch(`${CONFIG.apiUrl}/api/orders/${id}`, { method: 'DELETE', headers: authHeaders() });
   return res.json();
 }
 
@@ -320,19 +334,21 @@ const loginError  = document.getElementById('loginError');
 async function tryLogin(token) {
   adminToken = token;
   try {
-    const json = await apiGetProducts();
-    if (json.status !== 'success') throw new Error(json.message || 'gagal');
+    const [prodJson, accJson, ordJson] = await Promise.all([apiGetProducts(), apiGetAccounts(), apiGetOrders()]);
+    if (prodJson.status !== 'success') throw new Error(prodJson.message || 'gagal');
+
     localStorage.setItem('adminToken', token);
     loginScreen.style.display = 'none';
     adminApp.style.display = 'block';
-    products = json.data;
+
+    products = prodJson.data;
     populateProductSelect();
 
-    const accJson = await apiGetAccounts();
     if (accJson.status === 'success') accounts = accJson.data;
     populateAccountSelects();
 
-    await refreshOrders();
+    if (ordJson.status === 'success') orders = ordJson.data;
+    renderOrders();
   } catch (err) {
     adminToken = '';
     localStorage.removeItem('adminToken');
@@ -520,7 +536,7 @@ document.getElementById('orderForm').addEventListener('submit', async e => {
   btn.disabled = true; btn.textContent = 'Menyimpan...';
 
   try {
-    const json = await apiPost({ token: adminToken, action: 'createOrder', data });
+    const json = await apiCreateOrder(data);
     if (json.status === 'success') {
       showStatus('Pesanan tersimpan.', true);
       document.getElementById('orderForm').reset();
@@ -626,7 +642,7 @@ document.getElementById('orderList').addEventListener('change', async e => {
   const id = sel.dataset.id;
   const newStatus = sel.value;
   sel.disabled = true;
-  const json = await apiPost({ token: adminToken, action: 'updateOrderStatus', id, data: { status: newStatus } });
+  const json = await apiUpdateOrderStatus(id, { status: newStatus });
   sel.disabled = false;
   if (json.status === 'success') {
     // Refresh penuh, karena status "Batal" bisa reversal nominal pembayaran di backend
@@ -643,7 +659,7 @@ document.getElementById('orderList').addEventListener('click', async e => {
     const id = delBtn.dataset.id;
     if (!confirm('Hapus pesanan ini? Tindakan tidak bisa dibatalkan.')) return;
     delBtn.disabled = true;
-    const json = await apiPost({ token: adminToken, action: 'deleteOrder', id });
+    const json = await apiDeleteOrder(id);
     delBtn.disabled = false;
     if (json.status === 'success') {
       orders = orders.filter(o => String(o.id) !== String(id));
@@ -666,7 +682,7 @@ document.getElementById('orderList').addEventListener('click', async e => {
     const akun = akunSel ? akunSel.value : 'Kas';
 
     payBtn.disabled = true;
-    const json = await apiPost({ token: adminToken, action: 'updatePayment', id, data: { nominal_dibayar: nominal, akun } });
+    const json = await apiUpdatePayment(id, { nominal_dibayar: nominal, akun });
     payBtn.disabled = false;
 
     if (json.status === 'success') {

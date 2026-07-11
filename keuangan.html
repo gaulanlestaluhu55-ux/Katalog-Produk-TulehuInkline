@@ -292,7 +292,8 @@
    KONFIGURASI — samain dengan admin.html / pesanan.html
 ═══════════════════════════════════════════════════════ */
 const CONFIG = {
-  apiUrl: 'https://script.google.com/macros/s/AKfycbzlYlpJpNKOOUki_TQ0gs9McSgDGFSw7n_H1RWPc-OX3biRoEajOl1bpBAW0i-bsKV2/exec',
+  // Ganti sesuai URL project Vercel lo (tanpa trailing slash)
+  apiUrl: 'https://xxxxx.vercel.app',
 };
 
 let adminToken = localStorage.getItem('adminToken') || '';
@@ -302,22 +303,35 @@ let currentFilter = 'semua';
 let selectedTipe = 'Masuk';
 
 /* ═══════════════════════════════════════════════════════
-   API HELPERS
+   API HELPERS — REST ke backend Vercel, auth pakai Bearer token
 ═══════════════════════════════════════════════════════ */
+function authHeaders(json) {
+  const h = { Authorization: `Bearer ${adminToken}` };
+  if (json) h['Content-Type'] = 'application/json';
+  return h;
+}
 async function apiGetTransactions() {
-  const res = await fetch(`${CONFIG.apiUrl}?resource=keuangan&token=${encodeURIComponent(adminToken)}`);
+  const res = await fetch(`${CONFIG.apiUrl}/api/finance`, { headers: authHeaders() });
   return res.json();
 }
 async function apiGetAccounts() {
-  const res = await fetch(`${CONFIG.apiUrl}?resource=akun&token=${encodeURIComponent(adminToken)}`);
+  const res = await fetch(`${CONFIG.apiUrl}/api/accounts`, { headers: authHeaders() });
   return res.json();
 }
-async function apiPost(body) {
-  const res = await fetch(CONFIG.apiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(body),
-  });
+async function apiCreateAccount(nama) {
+  const res = await fetch(`${CONFIG.apiUrl}/api/accounts`, { method: 'POST', headers: authHeaders(true), body: JSON.stringify({ nama }) });
+  return res.json();
+}
+async function apiDeleteAccount(id) {
+  const res = await fetch(`${CONFIG.apiUrl}/api/accounts/${id}`, { method: 'DELETE', headers: authHeaders() });
+  return res.json();
+}
+async function apiCreateTransaction(data) {
+  const res = await fetch(`${CONFIG.apiUrl}/api/finance`, { method: 'POST', headers: authHeaders(true), body: JSON.stringify(data) });
+  return res.json();
+}
+async function apiDeleteTransaction(id) {
+  const res = await fetch(`${CONFIG.apiUrl}/api/finance/${id}`, { method: 'DELETE', headers: authHeaders() });
   return res.json();
 }
 
@@ -331,14 +345,14 @@ const loginError  = document.getElementById('loginError');
 async function tryLogin(token) {
   adminToken = token;
   try {
-    const json = await apiGetTransactions();
-    if (json.status !== 'success') throw new Error(json.message || 'gagal');
+    const [txJson, accJson] = await Promise.all([apiGetTransactions(), apiGetAccounts()]);
+    if (txJson.status !== 'success') throw new Error(txJson.message || 'gagal');
+
     localStorage.setItem('adminToken', token);
     loginScreen.style.display = 'none';
     adminApp.style.display = 'block';
-    transactions = json.data;
+    transactions = txJson.data;
 
-    const accJson = await apiGetAccounts();
     if (accJson.status === 'success') accounts = accJson.data;
 
     renderAll();
@@ -402,7 +416,7 @@ document.getElementById('addAccountBtn').addEventListener('click', async () => {
   const nama = input.value.trim();
   if (!nama) { showStatus('Isi dulu nama akunnya.', false); return; }
 
-  const json = await apiPost({ token: adminToken, action: 'createAccount', data: { nama } });
+  const json = await apiCreateAccount(nama);
   if (json.status === 'success') {
     accounts.push({ id: json.data.id, nama: json.data.nama });
     renderAccountTags();
@@ -420,7 +434,7 @@ document.getElementById('accountTags').addEventListener('click', async e => {
   const id = btn.dataset.id;
   if (!confirm('Hapus akun ini? Transaksi lama yang udah tercatat pakai akun ini gak akan ikut terhapus.')) return;
 
-  const json = await apiPost({ token: adminToken, action: 'deleteAccount', id });
+  const json = await apiDeleteAccount(id);
   if (json.status === 'success') {
     accounts = accounts.filter(a => String(a.id) !== String(id));
     renderAccountTags();
@@ -459,7 +473,7 @@ document.getElementById('txForm').addEventListener('submit', async e => {
   btn.disabled = true; btn.textContent = 'Menyimpan...';
 
   try {
-    const json = await apiPost({ token: adminToken, action: 'createTransaction', data });
+    const json = await apiCreateTransaction(data);
     if (json.status === 'success') {
       showStatus('Transaksi tersimpan.', true);
       document.getElementById('txForm').reset();
@@ -579,7 +593,7 @@ document.getElementById('txList').addEventListener('click', async e => {
   const id = btn.dataset.id;
   if (!confirm('Hapus transaksi ini? Tindakan tidak bisa dibatalkan.')) return;
   btn.disabled = true;
-  const json = await apiPost({ token: adminToken, action: 'deleteTransaction', id });
+  const json = await apiDeleteTransaction(id);
   btn.disabled = false;
   if (json.status === 'success') {
     transactions = transactions.filter(t => String(t.id) !== String(id));
