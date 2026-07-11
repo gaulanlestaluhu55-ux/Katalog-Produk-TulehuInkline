@@ -21,6 +21,11 @@
  *   lebih dari sekali. Jalankan cuma 1x, di akhir proses migrasi.
  */
 
+console.log("Cek Token:", process.env.SUPABASE_SERVICE_ROLE_KEY ? "Ada" : "KOSONG!");
+console.log("Cek Admin Token:", process.env.ADMIN_TOKEN ? "Ada" : "KOSONG!");
+console.log("Cek OLD_GAS_URL:", process.env.OLD_GAS_URL ? "Ada" : "KOSONG!");
+console.log("Cek SUPABASE_URL:", process.env.SUPABASE_URL ? "Ada" : "KOSONG!");
+console.log("Cek SUPABASE_SERVICE_ROLE_KEY:", process.env.SUPABASE_SERVICE_ROLE_KEY ? "Ada" : "KOSONG!");
 import { createClient } from '@supabase/supabase-js';
 
 const GAS_URL = process.env.OLD_GAS_URL;
