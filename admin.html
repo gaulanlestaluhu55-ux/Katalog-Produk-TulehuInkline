@@ -540,7 +540,7 @@
     ═══════════════════════════════════════════════════════ */
     const CONFIG = {
       // Ganti sesuai URL project Vercel lo (tanpa trailing slash)
-      apiUrl: 'https://katalog-produk-tulehu-inkline.vercel.app/',
+      apiUrl: 'https://katalog-produk-tulehu-inkline.vercel.app',
     };
 
     let adminToken = localStorage.getItem('adminToken') || '';
@@ -551,7 +551,8 @@
        API HELPERS — REST ke backend Vercel, auth pakai Bearer token
     ═══════════════════════════════════════════════════════ */
     async function apiGet() {
-      const res = await fetch(`${CONFIG.apiUrl}/api/products?token=${encodeURIComponent(adminToken)}`, {
+      // Token hanya dikirim via Header, hapus "?token=..." dari URL
+      const res = await fetch(`${CONFIG.apiUrl}/api/products`, {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
       return res.json();
