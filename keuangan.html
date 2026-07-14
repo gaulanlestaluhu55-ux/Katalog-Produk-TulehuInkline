@@ -338,36 +338,35 @@
   </div>
 
   <script src="js/config.js"></script>
-  <script src="js/admin-core.js?v=6"></script>
+  <script src="js/admin-core.js?v=7"></script>
   <script>
     let transactions = [];
     let accounts = [];
     let currentFilter = 'semua';
     let selectedTipe = 'Masuk';
 
-    function authHeaders(json) { return window.authHeaders(json); }
     async function apiGetTransactions() {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/finance`, { headers: authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/finance`, { headers: window.authHeaders() });
       return res.json();
     }
     async function apiGetAccounts() {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/accounts`, { headers: authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/accounts`, { headers: window.authHeaders() });
       return res.json();
     }
     async function apiCreateAccount(nama) {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/accounts`, { method: 'POST', headers: authHeaders(true), body: JSON.stringify({ nama }) });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/accounts`, { method: 'POST', headers: window.authHeaders(true), body: JSON.stringify({ nama }) });
       return res.json();
     }
     async function apiDeleteAccount(id) {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/accounts/${id}`, { method: 'DELETE', headers: authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/accounts/${id}`, { method: 'DELETE', headers: window.authHeaders() });
       return res.json();
     }
     async function apiCreateTransaction(data) {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/finance`, { method: 'POST', headers: authHeaders(true), body: JSON.stringify(data) });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/finance`, { method: 'POST', headers: window.authHeaders(true), body: JSON.stringify(data) });
       return res.json();
     }
     async function apiDeleteTransaction(id) {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/finance/${id}`, { method: 'DELETE', headers: authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/finance/${id}`, { method: 'DELETE', headers: window.authHeaders() });
       return res.json();
     }
 

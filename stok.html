@@ -190,23 +190,22 @@
   </div>
 
   <script src="js/config.js"></script>
-  <script src="js/admin-core.js?v=6"></script>
+  <script src="js/admin-core.js?v=7"></script>
   <script>
     let stockNeeds = [];
     let vendors = [];
     let currentFilter = 'semua';
 
-    function authHeaders(json) { return window.authHeaders(json); }
     async function apiGetStock() {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/stock`, { headers: authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/stock`, { headers: window.authHeaders() });
       return res.json();
     }
     async function apiGetVendors() {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/vendors`, { headers: authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/vendors`, { headers: window.authHeaders() });
       return res.json();
     }
     async function apiUpdateStockStatus(data) {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/stock?action=status`, { method: 'POST', headers: authHeaders(true), body: JSON.stringify(data) });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/stock?action=status`, { method: 'POST', headers: window.authHeaders(true), body: JSON.stringify(data) });
       return res.json();
     }
 

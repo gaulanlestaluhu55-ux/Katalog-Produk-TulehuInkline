@@ -226,7 +226,7 @@
 
   <script src="js/config.js"></script>
   <script src="js/helpers.js"></script>
-  <script src="js/admin-core.js?v=6"></script>
+  <script src="js/admin-core.js?v=7"></script>
   <script>
     let products = [];
     let orders = [];
@@ -234,36 +234,32 @@
     let currentFilter = 'semua';
     let selectedOpts = { size: null, sleeve: null, color: null, nameset: null };
 
-    function authHeaders(json) {
-      return window.authHeaders(json);
-    }
-
     async function apiGetProducts() {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/products`, { headers: authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/products`, { headers: window.authHeaders() });
       return res.json();
     }
     async function apiGetOrders() {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/orders`, { headers: authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/orders`, { headers: window.authHeaders() });
       return res.json();
     }
     async function apiGetAccounts() {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/accounts`, { headers: authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/accounts`, { headers: window.authHeaders() });
       return res.json();
     }
     async function apiCreateOrder(data) {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/orders`, { method: 'POST', headers: authHeaders(true), body: JSON.stringify(data) });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/orders`, { method: 'POST', headers: window.authHeaders(true), body: JSON.stringify(data) });
       return res.json();
     }
     async function apiUpdateOrderStatus(id, data) {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/orders/${id}`, { method: 'PUT', headers: authHeaders(true), body: JSON.stringify(data) });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/orders/${id}`, { method: 'PUT', headers: window.authHeaders(true), body: JSON.stringify(data) });
       return res.json();
     }
     async function apiUpdatePayment(id, data) {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/orders/${id}?action=payment`, { method: 'PUT', headers: authHeaders(true), body: JSON.stringify(data) });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/orders/${id}?action=payment`, { method: 'PUT', headers: window.authHeaders(true), body: JSON.stringify(data) });
       return res.json();
     }
     async function apiDeleteOrder(id) {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/orders/${id}`, { method: 'DELETE', headers: authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/orders/${id}`, { method: 'DELETE', headers: window.authHeaders() });
       return res.json();
     }
 
