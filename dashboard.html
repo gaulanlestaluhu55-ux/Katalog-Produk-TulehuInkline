@@ -145,9 +145,11 @@
     <div class="login-card">
       <h1>Dashboard Admin</h1>
       <p>Masukkan token admin untuk melihat rekap bisnis.</p>
-      <input type="password" id="tokenInput" placeholder="Token admin" autocomplete="off" />
-      <button id="loginBtn">Masuk</button>
-      <div class="login-error" id="loginError">Token salah atau gagal konek ke server.</div>
+      <form id="loginForm" onsubmit="event.preventDefault();">
+        <input type="password" id="tokenInput" placeholder="Token admin" autocomplete="off" />
+        <button type="button" id="loginBtn">Masuk</button>
+        <div class="login-error" id="loginError">Token salah atau gagal konek ke server.</div>
+      </form>
     </div>
   </div>
 
@@ -273,12 +275,10 @@
       }
     }
 
-    document.getElementById('loginBtn').addEventListener('click', () => {
+    document.getElementById('loginForm').addEventListener('submit', e => {
+      e.preventDefault();
       const val = document.getElementById('tokenInput').value.trim();
       if (val) tryLogin(val);
-    });
-    document.getElementById('tokenInput').addEventListener('keydown', e => {
-      if (e.key === 'Enter') document.getElementById('loginBtn').click();
     });
     document.getElementById('logoutBtn').addEventListener('click', () => {
       stopAutoRefresh();

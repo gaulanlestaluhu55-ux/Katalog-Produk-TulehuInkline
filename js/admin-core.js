@@ -97,13 +97,19 @@ window.initLogin = function(loginCallback) {
     }
   }
 
-  loginBtn.addEventListener('click', () => {
-    const val = tokenInput.value.trim();
-    if (val) tryLogin(val);
-  });
-  tokenInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter') loginBtn.click();
-  });
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) {
+    loginForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const val = tokenInput.value.trim();
+      if (val) tryLogin(val);
+    });
+  } else {
+    loginBtn.addEventListener('click', () => {
+      const val = tokenInput.value.trim();
+      if (val) tryLogin(val);
+    });
+  }
   logoutBtn.addEventListener('click', window.logout);
 
   if (window.adminToken) {
