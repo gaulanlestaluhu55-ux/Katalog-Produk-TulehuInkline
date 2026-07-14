@@ -116,25 +116,31 @@
   </div>
 
   <script src="js/config.js"></script>
-  <script src="js/admin-core.js?v=7"></script>
+  <script src="js/admin-core.js?v=8"></script>
   <script>
     let vendors = [];
     let editingId = null;
 
+    function adminRequestHeaders(json) {
+      const h = { Authorization: `Bearer ${window.adminToken}` };
+      if (json) h['Content-Type'] = 'application/json';
+      return h;
+    }
+
     async function apiGetVendors() {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/vendors`, { headers: window.authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/vendors`, { headers: adminRequestHeaders() });
       return res.json();
     }
     async function apiCreateVendor(data) {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/vendors`, { method: 'POST', headers: window.authHeaders(true), body: JSON.stringify(data) });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/vendors`, { method: 'POST', headers: adminRequestHeaders(true), body: JSON.stringify(data) });
       return res.json();
     }
     async function apiUpdateVendor(id, data) {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/vendors/${id}`, { method: 'PUT', headers: window.authHeaders(true), body: JSON.stringify(data) });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/vendors/${id}`, { method: 'PUT', headers: adminRequestHeaders(true), body: JSON.stringify(data) });
       return res.json();
     }
     async function apiDeleteVendor(id) {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/vendors/${id}`, { method: 'DELETE', headers: window.authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/vendors/${id}`, { method: 'DELETE', headers: adminRequestHeaders() });
       return res.json();
     }
 

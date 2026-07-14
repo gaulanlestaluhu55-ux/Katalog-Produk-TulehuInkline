@@ -226,7 +226,7 @@
 
   <script src="js/config.js"></script>
   <script src="js/helpers.js"></script>
-  <script src="js/admin-core.js?v=7"></script>
+  <script src="js/admin-core.js?v=8"></script>
   <script>
     let products = [];
     let orders = [];
@@ -234,32 +234,38 @@
     let currentFilter = 'semua';
     let selectedOpts = { size: null, sleeve: null, color: null, nameset: null };
 
+    function adminRequestHeaders(json) {
+      const h = { Authorization: `Bearer ${window.adminToken}` };
+      if (json) h['Content-Type'] = 'application/json';
+      return h;
+    }
+
     async function apiGetProducts() {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/products`, { headers: window.authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/products`, { headers: adminRequestHeaders() });
       return res.json();
     }
     async function apiGetOrders() {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/orders`, { headers: window.authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/orders`, { headers: adminRequestHeaders() });
       return res.json();
     }
     async function apiGetAccounts() {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/accounts`, { headers: window.authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/accounts`, { headers: adminRequestHeaders() });
       return res.json();
     }
     async function apiCreateOrder(data) {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/orders`, { method: 'POST', headers: window.authHeaders(true), body: JSON.stringify(data) });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/orders`, { method: 'POST', headers: adminRequestHeaders(true), body: JSON.stringify(data) });
       return res.json();
     }
     async function apiUpdateOrderStatus(id, data) {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/orders/${id}`, { method: 'PUT', headers: window.authHeaders(true), body: JSON.stringify(data) });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/orders/${id}`, { method: 'PUT', headers: adminRequestHeaders(true), body: JSON.stringify(data) });
       return res.json();
     }
     async function apiUpdatePayment(id, data) {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/orders/${id}?action=payment`, { method: 'PUT', headers: window.authHeaders(true), body: JSON.stringify(data) });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/orders/${id}?action=payment`, { method: 'PUT', headers: adminRequestHeaders(true), body: JSON.stringify(data) });
       return res.json();
     }
     async function apiDeleteOrder(id) {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/orders/${id}`, { method: 'DELETE', headers: window.authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/orders/${id}`, { method: 'DELETE', headers: adminRequestHeaders() });
       return res.json();
     }
 

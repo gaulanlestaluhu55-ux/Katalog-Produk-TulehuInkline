@@ -190,22 +190,28 @@
   </div>
 
   <script src="js/config.js"></script>
-  <script src="js/admin-core.js?v=7"></script>
+  <script src="js/admin-core.js?v=8"></script>
   <script>
     let stockNeeds = [];
     let vendors = [];
     let currentFilter = 'semua';
 
+    function adminRequestHeaders(json) {
+      const h = { Authorization: `Bearer ${window.adminToken}` };
+      if (json) h['Content-Type'] = 'application/json';
+      return h;
+    }
+
     async function apiGetStock() {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/stock`, { headers: window.authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/stock`, { headers: adminRequestHeaders() });
       return res.json();
     }
     async function apiGetVendors() {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/vendors`, { headers: window.authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/vendors`, { headers: adminRequestHeaders() });
       return res.json();
     }
     async function apiUpdateStockStatus(data) {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/stock?action=status`, { method: 'POST', headers: window.authHeaders(true), body: JSON.stringify(data) });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/stock?action=status`, { method: 'POST', headers: adminRequestHeaders(true), body: JSON.stringify(data) });
       return res.json();
     }
 
