@@ -121,14 +121,26 @@ window.requireAuth = async function(callback) {
   const adminApp = document.getElementById('adminApp');
   const logoutBtn = document.getElementById('logoutBtn');
   if (!window.adminToken) { window.location.href = 'admin.html'; return; }
+
   try {
-    await callback(window.adminToken);
-    if (adminApp) adminApp.style.display = 'block';
+    const verifyRes = await window.apiFetch(`${CONFIG.apiUrl}/api/accounts`, { headers: window.authHeaders() });
+    const verifyJson = await verifyRes.json();
+    if (verifyJson.status !== 'success') throw new Error(verifyJson.message || 'Unauthorized');
   } catch (err) {
     window.adminToken = '';
     localStorage.removeItem('adminToken');
     window.location.href = 'admin.html';
+    return;
   }
+
+  try {
+    await callback(window.adminToken);
+    if (adminApp) adminApp.style.display = 'block';
+  } catch (err) {
+    if (adminApp) adminApp.style.display = 'block';
+    window.showStatus(err.message || 'Gagal memuat halaman.', false);
+  }
+
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
       window.logout();
