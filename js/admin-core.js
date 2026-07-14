@@ -123,17 +123,6 @@ window.requireAuth = async function(callback) {
   if (!window.adminToken) { window.location.href = 'admin.html'; return; }
 
   try {
-    const verifyRes = await window.apiFetch(`${CONFIG.apiUrl}/api/accounts`, { headers: window.authHeaders() });
-    const verifyJson = await verifyRes.json();
-    if (verifyJson.status !== 'success') throw new Error(verifyJson.message || 'Unauthorized');
-  } catch (err) {
-    window.adminToken = '';
-    localStorage.removeItem('adminToken');
-    window.location.href = 'admin.html';
-    return;
-  }
-
-  try {
     await callback(window.adminToken);
     if (adminApp) adminApp.style.display = 'block';
   } catch (err) {

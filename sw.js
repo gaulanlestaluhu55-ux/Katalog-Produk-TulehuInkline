@@ -1,4 +1,4 @@
-const CACHE = 'tulehu-v5';
+const CACHE = 'tulehu-v6';
 
 const PRECACHE_URLS = [
   '/',
