@@ -116,3 +116,23 @@ window.initLogin = function(loginCallback) {
     return tryLogin(window.adminToken);
   }
 };
+
+window.requireAuth = async function(callback) {
+  const adminApp = document.getElementById('adminApp');
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (!window.adminToken) { window.location.href = 'admin.html'; return; }
+  try {
+    await callback(window.adminToken);
+    if (adminApp) adminApp.style.display = 'block';
+  } catch (err) {
+    window.adminToken = '';
+    localStorage.removeItem('adminToken');
+    window.location.href = 'admin.html';
+  }
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      window.logout();
+      window.location.href = 'admin.html';
+    });
+  }
+};

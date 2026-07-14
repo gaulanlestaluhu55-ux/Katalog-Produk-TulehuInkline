@@ -125,19 +125,6 @@
 
 <body>
 
-  <!-- ═══ LOGIN ═══ -->
-  <div class="login-screen" id="loginScreen">
-    <div class="login-card">
-      <h1>Stok Vendor</h1>
-      <p>Masukkan token admin buat lihat rekap kebutuhan stok.</p>
-      <form id="loginForm" onsubmit="event.preventDefault();">
-        <input type="password" id="tokenInput" placeholder="Token admin" autocomplete="off" />
-        <button type="button" id="loginBtn">Masuk</button>
-        <div class="login-error" id="loginError">Token salah atau gagal konek ke server.</div>
-      </form>
-    </div>
-  </div>
-
   <!-- ═══ APP ═══ -->
   <div class="admin-app" id="adminApp">
     <header>
@@ -233,7 +220,7 @@
       renderStock();
     }
 
-    window.initLogin(tryLoginCb);
+    window.requireAuth(tryLoginCb);
 
     /* ═══════════════════════════════════════════════════════
        LIST & FILTER

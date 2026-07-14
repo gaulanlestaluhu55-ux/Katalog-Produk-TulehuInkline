@@ -140,19 +140,6 @@
 
 <body>
 
-  <!-- ═══ LOGIN ═══ -->
-  <div class="login-screen" id="loginScreen">
-    <div class="login-card">
-      <h1>Dashboard Admin</h1>
-      <p>Masukkan token admin untuk melihat rekap bisnis.</p>
-      <form id="loginForm" onsubmit="event.preventDefault();">
-        <input type="password" id="tokenInput" placeholder="Token admin" autocomplete="off" />
-        <button type="button" id="loginBtn">Masuk</button>
-        <div class="login-error" id="loginError">Token salah atau gagal konek ke server.</div>
-      </form>
-    </div>
-  </div>
-
   <!-- ═══ APP ═══ -->
   <div class="admin-app" id="adminApp">
     <header>
@@ -254,37 +241,14 @@
     let refreshTimer = null;
     const REFRESH_MS = 45000;
 
-    const loginScreen = document.getElementById('loginScreen');
     const adminApp = document.getElementById('adminApp');
-    const loginError = document.getElementById('loginError');
 
-    async function tryLogin(token) {
-      window.adminToken = token;
-      try {
-        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard/summary`, { headers: window.authHeaders() });
-        const json = await res.json();
-        if (json.status !== 'success') throw new Error(json.message || 'gagal');
-        localStorage.setItem('adminToken', token);
-        loginScreen.style.display = 'none';
-        adminApp.style.display = 'block';
-        initDashboard();
-      } catch (err) {
-        window.adminToken = '';
-        localStorage.removeItem('adminToken');
-        loginError.style.display = 'block';
-      }
-    }
-
-    document.getElementById('loginForm').addEventListener('submit', e => {
-      e.preventDefault();
-      const val = document.getElementById('tokenInput').value.trim();
-      if (val) tryLogin(val);
+    window.requireAuth(async (token) => {
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard/summary`, { headers: window.authHeaders() });
+      const json = await res.json();
+      if (json.status !== 'success') throw new Error(json.message || 'gagal');
+      initDashboard();
     });
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      stopAutoRefresh();
-      window.logout();
-    });
-    if (window.adminToken) tryLogin(window.adminToken);
 
     function fmt(n) {
       return isNaN(n) ? 'Rp\u00a00' : 'Rp\u00a0' + Math.round(n).toLocaleString('id-ID');
