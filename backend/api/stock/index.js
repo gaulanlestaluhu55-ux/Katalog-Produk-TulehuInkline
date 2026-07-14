@@ -6,6 +6,7 @@ export default async function handler(req, res) {
   if (handleCors(req, res)) return;
   if (!requireAdmin(req, res)) return;
 
+  if (req.method === 'POST' && req.query.action === 'status') return handleStatusPost(req, res);
   if (req.method !== 'GET') return res.status(405).json({ status: 'error', message: 'Method not allowed' });
 
   // 1. Ambil semua pesanan aktif (Baru/Diproses) yang punya varian size/warna
@@ -21,7 +22,7 @@ export default async function handler(req, res) {
     const size = o.size || '';
     const warna = o.warna || '';
     const lengan = o.lengan || '';
-    if (!size && !warna) continue; // skip item non-apparel (misal jersey)
+    if (!size && !warna) continue;
 
     const jenis = o.kategori || '-';
     const key = `${jenis}|${size}|${warna}|${lengan}`;
@@ -29,7 +30,7 @@ export default async function handler(req, res) {
     groups[key].qty += toNumSafe(o.qty);
   }
 
-  // 3. Gabung sama status checklist + vendor yang tersimpan
+  // 3. Gabung sama status checklist + vendor
   const { data: statusRows, error: statusErr } = await supabase.from('stock_vendor_status').select('*');
   if (statusErr) return res.status(500).json({ status: 'error', message: statusErr.message });
 
@@ -57,4 +58,34 @@ export default async function handler(req, res) {
   });
 
   return res.status(200).json({ status: 'success', data: result });
+}
+
+async function handleStatusPost(req, res) {
+  const body = req.body || {};
+  if (!body.key) return res.status(400).json({ status: 'error', message: 'key wajib diisi' });
+
+  const { data: existing } = await supabase.from('stock_vendor_status').select('*').eq('key', body.key).maybeSingle();
+
+  if (!existing) {
+    const { error } = await supabase.from('stock_vendor_status').insert({
+      key: body.key,
+      jenis: body.jenis || '',
+      size: body.size || '',
+      warna: body.warna || '',
+      lengan: body.lengan || '',
+      status: body.status || 'Belum Dipesan',
+      vendor_id: body.vendor_id || null,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) return res.status(500).json({ status: 'error', message: error.message });
+  } else {
+    const patch = { updated_at: new Date().toISOString() };
+    if (body.hasOwnProperty('status')) patch.status = body.status;
+    if (body.hasOwnProperty('vendor_id')) patch.vendor_id = body.vendor_id || null;
+
+    const { error } = await supabase.from('stock_vendor_status').update(patch).eq('key', body.key);
+    if (error) return res.status(500).json({ status: 'error', message: error.message });
+  }
+
+  return res.status(200).json({ status: 'success', data: { key: body.key, status: body.status, vendor_id: body.vendor_id } });
 }

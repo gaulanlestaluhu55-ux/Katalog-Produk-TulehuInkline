@@ -244,7 +244,7 @@
     const adminApp = document.getElementById('adminApp');
 
     window.requireAuth(async (token) => {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard/summary`, { headers: window.authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard?type=summary`, { headers: window.authHeaders() });
       const json = await res.json();
       if (json.status !== 'success') throw new Error(json.message || 'gagal');
       initDashboard();
@@ -308,7 +308,7 @@
     ═══════════════════════════════════════════════════════ */
     async function loadSummary() {
       try {
-        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard/summary`, { headers: authHeaders() });
+        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard?type=summary`, { headers: authHeaders() });
         const json = await res.json();
         if (json.status !== 'success') throw new Error(json.message);
 
@@ -362,7 +362,7 @@
     async function loadMonthly() {
       const range = document.getElementById('rangeSelect').value;
       try {
-        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard/monthly?range=${range}`, { headers: authHeaders() });
+        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard?type=monthly&range=${range}`, { headers: authHeaders() });
         const json = await res.json();
         if (json.status !== 'success') throw new Error(json.message);
 
@@ -438,7 +438,7 @@
     ═══════════════════════════════════════════════════════ */
     async function loadPaymentBreakdown() {
       try {
-        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard/summary`, { headers: authHeaders() });
+        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard?type=summary`, { headers: authHeaders() });
         const json = await res.json();
         if (json.status !== 'success') throw new Error(json.message);
 
@@ -499,7 +499,7 @@
     async function loadTopProducts() {
       try {
         const range = document.getElementById('rangeSelect').value;
-        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard/top-products?range=${range}&limit=5`, { headers: authHeaders() });
+        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard?type=top-products&range=${range}&limit=5`, { headers: authHeaders() });
         const json = await res.json();
         if (json.status !== 'success') throw new Error(json.message);
 
@@ -526,7 +526,7 @@
     ═══════════════════════════════════════════════════════ */
     async function loadRecentOrders() {
       try {
-        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard/recent-orders?limit=10`, { headers: authHeaders() });
+        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard?type=recent-orders&limit=10`, { headers: authHeaders() });
         const json = await res.json();
         if (json.status !== 'success') throw new Error(json.message);
 
