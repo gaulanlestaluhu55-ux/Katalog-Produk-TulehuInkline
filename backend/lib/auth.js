@@ -2,8 +2,6 @@
 export function getToken(req) {
   const header = req.headers['authorization'] || req.headers['Authorization'];
   if (header && header.startsWith('Bearer ')) return header.slice(7).trim();
-  // fallback: boleh juga dikirim lewat query ?token=xxx (buat kemudahan GET dari browser)
-  if (req.query && req.query.token) return req.query.token;
   return null;
 }
 
@@ -20,9 +18,10 @@ export function requireAdmin(req, res) {
   return true;
 }
 
-// CORS: izinkan dipanggil dari GitHub Pages (dan localhost buat dev)
+// CORS: izinkan dari domain frontend dan localhost buat dev
 export function setCors(res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = process.env.CORS_ORIGIN || 'https://katalog.tulehuinkline.my.id';
+  res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }

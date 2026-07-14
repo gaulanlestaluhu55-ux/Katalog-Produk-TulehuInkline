@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1a1a1a" />
+  <link rel="icon" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>Dashboard — Tulehu Inkline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="css/admin.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+  </style>
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 500px) {
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      color: var(--ink-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: 6px;
+    }
+
+    .kpi-value {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .kpi-value.green {
+      color: var(--accent-text);
+    }
+
+    .kpi-value.blue {
+      color: var(--primary);
+    }
+
+    .kpi-value.orange {
+      color: var(--warn-text);
+    }
+
+    .kpi-value.red {
+      color: var(--err-text);
+    }
+
+    .kpi-delta {
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .kpi-delta.up {
+      color: var(--accent-text);
+    }
+
+    .kpi-delta.down {
+      color: var(--err-text);
+    }
+
+    /* ── Chart Cards ── */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 12px;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .chart-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+
+    .chart-card h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .chart-wrap {
+      position: relative;
+      height: 300px;
+    }
+
+    .chart-card.small .chart-wrap {
+      height: 260px;
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .last-updated {
+      font-size: 11px;
+      color: var(--ink-muted);
+      margin-top: 8px;
+      text-align: right;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ═══ LOGIN ═══ -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <h1>Dashboard Admin</h1>
+      <p>Masukkan token admin untuk melihat rekap bisnis.</p>
+      <input type="password" id="tokenInput" placeholder="Token admin" autocomplete="off" />
+      <button id="loginBtn">Masuk</button>
+      <div class="login-error" id="loginError">Token salah atau gagal konek ke server.</div>
+    </div>
+  </div>
+
+  <!-- ═══ APP ═══ -->
+  <div class="admin-app" id="adminApp">
+    <header>
+      <div class="header-inner">
+        <div class="brand">Dashboard<div class="brand-sub">Tulehu Inkline</div>
+        </div>
+        <div class="header-actions">
+          <a class="link-btn" href="admin.html">Produk</a>
+          <a class="link-btn" href="pesanan.html">Pesanan</a>
+          <a class="link-btn" href="keuangan.html">Keuangan</a>
+          <a class="link-btn" href="stok.html">Stok Vendor</a>
+          <a class="link-btn" href="vendor.html">Vendor</a>
+          <a class="link-btn active" href="dashboard.html">Dashboard</a>
+          <button class="logout-btn" id="logoutBtn">Keluar</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="status-msg" id="statusMsg"></div>
+
+      <!-- Last updated -->
+      <div class="last-updated" id="lastUpdated">Terakhir update: —</div>
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid" id="kpiGrid">
+        <!-- Filled by JS -->
+      </div>
+
+      <!-- Charts -->
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+            <h3>Trend Bulanan (Pesanan & Revenue)</h3>
+            <select class="filter-select" id="rangeSelect" style="width:auto;">
+              <option value="6m">6 Bulan</option>
+              <option value="12m" selected>12 Bulan</option>
+              <option value="24m">24 Bulan</option>
+            </select>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="monthlyChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card small">
+          <h3>Status Pembayaran</h3>
+          <div class="chart-wrap" style="height:260px;">
+            <canvas id="paymentChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Products -->
+      <div class="table-card">
+        <h3>Top 5 Produk Terlaris</h3>
+        <div class="table-wrap">
+          <table id="topProductsTable">
+            <thead>
+              <tr>
+                <th>Produk</th>
+                <th>Kategori</th>
+                <th style="text-align:right;">Qty</th>
+                <th style="text-align:right;">Revenue</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Orders -->
+      <div class="table-card">
+        <h3>Pesanan Terbaru</h3>
+        <div class="table-wrap">
+          <table id="recentOrdersTable">
+            <thead>
+              <tr>
+                <th>Produk</th>
+                <th>Customer</th>
+                <th style="text-align:right;">Total</th>
+                <th>Status</th>
+                <th>Bayar</th>
+                <th>Waktu</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/admin-core.js"></script>
+  <script>
+    let monthlyChart = null;
+    let paymentChart = null;
+    let refreshTimer = null;
+    const REFRESH_MS = 45000;
+
+    const loginScreen = document.getElementById('loginScreen');
+    const adminApp = document.getElementById('adminApp');
+    const loginError = document.getElementById('loginError');
+
+    async function tryLogin(token) {
+      window.adminToken = token;
+      try {
+        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard/summary`, { headers: window.authHeaders() });
+        const json = await res.json();
+        if (json.status !== 'success') throw new Error(json.message || 'gagal');
+        localStorage.setItem('adminToken', token);
+        loginScreen.style.display = 'none';
+        adminApp.style.display = 'block';
+        initDashboard();
+      } catch (err) {
+        window.adminToken = '';
+        localStorage.removeItem('adminToken');
+        loginError.style.display = 'block';
+      }
+    }
+
+    document.getElementById('loginBtn').addEventListener('click', () => {
+      const val = document.getElementById('tokenInput').value.trim();
+      if (val) tryLogin(val);
+    });
+    document.getElementById('tokenInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('loginBtn').click();
+    });
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      stopAutoRefresh();
+      window.logout();
+    });
+    if (window.adminToken) tryLogin(window.adminToken);
+
+    function fmt(n) {
+      return isNaN(n) ? 'Rp\u00a00' : 'Rp\u00a0' + Math.round(n).toLocaleString('id-ID');
+    }
+
+    function fmtNum(n) {
+      return isNaN(n) ? '0' : Math.round(n).toLocaleString('id-ID');
+    }
+
+    function updateLastUpdated() {
+      document.getElementById('lastUpdated').textContent =
+        'Terakhir update: ' + new Date().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       AUTO REFRESH
+    ═══════════════════════════════════════════════════════ */
+    function startAutoRefresh() {
+      stopAutoRefresh();
+      refreshTimer = setInterval(refreshAll, REFRESH_MS);
+    }
+
+    function stopAutoRefresh() {
+      if (refreshTimer) clearInterval(refreshTimer);
+      refreshTimer = null;
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      document.hidden ? stopAutoRefresh() : startAutoRefresh();
+    });
+
+    /* ═══════════════════════════════════════════════════════
+       INIT DASHBOARD
+    ═══════════════════════════════════════════════════════ */
+    async function initDashboard() {
+      await refreshAll();
+      startAutoRefresh();
+
+      document.getElementById('rangeSelect').addEventListener('change', () => {
+        loadMonthly();
+      });
+    }
+
+    async function refreshAll() {
+      await Promise.all([
+        loadSummary(),
+        loadMonthly(),
+        loadTopProducts(),
+        loadRecentOrders(),
+        loadPaymentBreakdown()
+      ]);
+      updateLastUpdated();
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       LOAD SUMMARY (KPI)
+    ═══════════════════════════════════════════════════════ */
+    async function loadSummary() {
+      try {
+        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard/summary`, { headers: authHeaders() });
+        const json = await res.json();
+        if (json.status !== 'success') throw new Error(json.message);
+
+        const { range, this_month, last_month } = json.data;
+
+        // KPI Cards
+        const kpiHtml = `
+        <div class="kpi-card">
+          <div class="kpi-label">Total Pesanan (${rangeLabel()})</div>
+          <div class="kpi-value">${fmtNum(range.total)}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Total Revenue (${rangeLabel()})</div>
+          <div class="kpi-value green">${fmt(range.revenue)}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Pesanan Bulan Ini</div>
+          <div class="kpi-value blue">${fmtNum(this_month.total)}</div>
+          <div class="kpi-delta ${this_month.total >= last_month.total ? 'up' : 'down'}">
+            ${deltaPct(this_month.total, last_month.total)} vs bln lalu
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Revenue Bulan Ini</div>
+          <div class="kpi-value green">${fmt(this_month.revenue)}</div>
+          <div class="kpi-delta ${this_month.revenue >= last_month.revenue ? 'up' : 'down'}">
+            ${deltaPct(this_month.revenue, last_month.revenue)} vs bln lalu
+          </div>
+        </div>
+      `;
+        document.getElementById('kpiGrid').innerHTML = kpiHtml;
+      } catch (err) {
+        showStatus('Gagal load summary: ' + err.message, false);
+      }
+    }
+
+    function rangeLabel() {
+      const sel = document.getElementById('rangeSelect');
+      return sel.options[sel.selectedIndex].text;
+    }
+
+    function deltaPct(curr, prev) {
+      if (!prev) return '+100%';
+      const pct = ((curr - prev) / prev * 100).toFixed(1);
+      return (curr >= prev ? '+' : '') + pct + '%';
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       MONTHLY CHART
+    ═══════════════════════════════════════════════════════ */
+    async function loadMonthly() {
+      const range = document.getElementById('rangeSelect').value;
+      try {
+        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard/monthly?range=${range}`, { headers: authHeaders() });
+        const json = await res.json();
+        if (json.status !== 'success') throw new Error(json.message);
+
+        renderMonthlyChart(json.data);
+      } catch (err) {
+        showStatus('Gagal load chart bulanan: ' + err.message, false);
+      }
+    }
+
+    function renderMonthlyChart(data) {
+      const ctx = document.getElementById('monthlyChart').getContext('2d');
+      const labels = data.map(d => {
+        const [y, m] = d.month.split('-');
+        return new Date(y, m - 1).toLocaleString('id-ID', { month: 'short', year: '2-digit' });
+      });
+      const orders = data.map(d => d.orders);
+      const revenue = data.map(d => d.revenue);
+
+      if (monthlyChart) monthlyChart.destroy();
+
+      monthlyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Pesanan',
+            data: orders,
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            yAxisID: 'y',
+            tension: 0.3,
+            fill: true,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }, {
+            label: 'Revenue',
+            data: revenue,
+            borderColor: '#15803d',
+            backgroundColor: 'rgba(21, 128, 61, 0.1)',
+            yAxisID: 'y1',
+            tension: 0.3,
+            fill: true,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top', labels: { font: { size: 11 }, usePointStyle: true } },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  if (ctx.datasetIndex === 1) return `Revenue: ${fmt(ctx.raw)}`;
+                  return `Pesanan: ${ctx.raw}`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: { type: 'linear', position: 'left', beginAtZero: true, title: { display: true, text: 'Pesanan', font: { size: 11 } }, grid: { color: '#e4e4e0' }, ticks: { font: { size: 10 } } },
+            y1: { type: 'linear', position: 'right', beginAtZero: true, title: { display: true, text: 'Revenue (Rp)', font: { size: 11 } }, grid: { drawOnChartArea: false }, ticks: { font: { size: 10 }, callback: v => fmt(v) } },
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       PAYMENT BREAKDOWN (DOUGHNUT)
+    ═══════════════════════════════════════════════════════ */
+    async function loadPaymentBreakdown() {
+      try {
+        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard/summary`, { headers: authHeaders() });
+        const json = await res.json();
+        if (json.status !== 'success') throw new Error(json.message);
+
+        const { range } = json.data;
+        renderPaymentChart({
+          lunas: range.lunas,
+          dp: range.dp,
+          belum_bayar: range.belum_bayar
+        });
+      } catch (err) {
+        showStatus('Gagal load payment breakdown: ' + err.message, false);
+      }
+    }
+
+    function renderPaymentChart(data) {
+      const ctx = document.getElementById('paymentChart').getContext('2d');
+      const total = data.lunas + data.dp + data.belum_bayar;
+      if (total === 0) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        return;
+      }
+
+      if (paymentChart) paymentChart.destroy();
+
+      paymentChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Lunas', 'DP', 'Belum Bayar'],
+          datasets: [{
+            data: [data.lunas, data.dp, data.belum_bayar],
+            backgroundColor: ['#15803d', '#854d0e', '#991b1b'],
+            borderWidth: 0,
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '65%',
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 11 }, usePointStyle: true, padding: 16 } },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const pct = ((ctx.raw / total) * 100).toFixed(1);
+                  return `${ctx.label}: ${fmtNum(ctx.raw)} (${pct}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       TOP PRODUCTS
+    ═══════════════════════════════════════════════════════ */
+    async function loadTopProducts() {
+      try {
+        const range = document.getElementById('rangeSelect').value;
+        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard/top-products?range=${range}&limit=5`, { headers: authHeaders() });
+        const json = await res.json();
+        if (json.status !== 'success') throw new Error(json.message);
+
+        const tbody = document.querySelector('#topProductsTable tbody');
+        if (!json.data.length) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--ink-muted); padding:2rem;">Belum ada data</td></tr>';
+          return;
+        }
+        tbody.innerHTML = json.data.map(p => `
+        <tr>
+          <td>${p.nama}</td>
+          <td>${p.product_id === p.nama ? '-' : ''}</td>
+          <td style="text-align:right;">${fmtNum(p.total_qty)}</td>
+          <td style="text-align:right;">${fmt(p.total_revenue)}</td>
+        </tr>
+      `).join('');
+      } catch (err) {
+        showStatus('Gagal load top produk: ' + err.message, false);
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       RECENT ORDERS
+    ═══════════════════════════════════════════════════════ */
+    async function loadRecentOrders() {
+      try {
+        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard/recent-orders?limit=10`, { headers: authHeaders() });
+        const json = await res.json();
+        if (json.status !== 'success') throw new Error(json.message);
+
+        const tbody = document.querySelector('#recentOrdersTable tbody');
+        if (!json.data.length) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--ink-muted); padding:2rem;">Belum ada pesanan</td></tr>';
+          return;
+        }
+        tbody.innerHTML = json.data.map(o => `
+        <tr>
+          <td>${o.nama_produk || '-'}</td>
+          <td>${o.nama_customer || '-'}</td>
+          <td style="text-align:right;">${fmt(o.total)}</td>
+          <td><span class="status-badge ${(o.status || 'baru').toLowerCase()}">${o.status || 'Baru'}</span></td>
+          <td><span class="status-badge ${(o.status_bayar || 'belum-bayar').toLowerCase().replace(' ', '-')}">${o.status_bayar || 'Belum Bayar'}</span></td>
+          <td>${o.created_at ? new Date(o.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '-'}</td>
+        </tr>
+      `).join('');
+      } catch (err) {
+        showStatus('Gagal load recent orders: ' + err.message, false);
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       PWA
+    ═══════════════════════════════════════════════════════ */
+    window.registerSW();
+  </script>
+</body>
+
+</html>

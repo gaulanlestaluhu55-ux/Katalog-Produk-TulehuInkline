@@ -13,228 +13,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="css/admin.css" rel="stylesheet" />
   <style>
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    :root {
-      --ink: #1a1a1a;
-      --ink-soft: #555;
-      --ink-muted: #999;
-      --bg: #f8f8f7;
-      --surface: #fff;
-      --border: #e4e4e0;
-      --accent-bg: #f0fdf4;
-      --accent-border: #bbf7d0;
-      --accent-text: #15803d;
-      --warn-bg: #fefce8;
-      --warn-text: #854d0e;
-      --err-bg: #fef2f2;
-      --err-text: #991b1b;
-      --radius: 12px;
-      --radius-sm: 8px;
-    }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background: var(--bg);
-      color: var(--ink);
-      min-height: 100vh;
-    }
-
-    /* ── Login ── */
-    .login-screen {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1.5rem;
-    }
-
-    .login-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 2rem;
-      width: 100%;
-      max-width: 360px;
-    }
-
-    .login-card h1 {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .login-card p {
-      font-size: 13px;
-      color: var(--ink-muted);
-      margin-bottom: 1.25rem;
-    }
-
-    .login-card input {
-      width: 100%;
-      height: 42px;
-      padding: 0 12px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-family: inherit;
-      font-size: 14px;
-      margin-bottom: 10px;
-      outline: none;
-    }
-
-    .login-card input:focus {
-      border-color: var(--ink);
-    }
-
-    .login-card button {
-      width: 100%;
-      height: 42px;
-      border: none;
-      border-radius: var(--radius-sm);
-      background: var(--ink);
-      color: #fff;
-      font-family: inherit;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .login-error {
-      font-size: 12px;
-      color: var(--err-text);
-      margin-top: 8px;
-      display: none;
-    }
-
-    /* ── Admin shell ── */
-    .admin-app {
-      display: none;
-    }
-
-    header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 0 1.5rem;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    .header-inner {
-      max-width: 900px;
-      margin: 0 auto;
-      height: 58px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .brand {
-      font-size: 15px;
-      font-weight: 600;
-    }
-
-    .brand-sub {
-      font-size: 11px;
-      color: var(--ink-muted);
-      font-weight: 400;
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .logout-btn,
-    .link-btn {
-      height: 34px;
-      padding: 0 14px;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      background: var(--surface);
-      color: var(--ink-soft);
-      font-family: inherit;
-      font-size: 13px;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-    }
-
-    .logout-btn:hover,
-    .link-btn:hover {
-      border-color: var(--ink);
-      color: var(--ink);
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 1.5rem;
-    }
-
-    .toolbar-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .toolbar-row h2 {
-      font-size: 18px;
-      font-weight: 600;
-    }
-
-    .btn-primary {
-      height: 38px;
-      padding: 0 16px;
-      border: none;
-      border-radius: var(--radius-sm);
-      background: var(--ink);
-      color: #fff;
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .btn-primary:hover {
-      opacity: 0.85;
-    }
-
-    .status-msg {
-      font-size: 13px;
-      padding: 10px 14px;
-      border-radius: var(--radius-sm);
-      margin-bottom: 14px;
-      display: none;
-    }
-
-    .status-msg.show {
-      display: block;
-    }
-
-    .status-msg.ok {
-      background: var(--accent-bg);
-      border: 1px solid var(--accent-border);
-      color: var(--accent-text);
-    }
-
-    .status-msg.err {
-      background: var(--err-bg);
-      color: var(--err-text);
-    }
-
     /* ── Product list ── */
     .product-row {
       background: var(--surface);
@@ -281,31 +61,6 @@
       flex-shrink: 0;
     }
 
-    .icon-btn {
-      height: 32px;
-      padding: 0 12px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--surface);
-      color: var(--ink-soft);
-      font-family: inherit;
-      font-size: 12px;
-      cursor: pointer;
-    }
-
-    .icon-btn:hover {
-      border-color: var(--ink);
-      color: var(--ink);
-    }
-
-    .icon-btn.danger {
-      color: var(--err-text);
-    }
-
-    .icon-btn.danger:hover {
-      border-color: var(--err-text);
-    }
-
     .badge-inactive {
       font-size: 10px;
       background: var(--warn-bg);
@@ -313,120 +68,6 @@
       padding: 2px 7px;
       border-radius: 8px;
       margin-left: 6px;
-    }
-
-    /* ── Form modal ── */
-    .modal-backdrop {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.4);
-      z-index: 300;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 2rem 1rem;
-      overflow-y: auto;
-    }
-
-    .modal-backdrop.show {
-      display: flex;
-    }
-
-    .modal {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 1.5rem;
-      width: 100%;
-      max-width: 480px;
-    }
-
-    .modal h3 {
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 1rem;
-    }
-
-    .field {
-      margin-bottom: 12px;
-    }
-
-    .field label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--ink-muted);
-      margin-bottom: 5px;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-
-    .field input,
-    .field select,
-    .field textarea {
-      width: 100%;
-      padding: 9px 11px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-family: inherit;
-      font-size: 14px;
-      outline: none;
-    }
-
-    .field input:focus,
-    .field select:focus,
-    .field textarea:focus {
-      border-color: var(--ink);
-    }
-
-    .field textarea {
-      resize: vertical;
-      min-height: 60px;
-    }
-
-    .field-hint {
-      font-size: 11px;
-      color: var(--ink-muted);
-      margin-top: 4px;
-    }
-
-    .field-row {
-      display: flex;
-      gap: 10px;
-    }
-
-    .field-row .field {
-      flex: 1;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 1.25rem;
-    }
-
-    .btn-secondary {
-      height: 40px;
-      padding: 0 16px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      background: var(--surface);
-      color: var(--ink-soft);
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      flex: 1;
-    }
-
-    .modal-actions .btn-primary {
-      flex: 1;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 3rem 1rem;
-      color: var(--ink-muted);
-      font-size: 14px;
     }
   </style>
 </head>
@@ -451,6 +92,7 @@
         <div class="brand">Admin Katalog<div class="brand-sub">Tulehu Inkline</div>
         </div>
         <div class="header-actions">
+          <a class="link-btn" href="dashboard.html">Dashboard</a>
           <a class="link-btn" href="pesanan.html">Daftar Pesanan</a>
           <a class="link-btn" href="keuangan.html">Keuangan</a>
           <a class="link-btn" href="stok.html">Stok Vendor</a>
@@ -534,109 +176,54 @@
     </div>
   </div>
 
+  <script src="js/config.js"></script>
+  <script src="js/admin-core.js"></script>
   <script>
-    /* ═══════════════════════════════════════════════════════
-       KONFIGURASI — samain dengan index.html
-    ═══════════════════════════════════════════════════════ */
-    const CONFIG = {
-      // Ganti sesuai URL project Vercel lo (tanpa trailing slash)
-      apiUrl: 'https://katalog-produk-tulehu-inkline.vercel.app',
-    };
-
-    let adminToken = localStorage.getItem('adminToken') || '';
     let products = [];
-    let editingId = null; // null = mode tambah
+    let editingId = null;
 
-    /* ═══════════════════════════════════════════════════════
-       API HELPERS — REST ke backend Vercel, auth pakai Bearer token
-    ═══════════════════════════════════════════════════════ */
     async function apiGet() {
-      // Token hanya dikirim via Header, hapus "?token=..." dari URL
-      const res = await fetch(`${CONFIG.apiUrl}/api/products`, {
-        headers: { Authorization: `Bearer ${adminToken}` },
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/products`, {
+        headers: window.authHeaders(),
       });
       return res.json();
     }
 
     async function apiCreateProduct(data) {
-      const res = await fetch(`${CONFIG.apiUrl}/api/products`, {
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/products`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+        headers: window.authHeaders(true),
         body: JSON.stringify(data),
       });
       return res.json();
     }
 
     async function apiUpdateProduct(id, data) {
-      const res = await fetch(`${CONFIG.apiUrl}/api/products/${id}`, {
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/products/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+        headers: window.authHeaders(true),
         body: JSON.stringify(data),
       });
       return res.json();
     }
 
     async function apiToggleActive(id, aktif) {
-      const res = await fetch(`${CONFIG.apiUrl}/api/products/${id}`, {
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/products/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+        headers: window.authHeaders(true),
         body: JSON.stringify({ aktif }),
       });
       return res.json();
     }
 
-    /* ═══════════════════════════════════════════════════════
-       AUTH / LOGIN
-    ═══════════════════════════════════════════════════════ */
-    const loginScreen = document.getElementById('loginScreen');
-    const adminApp = document.getElementById('adminApp');
-    const loginError = document.getElementById('loginError');
-
-    async function tryLogin(token) {
-      adminToken = token;
-      try {
-        const json = await apiGet();
-        if (json.status !== 'success') throw new Error(json.message || 'gagal');
-        localStorage.setItem('adminToken', token);
-        loginScreen.style.display = 'none';
-        adminApp.style.display = 'block';
-        products = json.data;
-        renderProducts();
-      } catch (err) {
-        adminToken = '';
-        localStorage.removeItem('adminToken');
-        loginError.style.display = 'block';
-      }
+    async function tryLoginCb(token) {
+      const json = await apiGet();
+      if (json.status !== 'success') throw new Error(json.message || 'gagal');
+      products = json.data;
+      renderProducts();
     }
 
-    document.getElementById('loginBtn').addEventListener('click', () => {
-      const val = document.getElementById('tokenInput').value.trim();
-      if (val) tryLogin(val);
-    });
-    document.getElementById('tokenInput').addEventListener('keydown', e => {
-      if (e.key === 'Enter') document.getElementById('loginBtn').click();
-    });
-
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('adminToken');
-      adminToken = '';
-      adminApp.style.display = 'none';
-      loginScreen.style.display = 'flex';
-      document.getElementById('tokenInput').value = '';
-    });
-
-    /* Auto-login kalau token udah tersimpan dari sesi sebelumnya */
-    if (adminToken) tryLogin(adminToken);
-
-    /* ═══════════════════════════════════════════════════════
-       STATUS MESSAGE
-    ═══════════════════════════════════════════════════════ */
-    function showStatus(msg, ok) {
-      const el = document.getElementById('statusMsg');
-      el.textContent = msg;
-      el.className = 'status-msg show ' + (ok ? 'ok' : 'err');
-      setTimeout(() => el.classList.remove('show'), 3500);
-    }
+    window.initLogin(tryLoginCb);
 
     /* ═══════════════════════════════════════════════════════
        RENDER PRODUCT LIST
@@ -780,13 +367,9 @@
     });
 
     /* ═══════════════════════════════════════════════════════
-       PWA — register service worker biar Chrome bisa full-install app ini
+       PWA
     ═══════════════════════════════════════════════════════ */
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => { });
-      });
-    }
+    window.registerSW();
 
   </script>
 </body>

@@ -13,214 +13,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="css/admin.css" rel="stylesheet" />
   <style>
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    :root {
-      --ink: #1a1a1a;
-      --ink-soft: #555;
-      --ink-muted: #999;
-      --bg: #f8f8f7;
-      --surface: #fff;
-      --border: #e4e4e0;
-      --accent-bg: #f0fdf4;
-      --accent-border: #bbf7d0;
-      --accent-text: #15803d;
-      --warn-bg: #fefce8;
-      --warn-text: #854d0e;
-      --err-bg: #fef2f2;
-      --err-text: #991b1b;
-      --radius: 12px;
-      --radius-sm: 8px;
-    }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background: var(--bg);
-      color: var(--ink);
-      min-height: 100vh;
-    }
-
-    /* ── Login ── */
-    .login-screen {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1.5rem;
-    }
-
-    .login-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 2rem;
-      width: 100%;
-      max-width: 360px;
-    }
-
-    .login-card h1 {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .login-card p {
-      font-size: 13px;
-      color: var(--ink-muted);
-      margin-bottom: 1.25rem;
-    }
-
-    .login-card input {
-      width: 100%;
-      height: 42px;
-      padding: 0 12px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-family: inherit;
-      font-size: 14px;
-      margin-bottom: 10px;
-      outline: none;
-    }
-
-    .login-card input:focus {
-      border-color: var(--ink);
-    }
-
-    .login-card button {
-      width: 100%;
-      height: 42px;
-      border: none;
-      border-radius: var(--radius-sm);
-      background: var(--ink);
-      color: #fff;
-      font-family: inherit;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .login-error {
-      font-size: 12px;
-      color: var(--err-text);
-      margin-top: 8px;
-      display: none;
-    }
-
-    /* ── Shell ── */
-    .admin-app {
-      display: none;
-    }
-
-    header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 0 1.5rem;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    .header-inner {
-      max-width: 900px;
-      margin: 0 auto;
-      height: 58px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .brand {
-      font-size: 15px;
-      font-weight: 600;
-    }
-
-    .brand-sub {
-      font-size: 11px;
-      color: var(--ink-muted);
-      font-weight: 400;
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .logout-btn,
-    .link-btn {
-      height: 34px;
-      padding: 0 14px;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      background: var(--surface);
-      color: var(--ink-soft);
-      font-family: inherit;
-      font-size: 13px;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-    }
-
-    .logout-btn:hover,
-    .link-btn:hover {
-      border-color: var(--ink);
-      color: var(--ink);
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 1.5rem;
-    }
-
-    .toolbar-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .toolbar-row h2 {
-      font-size: 18px;
-      font-weight: 600;
-    }
-
-    .status-msg {
-      font-size: 13px;
-      padding: 10px 14px;
-      border-radius: var(--radius-sm);
-      margin-bottom: 14px;
-      display: none;
-    }
-
-    .status-msg.show {
-      display: block;
-    }
-
-    .status-msg.ok {
-      background: var(--accent-bg);
-      border: 1px solid var(--accent-border);
-      color: var(--accent-text);
-    }
-
-    .status-msg.err {
-      background: var(--err-bg);
-      color: var(--err-text);
-    }
-
     .info-note {
       font-size: 12px;
       color: var(--ink-muted);
@@ -231,31 +25,6 @@
       margin-bottom: 1.25rem;
     }
 
-    /* ── Filter ── */
-    .filter-btns {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .filter-btn {
-      padding: 6px 14px;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      background: var(--surface);
-      font-family: inherit;
-      font-size: 12px;
-      cursor: pointer;
-      color: var(--ink-soft);
-    }
-
-    .filter-btn.active {
-      background: var(--ink);
-      border-color: var(--ink);
-      color: #fff;
-    }
-
-    /* ── Stock item card ── */
     .stock-row {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -319,64 +88,6 @@
       flex-wrap: wrap;
     }
 
-    .status-badge {
-      font-size: 11px;
-      font-weight: 600;
-      padding: 3px 10px;
-      border-radius: 20px;
-      white-space: nowrap;
-    }
-
-    .status-badge.belum-dipesan {
-      background: var(--warn-bg);
-      color: var(--warn-text);
-    }
-
-    .status-badge.sudah-dipesan {
-      background: var(--accent-bg);
-      color: var(--accent-text);
-    }
-
-    .icon-btn {
-      height: 32px;
-      padding: 0 14px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--surface);
-      color: var(--ink-soft);
-      font-family: inherit;
-      font-size: 12px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    .icon-btn:hover {
-      border-color: var(--ink);
-      color: var(--ink);
-    }
-
-    .icon-btn.primary {
-      background: var(--ink);
-      border-color: var(--ink);
-      color: #fff;
-    }
-
-    .icon-btn.primary:hover {
-      opacity: 0.85;
-      color: #fff;
-    }
-
-    .icon-btn.wa {
-      background: var(--accent-text);
-      border-color: var(--accent-text);
-      color: #fff;
-    }
-
-    .icon-btn.wa:hover {
-      opacity: 0.85;
-      color: #fff;
-    }
-
     .vendor-row-select {
       display: flex;
       gap: 6px;
@@ -395,70 +106,6 @@
       background: var(--surface);
       color: var(--ink);
       max-width: 180px;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 3rem 1rem;
-      color: var(--ink-muted);
-      font-size: 14px;
-    }
-
-    /* ── Panel kirim pesan konsolidasi ── */
-    .form-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.25rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .form-card h3 {
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 1rem;
-    }
-
-    .field {
-      margin-bottom: 12px;
-    }
-
-    .field label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--ink-muted);
-      margin-bottom: 5px;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-
-    .field input,
-    .field select,
-    .field textarea {
-      width: 100%;
-      padding: 9px 11px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-family: inherit;
-      font-size: 14px;
-      outline: none;
-      background: var(--surface);
-      color: var(--ink);
-    }
-
-    .field input:focus,
-    .field select:focus,
-    .field textarea:focus {
-      border-color: var(--ink);
-    }
-
-    .field textarea {
-      resize: vertical;
-      min-height: 160px;
-      font-family: 'Courier New', monospace;
-      font-size: 13px;
-      line-height: 1.5;
     }
 
     .send-panel-actions {
@@ -496,6 +143,7 @@
         <div class="brand">Stok Vendor<div class="brand-sub">Tulehu Inkline</div>
         </div>
         <div class="header-actions">
+          <a class="link-btn" href="dashboard.html">Dashboard</a>
           <a class="link-btn" href="admin.html">Admin Produk</a>
           <a class="link-btn" href="pesanan.html">Daftar Pesanan</a>
           <a class="link-btn" href="keuangan.html">Keuangan</a>
@@ -552,97 +200,38 @@
     </div>
   </div>
 
+  <script src="js/config.js"></script>
+  <script src="js/admin-core.js"></script>
   <script>
-    /* ═══════════════════════════════════════════════════════
-       KONFIGURASI — samain dengan admin.html / pesanan.html / keuangan.html
-    ═══════════════════════════════════════════════════════ */
-    const CONFIG = {
-      // Ganti sesuai URL project Vercel lo (tanpa trailing slash)
-      apiUrl: 'https://katalog-produk-tulehu-inkline.vercel.app',
-    };
-
-    let adminToken = localStorage.getItem('adminToken') || '';
     let stockNeeds = [];
     let vendors = [];
     let currentFilter = 'semua';
 
-    /* ═══════════════════════════════════════════════════════
-       API HELPERS — REST ke backend Vercel, auth pakai Bearer token
-    ═══════════════════════════════════════════════════════ */
-    function authHeaders(json) {
-      const h = { Authorization: `Bearer ${adminToken}` };
-      if (json) h['Content-Type'] = 'application/json';
-      return h;
-    }
+    function authHeaders(json) { return window.authHeaders(json); }
     async function apiGetStock() {
-      const res = await fetch(`${CONFIG.apiUrl}/api/stock`, { headers: authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/stock`, { headers: authHeaders() });
       return res.json();
     }
     async function apiGetVendors() {
-      const res = await fetch(`${CONFIG.apiUrl}/api/vendors`, { headers: authHeaders() });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/vendors`, { headers: authHeaders() });
       return res.json();
     }
     async function apiUpdateStockStatus(data) {
-      const res = await fetch(`${CONFIG.apiUrl}/api/stock/status`, { method: 'POST', headers: authHeaders(true), body: JSON.stringify(data) });
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/stock/status`, { method: 'POST', headers: authHeaders(true), body: JSON.stringify(data) });
       return res.json();
     }
 
-    /* ═══════════════════════════════════════════════════════
-       AUTH / LOGIN
-    ═══════════════════════════════════════════════════════ */
-    const loginScreen = document.getElementById('loginScreen');
-    const adminApp = document.getElementById('adminApp');
-    const loginError = document.getElementById('loginError');
-
-    async function tryLogin(token) {
-      adminToken = token;
-      try {
-        const [stockJson, vendorJson] = await Promise.all([apiGetStock(), apiGetVendors()]);
-        if (stockJson.status !== 'success') throw new Error(stockJson.message || 'gagal');
-
-        localStorage.setItem('adminToken', token);
-        loginScreen.style.display = 'none';
-        adminApp.style.display = 'block';
-        stockNeeds = stockJson.data;
-
-        if (vendorJson.status === 'success') vendors = vendorJson.data;
-
-        document.getElementById('f_pembuka').value = localStorage.getItem(PEMBUKA_STORAGE_KEY) || 'Kak, mau pesan kaos, ini listnya:';
-        populateVendorKirimSelect();
-
-        renderStock();
-      } catch (err) {
-        adminToken = '';
-        localStorage.removeItem('adminToken');
-        loginError.style.display = 'block';
-      }
+    async function tryLoginCb(token) {
+      const [stockJson, vendorJson] = await Promise.all([apiGetStock(), apiGetVendors()]);
+      if (stockJson.status !== 'success') throw new Error(stockJson.message || 'gagal');
+      stockNeeds = stockJson.data;
+      if (vendorJson.status === 'success') vendors = vendorJson.data;
+      document.getElementById('f_pembuka').value = localStorage.getItem(PEMBUKA_STORAGE_KEY) || 'Kak, mau pesan kaos, ini listnya:';
+      populateVendorKirimSelect();
+      renderStock();
     }
 
-    document.getElementById('loginBtn').addEventListener('click', () => {
-      const val = document.getElementById('tokenInput').value.trim();
-      if (val) tryLogin(val);
-    });
-    document.getElementById('tokenInput').addEventListener('keydown', e => {
-      if (e.key === 'Enter') document.getElementById('loginBtn').click();
-    });
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('adminToken');
-      adminToken = '';
-      adminApp.style.display = 'none';
-      loginScreen.style.display = 'flex';
-      document.getElementById('tokenInput').value = '';
-    });
-    if (adminToken) tryLogin(adminToken);
-
-    /* ═══════════════════════════════════════════════════════
-       STATUS MESSAGE
-    ═══════════════════════════════════════════════════════ */
-    function showStatus(msg, ok) {
-      const el = document.getElementById('statusMsg');
-      el.textContent = msg;
-      el.className = 'status-msg show ' + (ok ? 'ok' : 'err');
-      setTimeout(() => el.classList.remove('show'), 3500);
-    }
+    window.initLogin(tryLoginCb);
 
     /* ═══════════════════════════════════════════════════════
        LIST & FILTER
@@ -860,13 +449,9 @@
     });
 
     /* ═══════════════════════════════════════════════════════
-       PWA — register service worker
+       PWA
     ═══════════════════════════════════════════════════════ */
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => { });
-      });
-    }
+    window.registerSW();
   </script>
 </body>
 
