@@ -374,8 +374,9 @@
     async function tryLoginCb(token) {
       const [txJson, accJson] = await Promise.all([apiGetTransactions(), apiGetAccounts()]);
       if (txJson.status !== 'success') throw new Error(txJson.message || 'gagal');
+      if (accJson.status !== 'success') throw new Error(accJson.message || 'gagal');
       transactions = txJson.data;
-      if (accJson.status === 'success') accounts = accJson.data;
+      accounts = accJson.data;
       renderAll();
     }
 
@@ -485,12 +486,16 @@
        LIST & RINGKASAN
     ═══════════════════════════════════════════════════════ */
     async function refreshTransactions() {
-      const json = await apiGetTransactions();
-      if (json.status === 'success') {
-        transactions = json.data;
-        renderAll();
-      } else {
-        document.getElementById('txList').innerHTML = `<div class="empty-state">Gagal memuat: ${json.message}</div>`;
+      try {
+        const json = await apiGetTransactions();
+        if (json.status === 'success') {
+          transactions = json.data;
+          renderAll();
+        } else {
+          document.getElementById('txList').innerHTML = `<div class="empty-state">Gagal memuat: ${json.message}</div>`;
+        }
+      } catch (err) {
+        document.getElementById('txList').innerHTML = `<div class="empty-state">Gagal konek ke server: ${err.message}</div>`;
       }
     }
 

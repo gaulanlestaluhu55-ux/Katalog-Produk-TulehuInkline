@@ -219,6 +219,10 @@
     }
 
     async function tryLoginCb(token) {
+      const verifyRes = await apiFetch(`${CONFIG.apiUrl}/api/accounts`, { headers: window.authHeaders() });
+      const verify = await verifyRes.json();
+      if (verify.status !== 'success') throw new Error(verify.message || 'Token admin tidak valid.');
+
       const json = await apiGet();
       if (json.status !== 'success') throw new Error(json.message || 'gagal');
       products = json.data;

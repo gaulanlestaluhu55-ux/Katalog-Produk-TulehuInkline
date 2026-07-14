@@ -213,8 +213,9 @@
     async function tryLoginCb(token) {
       const [stockJson, vendorJson] = await Promise.all([apiGetStock(), apiGetVendors()]);
       if (stockJson.status !== 'success') throw new Error(stockJson.message || 'gagal');
+      if (vendorJson.status !== 'success') throw new Error(vendorJson.message || 'gagal');
       stockNeeds = stockJson.data;
-      if (vendorJson.status === 'success') vendors = vendorJson.data;
+      vendors = vendorJson.data;
       document.getElementById('f_pembuka').value = localStorage.getItem(PEMBUKA_STORAGE_KEY) || 'Kak, mau pesan kaos, ini listnya:';
       populateVendorKirimSelect();
       renderStock();
@@ -226,12 +227,16 @@
        LIST & FILTER
     ═══════════════════════════════════════════════════════ */
     async function refreshStock() {
-      const json = await apiGetStock();
-      if (json.status === 'success') {
-        stockNeeds = json.data;
-        renderStock();
-      } else {
-        document.getElementById('stockList').innerHTML = `<div class="empty-state">Gagal memuat: ${json.message}</div>`;
+      try {
+        const json = await apiGetStock();
+        if (json.status === 'success') {
+          stockNeeds = json.data;
+          renderStock();
+        } else {
+          document.getElementById('stockList').innerHTML = `<div class="empty-state">Gagal memuat: ${json.message}</div>`;
+        }
+      } catch (err) {
+        document.getElementById('stockList').innerHTML = `<div class="empty-state">Gagal konek ke server: ${err.message}</div>`;
       }
     }
 

@@ -104,13 +104,13 @@ window.initLogin = function(loginCallback) {
       const val = tokenInput.value.trim();
       if (val) tryLogin(val);
     });
-  } else {
+  } else if (loginBtn && tokenInput) {
     loginBtn.addEventListener('click', () => {
       const val = tokenInput.value.trim();
       if (val) tryLogin(val);
     });
   }
-  logoutBtn.addEventListener('click', window.logout);
+  if (logoutBtn) logoutBtn.addEventListener('click', window.logout);
 
   if (window.adminToken) {
     return tryLogin(window.adminToken);

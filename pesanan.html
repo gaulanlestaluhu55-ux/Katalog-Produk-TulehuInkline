@@ -270,14 +270,16 @@
     async function tryLoginCb(token) {
       const [prodJson, accJson, ordJson] = await Promise.all([apiGetProducts(), apiGetAccounts(), apiGetOrders()]);
       if (prodJson.status !== 'success') throw new Error(prodJson.message || 'gagal');
+      if (accJson.status !== 'success') throw new Error(accJson.message || 'gagal');
+      if (ordJson.status !== 'success') throw new Error(ordJson.message || 'gagal');
 
       products = prodJson.data;
       populateProductSelect();
 
-      if (accJson.status === 'success') accounts = accJson.data;
+      accounts = accJson.data;
       populateAccountSelects();
 
-      if (ordJson.status === 'success') orders = ordJson.data;
+      orders = ordJson.data;
       renderOrders();
     }
 
@@ -458,12 +460,16 @@
        LIST PESANAN
     ═══════════════════════════════════════════════════════ */
     async function refreshOrders() {
-      const json = await apiGetOrders();
-      if (json.status === 'success') {
-        orders = json.data;
-        renderOrders();
-      } else {
-        document.getElementById('orderList').innerHTML = `<div class="empty-state">Gagal memuat: ${json.message}</div>`;
+      try {
+        const json = await apiGetOrders();
+        if (json.status === 'success') {
+          orders = json.data;
+          renderOrders();
+        } else {
+          document.getElementById('orderList').innerHTML = `<div class="empty-state">Gagal memuat: ${json.message}</div>`;
+        }
+      } catch (err) {
+        document.getElementById('orderList').innerHTML = `<div class="empty-state">Gagal konek ke server: ${err.message}</div>`;
       }
     }
 
