@@ -172,11 +172,11 @@
       <div class="chart-grid">
         <div class="chart-card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-            <h3>Trend Bulanan (Pesanan & Revenue)</h3>
+            <h3 id="trendTitle">Trend 12 Bulan (Pesanan & Revenue)</h3>
             <select class="filter-select" id="rangeSelect" style="width:auto;">
-              <option value="6m">6 Bulan</option>
+              <option value="1d">Hari Ini</option>
+              <option value="1m">Bulan Ini</option>
               <option value="12m" selected>12 Bulan</option>
-              <option value="24m">24 Bulan</option>
             </select>
           </div>
           <div class="chart-wrap">
@@ -268,6 +268,19 @@
         'Terakhir update: ' + new Date().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
     }
 
+    function currentRange() {
+      return document.getElementById('rangeSelect').value;
+    }
+
+    function updateTrendTitle() {
+      const labels = {
+        '1d': 'Trend Hari Ini (Pesanan & Revenue)',
+        '1m': 'Trend Bulan Ini (Pesanan & Revenue)',
+        '12m': 'Trend 12 Bulan (Pesanan & Revenue)'
+      };
+      document.getElementById('trendTitle').textContent = labels[currentRange()] || labels['12m'];
+    }
+
     /* ═══════════════════════════════════════════════════════
        AUTO REFRESH
     ═══════════════════════════════════════════════════════ */
@@ -289,11 +302,14 @@
        INIT DASHBOARD
     ═══════════════════════════════════════════════════════ */
     async function initDashboard() {
+      updateTrendTitle();
       await refreshAll();
       startAutoRefresh();
 
-      document.getElementById('rangeSelect').addEventListener('change', () => {
-        loadMonthly();
+      document.getElementById('rangeSelect').addEventListener('change', async () => {
+        updateTrendTitle();
+        await Promise.all([loadSummary(), loadMonthly(), loadTopProducts(), loadPaymentBreakdown()]);
+        updateLastUpdated();
       });
     }
 
@@ -313,34 +329,35 @@
     ═══════════════════════════════════════════════════════ */
     async function loadSummary() {
       try {
-        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard?type=summary`, { headers: adminRequestHeaders() });
+        const range = currentRange();
+        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard?type=summary&range=${range}`, { headers: adminRequestHeaders() });
         const json = await res.json();
         if (json.status !== 'success') throw new Error(json.message);
 
-        const { range, this_month, last_month } = json.data;
+        const { range: current, previous_range: previous } = json.data;
+        const compareLabel = rangeCompareLabel(range);
 
-        // KPI Cards
         const kpiHtml = `
         <div class="kpi-card">
           <div class="kpi-label">Total Pesanan (${rangeLabel()})</div>
-          <div class="kpi-value">${fmtNum(range.total)}</div>
+          <div class="kpi-value">${fmtNum(current.total)}</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Total Revenue (${rangeLabel()})</div>
-          <div class="kpi-value green">${fmt(range.revenue)}</div>
+          <div class="kpi-value green">${fmt(current.revenue)}</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Pesanan Bulan Ini</div>
-          <div class="kpi-value blue">${fmtNum(this_month.total)}</div>
-          <div class="kpi-delta ${this_month.total >= last_month.total ? 'up' : 'down'}">
-            ${deltaPct(this_month.total, last_month.total)} vs bln lalu
+          <div class="kpi-label">Pesanan ${rangeLabel()}</div>
+          <div class="kpi-value blue">${fmtNum(current.total)}</div>
+          <div class="kpi-delta ${current.total >= previous.total ? 'up' : 'down'}">
+            ${deltaPct(current.total, previous.total)} ${compareLabel}
           </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Revenue Bulan Ini</div>
-          <div class="kpi-value green">${fmt(this_month.revenue)}</div>
-          <div class="kpi-delta ${this_month.revenue >= last_month.revenue ? 'up' : 'down'}">
-            ${deltaPct(this_month.revenue, last_month.revenue)} vs bln lalu
+          <div class="kpi-label">Revenue ${rangeLabel()}</div>
+          <div class="kpi-value green">${fmt(current.revenue)}</div>
+          <div class="kpi-delta ${current.revenue >= previous.revenue ? 'up' : 'down'}">
+            ${deltaPct(current.revenue, previous.revenue)} ${compareLabel}
           </div>
         </div>
       `;
@@ -355,34 +372,49 @@
       return sel.options[sel.selectedIndex].text;
     }
 
+    function rangeCompareLabel(range) {
+      if (range === '1d') return 'vs kemarin';
+      if (range === '1m') return 'vs bulan lalu';
+      return 'vs 12 bulan sebelumnya';
+    }
+
     function deltaPct(curr, prev) {
       if (!prev) return '+100%';
       const pct = ((curr - prev) / prev * 100).toFixed(1);
       return (curr >= prev ? '+' : '') + pct + '%';
     }
 
+    function formatChartLabel(bucket, range) {
+      if (range === '1d') {
+        return `${bucket}:00`;
+      }
+      if (range === '1m') {
+        const [y, m, d] = bucket.split('-');
+        return new Date(y, m - 1, d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+      }
+      const [y, m] = bucket.split('-');
+      return new Date(y, m - 1).toLocaleDateString('id-ID', { month: 'short', year: '2-digit' });
+    }
+
     /* ═══════════════════════════════════════════════════════
        MONTHLY CHART
     ═══════════════════════════════════════════════════════ */
     async function loadMonthly() {
-      const range = document.getElementById('rangeSelect').value;
+      const range = currentRange();
       try {
         const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard?type=monthly&range=${range}`, { headers: adminRequestHeaders() });
         const json = await res.json();
         if (json.status !== 'success') throw new Error(json.message);
 
-        renderMonthlyChart(json.data);
+        renderMonthlyChart(json.data, json.meta?.range || range);
       } catch (err) {
-        showStatus('Gagal load chart bulanan: ' + err.message, false);
+        showStatus('Gagal load chart trend: ' + err.message, false);
       }
     }
 
-    function renderMonthlyChart(data) {
+    function renderMonthlyChart(data, range) {
       const ctx = document.getElementById('monthlyChart').getContext('2d');
-      const labels = data.map(d => {
-        const [y, m] = d.month.split('-');
-        return new Date(y, m - 1).toLocaleString('id-ID', { month: 'short', year: '2-digit' });
-      });
+      const labels = data.map(d => formatChartLabel(d.bucket, range));
       const orders = data.map(d => d.orders);
       const revenue = data.map(d => d.revenue);
 
@@ -443,15 +475,16 @@
     ═══════════════════════════════════════════════════════ */
     async function loadPaymentBreakdown() {
       try {
-        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard?type=summary`, { headers: adminRequestHeaders() });
+        const range = currentRange();
+        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard?type=summary&range=${range}`, { headers: adminRequestHeaders() });
         const json = await res.json();
         if (json.status !== 'success') throw new Error(json.message);
 
-        const { range } = json.data;
+        const { range: current } = json.data;
         renderPaymentChart({
-          lunas: range.lunas,
-          dp: range.dp,
-          belum_bayar: range.belum_bayar
+          lunas: current.lunas,
+          dp: current.dp,
+          belum_bayar: current.belum_bayar
         });
       } catch (err) {
         showStatus('Gagal load payment breakdown: ' + err.message, false);
@@ -503,7 +536,7 @@
     ═══════════════════════════════════════════════════════ */
     async function loadTopProducts() {
       try {
-        const range = document.getElementById('rangeSelect').value;
+        const range = currentRange();
         const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard?type=top-products&range=${range}&limit=5`, { headers: adminRequestHeaders() });
         const json = await res.json();
         if (json.status !== 'success') throw new Error(json.message);

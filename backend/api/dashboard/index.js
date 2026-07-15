@@ -8,8 +8,8 @@ export default async function handler(req, res) {
 
   try {
     switch (req.query.type) {
-      case 'summary':     return handleSummary(req, res);
-      case 'monthly':     return handleMonthly(req, res);
+      case 'summary': return handleSummary(req, res);
+      case 'monthly': return handleMonthly(req, res);
       case 'top-products': return handleTopProducts(req, res);
       case 'recent-orders': return handleRecentOrders(req, res);
       default: return res.status(400).json({ status: 'error', message: 'Invalid type param' });
@@ -19,105 +19,61 @@ export default async function handler(req, res) {
   }
 }
 
-/* ─── Summary KPI ─── */
 async function handleSummary(req, res) {
-  const range = req.query.range || '12m';
-  const since = getSince(range);
+  const range = normalizeRange(req.query.range);
+  const current = getRangeBounds(range);
+  const previous = getPreviousRangeBounds(range, current);
 
-  const { data: allOrders, error: ordersErr } = await supabase
+  const { data: currentOrders, error: currentErr } = await supabase
     .from('orders')
     .select('status, status_bayar, total, created_at')
-    .gte('created_at', since.toISOString());
-  if (ordersErr) throw ordersErr;
+    .gte('created_at', current.start.toISOString())
+    .lt('created_at', current.end.toISOString());
+  if (currentErr) throw currentErr;
 
-  const thisMonthStart = new Date();
-  thisMonthStart.setDate(1);
-  thisMonthStart.setHours(0, 0, 0, 0);
-  const { data: thisMonthOrders, error: thisMonthErr } = await supabase
+  const { data: previousOrders, error: previousErr } = await supabase
     .from('orders')
     .select('status, status_bayar, total, created_at')
-    .gte('created_at', thisMonthStart.toISOString());
-  if (thisMonthErr) throw thisMonthErr;
-
-  const lastMonthStart = new Date(thisMonthStart);
-  lastMonthStart.setMonth(lastMonthStart.getMonth() - 1);
-  const { data: lastMonthOrders, error: lastMonthErr } = await supabase
-    .from('orders')
-    .select('status, status_bayar, total, created_at')
-    .gte('created_at', lastMonthStart.toISOString())
-    .lt('created_at', thisMonthStart.toISOString());
-  if (lastMonthErr) throw lastMonthErr;
-
-  const agg = (arr) => arr.reduce((a, o) => {
-    a.total += 1;
-    a.revenue += Number(o.total || 0);
-    if (o.status === 'Baru') a.baru += 1;
-    else if (o.status === 'Diproses') a.diproses += 1;
-    else if (o.status === 'Selesai') a.selesai += 1;
-    else if (o.status === 'Diambil') a.diambil += 1;
-    else if (o.status === 'Batal') a.batal += 1;
-    if (o.status_bayar === 'Lunas') a.lunas += 1;
-    else if (o.status_bayar === 'DP') a.dp += 1;
-    else a.belum_bayar += 1;
-    return a;
-  }, { total: 0, revenue: 0, baru: 0, diproses: 0, selesai: 0, diambil: 0, batal: 0, lunas: 0, dp: 0, belum_bayar: 0 });
+    .gte('created_at', previous.start.toISOString())
+    .lt('created_at', previous.end.toISOString());
+  if (previousErr) throw previousErr;
 
   return res.status(200).json({
     status: 'success',
     data: {
-      range: agg(allOrders || []),
-      this_month: agg(thisMonthOrders || []),
-      last_month: agg(lastMonthOrders || [])
+      range: aggregateOrders(currentOrders || []),
+      previous_range: aggregateOrders(previousOrders || []),
+      range_key: range
     }
   });
 }
 
-/* ─── Monthly Chart ─── */
 async function handleMonthly(req, res) {
-  const range = req.query.range || '12m';
-  const since = getSince(range);
+  const range = normalizeRange(req.query.range);
+  const bounds = getRangeBounds(range);
 
   const { data: orders, error } = await supabase
     .from('orders')
     .select('total, created_at')
-    .gte('created_at', since.toISOString())
+    .gte('created_at', bounds.start.toISOString())
+    .lt('created_at', bounds.end.toISOString())
     .order('created_at', { ascending: true });
   if (error) throw error;
 
-  const months = {};
-  for (const o of orders) {
-    const date = new Date(o.created_at);
-    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    if (!months[key]) months[key] = { month: key, orders: 0, revenue: 0 };
-    months[key].orders += 1;
-    months[key].revenue += Number(o.total || 0);
-  }
-
-  const result = [];
-  const start = new Date(since);
-  start.setDate(1);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date();
-  const current = new Date(start);
-  while (current <= end) {
-    const key = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`;
-    result.push(months[key] || { month: key, orders: 0, revenue: 0 });
-    current.setMonth(current.getMonth() + 1);
-  }
-
-  return res.status(200).json({ status: 'success', data: result });
+  const result = buildTimeSeries(range, orders || [], bounds);
+  return res.status(200).json({ status: 'success', data: result, meta: { range } });
 }
 
-/* ─── Top Products ─── */
 async function handleTopProducts(req, res) {
   const limit = Math.min(parseInt(req.query.limit || '5', 10), 50);
-  const range = req.query.range || '12m';
-  const since = getSince(range);
+  const range = normalizeRange(req.query.range);
+  const bounds = getRangeBounds(range);
 
   const { data: orders, error } = await supabase
     .from('orders')
     .select('id_produk, nama_produk, kategori, qty, total, created_at')
-    .gte('created_at', since.toISOString());
+    .gte('created_at', bounds.start.toISOString())
+    .lt('created_at', bounds.end.toISOString());
   if (error) throw error;
 
   const groups = {};
@@ -146,7 +102,6 @@ async function handleTopProducts(req, res) {
   return res.status(200).json({ status: 'success', data: result });
 }
 
-/* ─── Recent Orders ─── */
 async function handleRecentOrders(req, res) {
   const limit = Math.min(parseInt(req.query.limit || '10', 10), 50);
 
@@ -160,12 +115,123 @@ async function handleRecentOrders(req, res) {
   return res.status(200).json({ status: 'success', data: orders });
 }
 
-/* ─── Helper ─── */
-function getSince(range) {
+function aggregateOrders(arr) {
+  return arr.reduce((a, o) => {
+    a.total += 1;
+    a.revenue += Number(o.total || 0);
+    if (o.status === 'Baru') a.baru += 1;
+    else if (o.status === 'Diproses') a.diproses += 1;
+    else if (o.status === 'Selesai') a.selesai += 1;
+    else if (o.status === 'Diambil') a.diambil += 1;
+    else if (o.status === 'Batal') a.batal += 1;
+    if (o.status_bayar === 'Lunas') a.lunas += 1;
+    else if (o.status_bayar === 'DP') a.dp += 1;
+    else a.belum_bayar += 1;
+    return a;
+  }, { total: 0, revenue: 0, baru: 0, diproses: 0, selesai: 0, diambil: 0, batal: 0, lunas: 0, dp: 0, belum_bayar: 0 });
+}
+
+function normalizeRange(range) {
+  return ['1d', '1m', '12m'].includes(range) ? range : '12m';
+}
+
+function getRangeBounds(range) {
   const now = new Date();
-  if (range === '6m') now.setMonth(now.getMonth() - 6);
-  else if (range === '12m') now.setMonth(now.getMonth() - 12);
-  else if (range === '24m') now.setMonth(now.getMonth() - 24);
-  else now.setMonth(now.getMonth() - 12);
-  return now;
+  const end = new Date(now);
+  let start = new Date(now);
+
+  if (range === '1d') {
+    start.setHours(0, 0, 0, 0);
+  } else if (range === '1m') {
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+  } else {
+    start = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    start.setHours(0, 0, 0, 0);
+    end.setMonth(end.getMonth() + 1, 1);
+    end.setHours(0, 0, 0, 0);
+  }
+
+  return { start, end };
+}
+
+function getPreviousRangeBounds(range, current) {
+  const end = new Date(current.start);
+  const start = new Date(current.start);
+
+  if (range === '1d') {
+    start.setDate(start.getDate() - 1);
+  } else if (range === '1m') {
+    start.setMonth(start.getMonth() - 1);
+  } else {
+    start.setFullYear(start.getFullYear() - 1);
+  }
+
+  return { start, end };
+}
+
+function buildTimeSeries(range, orders, bounds) {
+  if (range === '1d') return buildHourlySeries(orders, bounds);
+  if (range === '1m') return buildDailySeries(orders, bounds);
+  return buildMonthlySeries(orders, bounds);
+}
+
+function buildHourlySeries(orders, bounds) {
+  const groups = {};
+  for (let hour = 0; hour < 24; hour += 1) {
+    const key = String(hour).padStart(2, '0');
+    groups[key] = { bucket: key, orders: 0, revenue: 0 };
+  }
+
+  for (const o of orders) {
+    const date = new Date(o.created_at);
+    const key = String(date.getHours()).padStart(2, '0');
+    groups[key].orders += 1;
+    groups[key].revenue += Number(o.total || 0);
+  }
+
+  return Object.values(groups);
+}
+
+function buildDailySeries(orders, bounds) {
+  const groups = {};
+  const current = new Date(bounds.start);
+  while (current < bounds.end) {
+    const key = toDateKey(current);
+    groups[key] = { bucket: key, orders: 0, revenue: 0 };
+    current.setDate(current.getDate() + 1);
+  }
+
+  for (const o of orders) {
+    const key = toDateKey(new Date(o.created_at));
+    if (!groups[key]) groups[key] = { bucket: key, orders: 0, revenue: 0 };
+    groups[key].orders += 1;
+    groups[key].revenue += Number(o.total || 0);
+  }
+
+  return Object.values(groups);
+}
+
+function buildMonthlySeries(orders, bounds) {
+  const groups = {};
+  const current = new Date(bounds.start);
+  while (current < bounds.end) {
+    const key = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`;
+    groups[key] = { bucket: key, orders: 0, revenue: 0 };
+    current.setMonth(current.getMonth() + 1);
+  }
+
+  for (const o of orders) {
+    const date = new Date(o.created_at);
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    if (!groups[key]) groups[key] = { bucket: key, orders: 0, revenue: 0 };
+    groups[key].orders += 1;
+    groups[key].revenue += Number(o.total || 0);
+  }
+
+  return Object.values(groups);
+}
+
+function toDateKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
