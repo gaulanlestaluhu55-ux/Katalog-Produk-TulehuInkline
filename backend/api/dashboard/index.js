@@ -116,23 +116,31 @@ async function handleTopProducts(req, res) {
 
   const { data: orders, error } = await supabase
     .from('orders')
-    .select('id_produk, nama_produk, qty, total, created_at')
-    .gte('created_at', since.toISOString())
-    .not('id_produk', 'is', null);
+    .select('id_produk, nama_produk, kategori, qty, total, created_at')
+    .gte('created_at', since.toISOString());
   if (error) throw error;
 
   const groups = {};
-  for (const o of orders) {
-    const key = o.id_produk;
+  for (const o of orders || []) {
+    const nama = String(o.nama_produk || '').trim();
+    if (!nama) continue;
+    const key = nama.toLowerCase();
     if (!groups[key]) {
-      groups[key] = { product_id: key, nama: o.nama_produk, total_qty: 0, total_revenue: 0 };
+      groups[key] = {
+        product_id: o.id_produk || null,
+        nama,
+        kategori: o.kategori || '-',
+        total_qty: 0,
+        total_revenue: 0
+      };
     }
-    groups[key].total_qty += o.qty || 0;
-    groups[key].total_revenue += o.total || 0;
+    groups[key].total_qty += Number(o.qty || 0);
+    groups[key].total_revenue += Number(o.total || 0);
+    if (!groups[key].product_id && o.id_produk) groups[key].product_id = o.id_produk;
   }
 
   const result = Object.values(groups)
-    .sort((a, b) => b.total_qty - a.total_qty)
+    .sort((a, b) => b.total_qty - a.total_qty || b.total_revenue - a.total_revenue)
     .slice(0, limit);
 
   return res.status(200).json({ status: 'success', data: result });

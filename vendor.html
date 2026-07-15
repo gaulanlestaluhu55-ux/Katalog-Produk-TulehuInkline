@@ -160,19 +160,25 @@
         wrap.innerHTML = '<div class="empty-state">Belum ada vendor. Klik "+ Tambah Vendor".</div>';
         return;
       }
-      wrap.innerHTML = vendors.map(v => `
+      wrap.innerHTML = vendors.map(v => {
+        const nama = escapeHtml(v.nama);
+        const noWa = escapeHtml(v.no_wa || '-');
+        const catatan = v.catatan ? `<div class="vendor-note">${escapeHtml(v.catatan)}</div>` : '';
+        const id = escapeHtml(v.id);
+        return `
     <div class="vendor-row">
       <div class="vendor-info">
-        <div class="vendor-name">${v.nama}</div>
-        <div class="vendor-meta">📱 ${v.no_wa || '-'}</div>
-        ${v.catatan ? `<div class="vendor-note">${v.catatan}</div>` : ''}
+        <div class="vendor-name">${nama}</div>
+        <div class="vendor-meta">📱 ${noWa}</div>
+        ${catatan}
       </div>
       <div class="vendor-actions">
-        <button class="icon-btn" data-action="edit" data-id="${v.id}">Edit</button>
-        <button class="icon-btn danger" data-action="delete" data-id="${v.id}">Hapus</button>
+        <button class="icon-btn" data-action="edit" data-id="${id}">Edit</button>
+        <button class="icon-btn danger" data-action="delete" data-id="${id}">Hapus</button>
       </div>
     </div>
-  `).join('');
+  `;
+      }).join('');
     }
 
     document.getElementById('vendorList').addEventListener('click', async e => {

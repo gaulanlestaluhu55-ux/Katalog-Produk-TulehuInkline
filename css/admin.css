@@ -158,6 +158,45 @@ header {
   text-decoration: none;
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 768px) {
+  header {
+    padding: 0 12px;
+  }
+
+  .header-inner {
+    height: auto;
+    align-items: flex-start;
+    padding: 10px 0;
+  }
+
+  .header-actions {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    padding-bottom: 4px;
+  }
+
+  .header-actions::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .link-btn,
+  .logout-btn {
+    height: 32px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+
+  .container {
+    padding: 1rem;
+  }
 }
 
 .logout-btn:hover,

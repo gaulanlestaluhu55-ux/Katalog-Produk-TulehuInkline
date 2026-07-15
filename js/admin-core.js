@@ -10,6 +10,21 @@ window.authHeaders = function(json) {
   return h;
 };
 
+window.escapeHtml = function(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[ch]));
+};
+
+window.safeClassToken = function(value, fallback) {
+  const token = String(value ?? '').toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9_-]/g, '');
+  return token || fallback || '';
+};
+
 window.showStatus = function(msg, ok) {
   const el = document.getElementById('statusMsg');
   if (!el) return;
@@ -122,11 +137,11 @@ window.requireAuth = async function(callback) {
   const logoutBtn = document.getElementById('logoutBtn');
   if (!window.adminToken) { window.location.href = 'admin.html'; return; }
 
+  if (adminApp) adminApp.style.display = 'block';
+
   try {
     await callback(window.adminToken);
-    if (adminApp) adminApp.style.display = 'block';
   } catch (err) {
-    if (adminApp) adminApp.style.display = 'block';
     window.showStatus(err.message || 'Gagal memuat halaman.', false);
   }
 

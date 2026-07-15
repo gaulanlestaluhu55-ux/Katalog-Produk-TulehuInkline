@@ -14,8 +14,17 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     const body = req.body || {};
-    const total = toNumSafe(body.total);
-    const nominalDibayar = toNumSafe(body.nominal_dibayar);
+    const namaProduk = String(body.nama_produk || '').trim();
+    const namaCustomer = String(body.nama_customer || '').trim();
+    const kategori = String(body.kategori || '').trim();
+    const qty = Math.max(1, Math.floor(toNumSafe(body.qty) || 1));
+    const hargaSatuan = Math.max(0, toNumSafe(body.harga_satuan));
+    const total = Math.max(0, toNumSafe(body.total));
+    const nominalDibayar = Math.max(0, toNumSafe(body.nominal_dibayar));
+    if (!namaProduk) return res.status(400).json({ status: 'error', message: 'Nama produk wajib diisi.' });
+    if (!namaCustomer) return res.status(400).json({ status: 'error', message: 'Nama customer wajib diisi.' });
+    if (!kategori) return res.status(400).json({ status: 'error', message: 'Kategori wajib diisi.' });
+    if (nominalDibayar > total) return res.status(400).json({ status: 'error', message: 'Nominal dibayar tidak boleh lebih besar dari total.' });
     const sisa = total - nominalDibayar;
     const statusBayar = computeStatusBayar(nominalDibayar, total);
 
@@ -23,19 +32,19 @@ export default async function handler(req, res) {
       .from('orders')
       .insert({
         id_produk: body.id_produk || null,
-        nama_produk: body.nama_produk || '',
-        kategori: body.kategori || '',
-        opsi: body.opsi || '',
-        size: body.size || '',
-        warna: body.warna || '',
-        lengan: body.lengan || '',
-        qty: body.qty || 1,
-        harga_satuan: body.harga_satuan || 0,
+        nama_produk: namaProduk,
+        kategori,
+        opsi: String(body.opsi || '').trim(),
+        size: String(body.size || '').trim(),
+        warna: String(body.warna || '').trim(),
+        lengan: String(body.lengan || '').trim(),
+        qty,
+        harga_satuan: hargaSatuan,
         total,
-        nama_customer: body.nama_customer || '',
-        kontak: body.kontak || '',
-        status: body.status || 'Baru',
-        catatan: body.catatan || '',
+        nama_customer: namaCustomer,
+        kontak: String(body.kontak || '').trim(),
+        status: String(body.status || 'Baru').trim() || 'Baru',
+        catatan: String(body.catatan || '').trim(),
         status_bayar: statusBayar,
         nominal_dibayar: nominalDibayar,
         sisa,

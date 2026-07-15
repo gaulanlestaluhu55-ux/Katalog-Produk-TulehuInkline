@@ -17,20 +17,25 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     if (!requireAdmin(req, res)) return;
     const body = req.body || {};
+    const nama = String(body.nama || '').trim();
+    const kategori = String(body.kategori || '').trim();
+    const harga = Math.max(0, Number(body.harga) || 0);
+    if (!nama) return res.status(400).json({ status: 'error', message: 'Nama produk wajib diisi.' });
+    if (!kategori) return res.status(400).json({ status: 'error', message: 'Kategori wajib diisi.' });
 
     const { data, error } = await supabase
       .from('products')
       .insert({
-        nama: body.nama || '',
-        kategori: body.kategori || '',
-        badge: body.badge || '',
-        deskripsi: body.deskripsi || '',
-        harga: body.harga || 0,
-        satuan: body.satuan || '/pcs',
-        gambar: body.gambar || '',
-        harga_nama: body.harga_nama || 0,
-        harga_angka: body.harga_angka || 0,
-        harga_nama_angka: body.harga_nama_angka || 0,
+        nama,
+        kategori,
+        badge: String(body.badge || '').trim(),
+        deskripsi: String(body.deskripsi || '').trim(),
+        harga,
+        satuan: String(body.satuan || '/pcs').trim() || '/pcs',
+        gambar: String(body.gambar || '').trim(),
+        harga_nama: Math.max(0, Number(body.harga_nama) || 0),
+        harga_angka: Math.max(0, Number(body.harga_angka) || 0),
+        harga_nama_angka: Math.max(0, Number(body.harga_nama_angka) || 0),
         aktif: true,
       })
       .select('id')

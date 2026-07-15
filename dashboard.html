@@ -515,8 +515,8 @@
         }
         tbody.innerHTML = json.data.map(p => `
         <tr>
-          <td>${p.nama}</td>
-          <td>${p.product_id === p.nama ? '-' : ''}</td>
+          <td>${escapeHtml(p.nama)}</td>
+          <td>${escapeHtml(p.kategori || '-')}</td>
           <td style="text-align:right;">${fmtNum(p.total_qty)}</td>
           <td style="text-align:right;">${fmt(p.total_revenue)}</td>
         </tr>
@@ -542,11 +542,11 @@
         }
         tbody.innerHTML = json.data.map(o => `
         <tr>
-          <td>${o.nama_produk || '-'}</td>
-          <td>${o.nama_customer || '-'}</td>
+          <td>${escapeHtml(o.nama_produk || '-')}</td>
+          <td>${escapeHtml(o.nama_customer || '-')}</td>
           <td style="text-align:right;">${fmt(o.total)}</td>
-          <td><span class="status-badge ${(o.status || 'baru').toLowerCase()}">${o.status || 'Baru'}</span></td>
-          <td><span class="status-badge ${(o.status_bayar || 'belum-bayar').toLowerCase().replace(' ', '-')}">${o.status_bayar || 'Belum Bayar'}</span></td>
+          <td><span class="status-badge ${safeClassToken(o.status, 'baru')}">${escapeHtml(o.status || 'Baru')}</span></td>
+          <td><span class="status-badge ${safeClassToken(o.status_bayar, 'belum-bayar')}">${escapeHtml(o.status_bayar || 'Belum Bayar')}</span></td>
           <td>${o.created_at ? new Date(o.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '-'}</td>
         </tr>
       `).join('');
