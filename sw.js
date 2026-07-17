@@ -7,6 +7,7 @@ const PRECACHE_URLS = [
   '/dashboard.html',
   '/pesanan.html',
   '/keuangan.html',
+  '/laporan-keuangan.html',
   '/stok.html',
   '/vendor.html',
   '/css/style.css',
