@@ -265,14 +265,11 @@
         const json = await res.json();
         if (json.status !== 'success') throw new Error(json.message);
         renderKPI(json.data);
-        try { renderKategoriPie(json.data); } catch (e) { console.error('renderKategoriPie:', e); }
-        try { renderMonthlyChart(json.data); } catch (e) { console.error('renderMonthlyChart:', e); }
+        renderKategoriPie(json.data);
+        renderMonthlyChart(json.data);
         renderKategoriRekap(json.data);
         renderTxTable(json.data);
       } catch (err) {
-        if (err.message === 'Assignment to constant variable') {
-          console.error('Full error:', err);
-        }
         showStatus('Gagal load data: ' + err.message, false);
       }
       updateLastUpdated();
@@ -386,7 +383,7 @@
       const allTx = data.transaksi || [];
       let totalMasuk = 0, totalKeluar = 0;
 
-      const rows = items.map(k => {
+      let rows = items.map(k => {
         totalMasuk += k.total_masuk;
         totalKeluar += k.total_keluar;
         return `<tr>
