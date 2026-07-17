@@ -12,6 +12,7 @@ export default async function handler(req, res) {
       case 'monthly': return handleMonthly(req, res);
       case 'top-products': return handleTopProducts(req, res);
       case 'recent-orders': return handleRecentOrders(req, res);
+      case 'finance': return handleFinance(req, res);
       default: return res.status(400).json({ status: 'error', message: 'Invalid type param' });
     }
   } catch (err) {
@@ -113,6 +114,66 @@ async function handleRecentOrders(req, res) {
   if (error) throw error;
 
   return res.status(200).json({ status: 'success', data: orders });
+}
+
+async function handleFinance(req, res) {
+  const range = normalizeRange(req.query.range);
+  const bounds = getRangeBounds(range);
+
+  const { data: tx, error } = await supabase
+    .from('finance_transactions')
+    .select('id, tipe, kategori, keterangan, nominal, akun, created_at')
+    .gte('created_at', bounds.start.toISOString())
+    .lt('created_at', bounds.end.toISOString())
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+
+  let total_masuk = 0, total_keluar = 0;
+  const per_kategori = {};
+  const bulanan = {};
+  const limit = Math.min(parseInt(req.query.limit || '50', 10), 200);
+
+  for (const t of tx || []) {
+    const nominal = Number(t.nominal || 0);
+    const kat = t.kategori || 'Lainnya';
+    if (!per_kategori[kat]) per_kategori[kat] = { kategori: kat, total_masuk: 0, total_keluar: 0 };
+
+    if (t.tipe === 'Keluar') {
+      total_keluar += nominal;
+      per_kategori[kat].total_keluar += nominal;
+    } else {
+      total_masuk += nominal;
+      per_kategori[kat].total_masuk += nominal;
+    }
+
+    const date = new Date(t.created_at);
+    const bulan = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    if (!bulanan[bulan]) bulanan[bulan] = { bulan, masuk: 0, keluar: 0 };
+    if (t.tipe === 'Keluar') bulanan[bulan].keluar += nominal;
+    else bulanan[bulan].masuk += nominal;
+  }
+
+  const transaksi = (tx || []).slice(0, limit).map(t => ({
+    id: t.id,
+    kategori: t.kategori || 'Lainnya',
+    keterangan: t.keterangan || '',
+    nominal: Number(t.nominal || 0),
+    tipe: t.tipe,
+    akun: t.akun || 'Kas',
+    created_at: t.created_at,
+  }));
+
+  return res.status(200).json({
+    status: 'success',
+    data: {
+      total_masuk,
+      total_keluar,
+      saldo: total_masuk - total_keluar,
+      per_kategori: Object.values(per_kategori).sort((a, b) => b.total_keluar - a.total_keluar),
+      bulanan: Object.values(bulanan).sort((a, b) => a.bulan.localeCompare(b.bulan)),
+      transaksi,
+    }
+  });
 }
 
 function aggregateOrders(arr) {

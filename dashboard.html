@@ -134,6 +134,59 @@
       margin-top: 8px;
       text-align: right;
     }
+
+    .fin-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 600px) {
+      .fin-grid { grid-template-columns: 1fr; }
+    }
+
+    .kategori-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .kategori-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .kategori-item:hover {
+      background: var(--bg);
+      margin: 0 -8px;
+      padding: 8px;
+      border-radius: var(--radius-sm);
+    }
+    .kategori-item .label { font-weight: 500; }
+    .kategori-item .amount { font-weight: 600; }
+    .kategori-item .amount.masuk { color: var(--accent-text); }
+    .kategori-item .amount.keluar { color: var(--err-text); }
+
+    .tx-detail-list {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .tx-detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .tx-detail-row:last-child { border-bottom: none; }
+    .tx-detail-row .keterangan { flex: 1; }
+    .tx-detail-row .nominal { font-weight: 600; white-space: nowrap; margin-left: 12px; }
+    .tx-detail-row .nominal.masuk { color: var(--accent-text); }
+    .tx-detail-row .nominal.keluar { color: var(--err-text); }
+    .tx-detail-row .akun { font-size: 11px; color: var(--ink-muted); margin-left: 8px; white-space: nowrap; }
   </style>
 </head>
 
@@ -191,6 +244,40 @@
         </div>
       </div>
 
+      <!-- ═══ KEUANGAN ═══ -->
+      <div class="fin-grid" id="finKpiGrid">
+        <div class="kpi-card"><div class="kpi-label">Total Pemasukan</div><div class="kpi-value green" id="finMasuk">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Pengeluaran</div><div class="kpi-value red" id="finKeluar">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Saldo Bersih</div><div class="kpi-value" id="finSaldo">—</div></div>
+      </div>
+
+      <div class="chart-grid">
+        <div class="chart-card">
+          <h3>Pengeluaran per Kategori</h3>
+          <div class="chart-wrap" style="height:260px;">
+            <canvas id="kategoriChart"></canvas>
+          </div>
+          <div class="kategori-list" id="kategoriList"></div>
+        </div>
+        <div class="chart-card small">
+          <h3>Tren Keuangan Bulanan</h3>
+          <div class="chart-wrap" style="height:260px;">
+            <canvas id="financeMonthlyChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal detail transaksi -->
+      <div class="modal-backdrop" id="txModal" style="display:none;">
+        <div class="modal">
+          <h3 id="txModalTitle">Detail Transaksi</h3>
+          <div class="tx-detail-list" id="txDetailList"></div>
+          <div style="margin-top:1rem;text-align:right;">
+            <button type="button" class="btn-secondary" id="closeTxModalBtn">Tutup</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Top Products -->
       <div class="table-card">
         <h3>Top 5 Produk Terlaris</h3>
@@ -237,6 +324,8 @@
   <script>
     let monthlyChart = null;
     let paymentChart = null;
+    let kategoriChart = null;
+    let financeMonthlyChart = null;
     let refreshTimer = null;
     const REFRESH_MS = 45000;
 
@@ -308,7 +397,7 @@
 
       document.getElementById('rangeSelect').addEventListener('change', async () => {
         updateTrendTitle();
-        await Promise.all([loadSummary(), loadMonthly(), loadTopProducts(), loadPaymentBreakdown()]);
+        await Promise.all([loadSummary(), loadMonthly(), loadTopProducts(), loadPaymentBreakdown(), loadFinance()]);
         updateLastUpdated();
       });
     }
@@ -319,7 +408,8 @@
         loadMonthly(),
         loadTopProducts(),
         loadRecentOrders(),
-        loadPaymentBreakdown()
+        loadPaymentBreakdown(),
+        loadFinance()
       ]);
       updateLastUpdated();
     }
@@ -530,6 +620,167 @@
         }
       });
     }
+
+    /* ═══════════════════════════════════════════════════════
+       FINANCE — KPI, Kategori Pie, Monthly Bar, Modal Detail
+    ═══════════════════════════════════════════════════════ */
+    async function loadFinance() {
+      const range = currentRange();
+      try {
+        const res = await apiFetch(`${CONFIG.apiUrl}/api/dashboard?type=finance&range=${range}`, { headers: adminRequestHeaders() });
+        const json = await res.json();
+        if (json.status !== 'success') throw new Error(json.message);
+        renderFinanceKPI(json.data);
+        renderKategoriPie(json.data);
+        renderFinanceMonthlyChart(json.data);
+        renderKategoriList(json.data);
+      } catch (err) {
+        showStatus('Gagal load data keuangan: ' + err.message, false);
+      }
+    }
+
+    function renderFinanceKPI(data) {
+      document.getElementById('finMasuk').textContent = fmt(data.total_masuk);
+      document.getElementById('finKeluar').textContent = fmt(data.total_keluar);
+      document.getElementById('finSaldo').textContent = fmt(data.saldo);
+    }
+
+    function renderKategoriPie(data) {
+      const ctx = document.getElementById('kategoriChart').getContext('2d');
+      if (kategoriChart) kategoriChart.destroy();
+
+      const items = (data.per_kategori || []).filter(k => k.total_keluar > 0);
+      if (!items.length) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        return;
+      }
+
+      const colors = ['#2563eb','#15803d','#854d0e','#991b1b','#6b21a8','#0d9488','#ca8a04','#dc2626','#4f46e5','#0891b2'];
+
+      kategoriChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: items.map(k => k.kategori),
+          datasets: [{
+            data: items.map(k => k.total_keluar),
+            backgroundColor: colors.slice(0, items.length),
+            borderWidth: 0,
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '60%',
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 10 }, usePointStyle: true, padding: 12 } },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const total = items.reduce((s, k) => s + k.total_keluar, 0);
+                  const pct = ((ctx.raw / total) * 100).toFixed(1);
+                  return `${ctx.label}: ${fmt(ctx.raw)} (${pct}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderFinanceMonthlyChart(data) {
+      const ctx = document.getElementById('financeMonthlyChart').getContext('2d');
+      if (financeMonthlyChart) financeMonthlyChart.destroy();
+
+      const bulanan = (data.bulanan || []).slice(-12);
+      if (!bulanan.length) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        return;
+      }
+
+      const labels = bulanan.map(b => {
+        const [y, m] = b.bulan.split('-');
+        return new Date(y, m - 1).toLocaleString('id-ID', { month: 'short', year: '2-digit' });
+      });
+
+      financeMonthlyChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Pemasukan',
+            data: bulanan.map(b => b.masuk),
+            backgroundColor: 'rgba(21, 128, 61, 0.7)',
+            borderRadius: 3,
+          }, {
+            label: 'Pengeluaran',
+            data: bulanan.map(b => b.keluar),
+            backgroundColor: 'rgba(153, 27, 27, 0.7)',
+            borderRadius: 3,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top', labels: { font: { size: 10 }, usePointStyle: true } },
+            tooltip: {
+              callbacks: {
+                label: ctx => `${ctx.dataset.label}: ${fmt(ctx.raw)}`
+              }
+            }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { font: { size: 10 }, callback: v => fmt(v) } },
+            x: { grid: { display: false }, ticks: { font: { size: 9 } } }
+          }
+        }
+      });
+    }
+
+    function renderKategoriList(data) {
+      const wrap = document.getElementById('kategoriList');
+      const items = (data.per_kategori || []).filter(k => k.total_keluar > 0 || k.total_masuk > 0);
+      if (!items.length) { wrap.innerHTML = '<div style="font-size:12px;color:var(--ink-muted);padding:8px 0;">Belum ada transaksi.</div>'; return; }
+      const allTx = data.transaksi || [];
+      wrap.innerHTML = items.map(k => `
+        <div class="kategori-item" data-kategori="${k.kategori}">
+          <span class="label">${k.kategori}</span>
+          <span>
+            ${k.total_masuk ? `<span class="amount masuk">${fmt(k.total_masuk)}</span>` : ''}
+            ${k.total_masuk && k.total_keluar ? ' / ' : ''}
+            ${k.total_keluar ? `<span class="amount keluar">${fmt(k.total_keluar)}</span>` : ''}
+          </span>
+        </div>
+      `).join('');
+
+      wrap.querySelectorAll('.kategori-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const kat = el.dataset.kategori;
+          const filtered = allTx.filter(t => (t.kategori || 'Lainnya') === kat);
+          document.getElementById('txModalTitle').textContent = 'Detail — ' + kat;
+          document.getElementById('txDetailList').innerHTML = filtered.length
+            ? filtered.map(t => {
+              const isMasuk = t.tipe !== 'Keluar';
+              const date = t.created_at ? new Date(t.created_at).toLocaleString('id-ID', { dateStyle: 'medium' }) : '';
+              return `<div class="tx-detail-row">
+                <div class="keterangan">${t.keterangan || '-'}<br><span style="font-size:11px;color:var(--ink-muted);">${date} · ${t.akun || 'Kas'}</span></div>
+                <div class="nominal ${isMasuk ? 'masuk' : 'keluar'}">${isMasuk ? '+' : '−'} ${fmt(t.nominal)}</div>
+              </div>`;
+            }).join('')
+            : '<div style="font-size:13px;color:var(--ink-muted);padding:1rem;text-align:center;">Tidak ada transaksi.</div>';
+          document.getElementById('txModal').style.display = 'flex';
+        });
+      });
+    }
+
+    document.addEventListener('click', e => {
+      const modal = document.getElementById('txModal');
+      if (e.target === modal || e.target.id === 'closeTxModalBtn') {
+        modal.style.display = 'none';
+      }
+    });
 
     /* ═══════════════════════════════════════════════════════
        TOP PRODUCTS

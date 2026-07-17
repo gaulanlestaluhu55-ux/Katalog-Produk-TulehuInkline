@@ -229,6 +229,45 @@
       color: var(--ink-soft);
       border: 1px solid var(--border);
     }
+    .kategori-summary {
+      margin-bottom: 1.5rem;
+    }
+    .kategori-summary table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .kategori-summary th {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      color: var(--ink-muted);
+      text-align: left;
+      padding: 0 0 6px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .kategori-summary th:last-child,
+    .kategori-summary td:last-child {
+      text-align: right;
+    }
+    .kategori-summary td {
+      font-size: 13px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .kategori-summary td:last-child {
+      font-weight: 600;
+    }
+    .kategori-summary td.masuk {
+      color: var(--accent-text);
+    }
+    .kategori-summary td.keluar {
+      color: var(--err-text);
+    }
+    .kategori-summary .total-row td {
+      font-weight: 700;
+      border-top: 2px solid var(--ink);
+      padding-top: 8px;
+    }
   </style>
 </head>
 
@@ -301,7 +340,9 @@
           <div class="field-row">
             <div class="field">
               <label>Kategori</label>
-              <input type="text" id="f_kategori" placeholder="Bahan baku, Ongkos kirim, Modal, dll" required />
+              <select id="f_kategori" required>
+                <option value="">Pilih kategori...</option>
+              </select>
             </div>
             <div class="field">
               <label>Nominal</label>
@@ -320,6 +361,23 @@
           </div>
           <button type="submit" class="btn-primary" id="saveTxBtn">Simpan Transaksi</button>
         </form>
+      </div>
+
+      <!-- ── Rekap per Kategori ── -->
+      <div class="form-card kategori-summary">
+        <h3>Rekap per Kategori</h3>
+        <div class="table-wrap">
+          <table id="kategoriTable">
+            <thead>
+              <tr>
+                <th>Kategori</th>
+                <th style="text-align:right;">Pemasukan</th>
+                <th style="text-align:right;">Pengeluaran</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
 
       <!-- ── List transaksi ── -->
@@ -382,6 +440,7 @@
       if (accJson.status !== 'success') throw new Error(accJson.message || 'gagal');
       transactions = txJson.data;
       accounts = accJson.data;
+      populateCategorySelect(selectedTipe);
       renderAll();
     }
 
@@ -446,12 +505,20 @@
     /* ═══════════════════════════════════════════════════════
        FORM — pilih tipe transaksi
     ═══════════════════════════════════════════════════════ */
+    function populateCategorySelect(tipe) {
+      const sel = document.getElementById('f_kategori');
+      const cats = CONFIG.categories[tipe] || [];
+      sel.innerHTML = '<option value="">Pilih kategori...</option>' +
+        cats.map(c => `<option value="${c}">${c}</option>`).join('');
+    }
+
     document.getElementById('tipePillRow').addEventListener('click', e => {
       const pill = e.target.closest('.pill');
       if (!pill) return;
       document.querySelectorAll('#tipePillRow .pill').forEach(p => p.classList.remove('selected'));
       pill.classList.add('selected');
       selectedTipe = pill.dataset.tipe;
+      populateCategorySelect(selectedTipe);
     });
 
     document.getElementById('txForm').addEventListener('submit', async e => {
@@ -475,6 +542,7 @@
         if (json.status === 'success') {
           showStatus('Transaksi tersimpan.', true);
           document.getElementById('txForm').reset();
+          populateCategorySelect(selectedTipe);
           populateAccountSelect(document.getElementById('f_akun_tx'), null);
           await refreshTransactions();
         } else {
@@ -508,8 +576,38 @@
       renderAccountTags();
       populateAccountSelect(document.getElementById('f_akun_tx'), null);
       renderSummary();
+      renderKategoriSummary();
       renderAccountBalances();
       renderTransactions();
+    }
+
+    function renderKategoriSummary() {
+      const filtered = currentFilter === 'semua' ? transactions : transactions.filter(t => t.tipe === currentFilter);
+      const map = {};
+      filtered.forEach(t => {
+        const kat = t.kategori || 'Lainnya';
+        if (!map[kat]) map[kat] = { masuk: 0, keluar: 0 };
+        const nominal = Number(t.nominal || 0);
+        if (t.tipe === 'Keluar') map[kat].keluar += nominal;
+        else map[kat].masuk += nominal;
+      });
+      const sorted = Object.keys(map).sort();
+      let totalMasuk = 0, totalKeluar = 0;
+      const rows = sorted.map(k => {
+        totalMasuk += map[k].masuk;
+        totalKeluar += map[k].keluar;
+        return `<tr>
+          <td>${k}</td>
+          <td class="masuk" style="text-align:right;">${map[k].masuk ? fmt(map[k].masuk) : '-'}</td>
+          <td class="keluar">${map[k].keluar ? fmt(map[k].keluar) : '-'}</td>
+        </tr>`;
+      }).join('');
+      rows += `<tr class="total-row">
+        <td>Total</td>
+        <td class="masuk" style="text-align:right;">${fmt(totalMasuk)}</td>
+        <td class="keluar">${fmt(totalKeluar)}</td>
+      </tr>`;
+      document.querySelector('#kategoriTable tbody').innerHTML = rows;
     }
 
     function renderSummary() {

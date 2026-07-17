@@ -17,6 +17,10 @@ const CONFIG = {
   },
   jersey: {
     nameSets: ['Nama saja', 'Angka saja', 'Nama + Angka'],
+  },
+  categories: {
+    Masuk: ['Penjualan', 'Modal', 'Pendapatan Lain'],
+    Keluar: ['Bahan Baku', 'Ongkos Kirim', 'Gaji Karyawan', 'Operasional', 'Marketing', 'Biaya Hidup', 'Angsuran', 'Lainnya'],
   }
 };
 window.CONFIG = CONFIG;
