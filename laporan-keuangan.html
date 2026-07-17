@@ -265,11 +265,14 @@
         const json = await res.json();
         if (json.status !== 'success') throw new Error(json.message);
         renderKPI(json.data);
-        renderKategoriPie(json.data);
-        renderMonthlyChart(json.data);
+        try { renderKategoriPie(json.data); } catch (e) { console.error('renderKategoriPie:', e); }
+        try { renderMonthlyChart(json.data); } catch (e) { console.error('renderMonthlyChart:', e); }
         renderKategoriRekap(json.data);
         renderTxTable(json.data);
       } catch (err) {
+        if (err.message === 'Assignment to constant variable') {
+          console.error('Full error:', err);
+        }
         showStatus('Gagal load data: ' + err.message, false);
       }
       updateLastUpdated();
