@@ -412,7 +412,9 @@
 
     async function apiGetTransactions() {
       const res = await fetch(`${CONFIG.apiUrl}/api/finance`, { headers: adminRequestHeaders() });
-      return res.json();
+      const text = await res.text();
+      if (!res.ok) console.error('HTTP status:', res.status, 'body:', text);
+      try { return JSON.parse(text); } catch (e) { console.error('JSON parse error:', e, 'body:', text); throw e; }
     }
     async function apiGetAccounts() {
       const res = await apiFetch(`${CONFIG.apiUrl}/api/accounts`, { headers: adminRequestHeaders() });
