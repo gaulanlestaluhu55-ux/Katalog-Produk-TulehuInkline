@@ -411,7 +411,7 @@
     }
 
     async function apiGetTransactions() {
-      const res = await apiFetch(`${CONFIG.apiUrl}/api/finance`, { headers: adminRequestHeaders() });
+      const res = await fetch(`${CONFIG.apiUrl}/api/finance`, { headers: adminRequestHeaders() });
       return res.json();
     }
     async function apiGetAccounts() {
