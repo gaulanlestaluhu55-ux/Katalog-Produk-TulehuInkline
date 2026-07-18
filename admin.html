@@ -330,12 +330,12 @@
       document.getElementById('f_kategori').value = p ? p.kategori || '' : '';
       document.getElementById('f_badge').value = p ? p.badge || '' : '';
       document.getElementById('f_deskripsi').value = p ? p.deskripsi || '' : '';
-      document.getElementById('f_harga').value = p ? p.harga || '' : '';
+      document.getElementById('f_harga').value = p ? p.harga ?? '' : '';
       document.getElementById('f_satuan').value = p ? (p.satuan || '/pcs') : '/pcs';
       document.getElementById('f_gambar').value = p ? p.gambar || '' : '';
-      document.getElementById('f_harga_nama').value = p ? p.harga_nama || '' : '';
-      document.getElementById('f_harga_angka').value = p ? p.harga_angka || '' : '';
-      document.getElementById('f_harga_nama_angka').value = p ? p.harga_nama_angka || '' : '';
+      document.getElementById('f_harga_nama').value = p ? p.harga_nama ?? '' : '';
+      document.getElementById('f_harga_angka').value = p ? p.harga_angka ?? '' : '';
+      document.getElementById('f_harga_nama_angka').value = p ? p.harga_nama_angka ?? '' : '';
 
       modalBackdrop.classList.add('show');
     }

@@ -10,9 +10,11 @@ export default async function handler(req, res) {
 
   if (req.method === 'PUT') {
     const body = req.body || {};
-    const updatable = ['nama', 'kategori', 'badge', 'deskripsi', 'harga', 'satuan', 'gambar', 'harga_nama', 'harga_angka', 'harga_nama_angka', 'pinned'];
+    const updatable = ['nama', 'kategori', 'badge', 'deskripsi', 'satuan', 'gambar', 'pinned'];
+    const numericFields = ['harga', 'harga_nama', 'harga_angka', 'harga_nama_angka'];
     const patch = {};
     updatable.forEach((k) => { if (body.hasOwnProperty(k)) patch[k] = body[k]; });
+    numericFields.forEach((k) => { if (body.hasOwnProperty(k)) patch[k] = Math.max(0, Number(body[k]) || 0); });
 
     const { error } = await supabase.from('products').update(patch).eq('id', id);
     if (error) return res.status(500).json({ status: 'error', message: error.message });
