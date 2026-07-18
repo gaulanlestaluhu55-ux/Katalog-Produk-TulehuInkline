@@ -181,6 +181,7 @@ function renderCard(p, idx) {
       <div class="card-body">
         <div class="card-name">${p.nama}</div>
         ${p.deskripsi ? `<div class="card-desc">${p.deskripsi}</div>` : ''}
+        ${Number(p.sold_count) > 0 ? `<div class="card-sold">${Number(p.sold_count).toLocaleString('id-ID')} terjual</div>` : ''}
       </div>
       ${toggleBtnHtml}
       ${collapsibleHtml}

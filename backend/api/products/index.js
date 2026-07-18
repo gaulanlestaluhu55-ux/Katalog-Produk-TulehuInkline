@@ -11,6 +11,25 @@ export default async function handler(req, res) {
 
     const { data, error } = await query;
     if (error) return res.status(500).json({ status: 'error', message: error.message });
+
+    // attach sold_count from completed orders
+    if (data && data.length > 0) {
+      const { data: soldData } = await supabase
+        .from('orders')
+        .select('id_produk, qty')
+        .in('status', ['Selesai', 'Diambil']);
+
+      const soldMap = {};
+      for (const o of soldData || []) {
+        const pid = o.id_produk;
+        if (pid) soldMap[pid] = (soldMap[pid] || 0) + Number(o.qty || 0);
+      }
+
+      for (const p of data) {
+        p.sold_count = soldMap[p.id] || 0;
+      }
+    }
+
     return res.status(200).json({ status: 'success', data });
   }
 
