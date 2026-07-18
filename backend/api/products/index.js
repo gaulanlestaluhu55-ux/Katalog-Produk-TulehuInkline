@@ -6,7 +6,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     const admin = isAdmin(req);
-    let query = supabase.from('products').select('*').order('created_at', { ascending: true });
+    let query = supabase.from('products').select('*').order('pinned', { ascending: false }).order('created_at', { ascending: true });
     if (!admin) query = query.eq('aktif', true);
 
     const { data, error } = await query;

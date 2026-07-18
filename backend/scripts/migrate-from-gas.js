@@ -79,6 +79,7 @@ async function migrateProducts() {
       harga_angka: toNum(r.harga_angka),
       harga_nama_angka: toNum(r.harga_nama_angka),
       aktif: toBool(r.aktif),
+      pinned: false,
     }));
 
   const { error } = await supabase.from('products').upsert(payload, { onConflict: 'id' });

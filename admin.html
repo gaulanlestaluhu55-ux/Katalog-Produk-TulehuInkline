@@ -220,6 +220,15 @@
       return res.json();
     }
 
+    async function apiTogglePin(id, pinned) {
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/products/${id}`, {
+        method: 'PATCH',
+        headers: window.authHeaders(true),
+        body: JSON.stringify({ pinned }),
+      });
+      return res.json();
+    }
+
     async function tryLoginCb(token) {
       const json = await apiGet();
       if (json.status !== 'success') throw new Error(json.message || 'gagal');
@@ -258,6 +267,7 @@
         <div class="product-meta">${p.kategori || '-'} · Rp${Number(p.harga || 0).toLocaleString('id-ID')}${p.satuan || ''}</div>
       </div>
       <div class="product-actions">
+        <button class="icon-btn" data-action="pin" data-id="${p.id}">${p.pinned ? '📌' : 'Pin'}</button>
         <button class="icon-btn" data-action="edit" data-id="${p.id}">Edit</button>
         <button class="icon-btn ${active ? 'danger' : ''}" data-action="toggle" data-id="${p.id}">${active ? 'Nonaktifkan' : 'Aktifkan'}</button>
       </div>
@@ -285,6 +295,20 @@
           p.aktif = nextActive;
           renderProducts();
           showStatus(nextActive ? 'Produk diaktifkan.' : 'Produk dinonaktifkan.', true);
+        } else {
+          showStatus('Gagal: ' + json.message, false);
+        }
+      }
+
+      if (btn.dataset.action === 'pin') {
+        const nextPin = !p.pinned;
+        btn.disabled = true;
+        const json = await apiTogglePin(id, nextPin);
+        btn.disabled = false;
+        if (json.status === 'success') {
+          p.pinned = nextPin;
+          renderProducts();
+          showStatus(nextPin ? 'Produk dipin.' : 'Pin dicopot.', true);
         } else {
           showStatus('Gagal: ' + json.message, false);
         }
