@@ -16,17 +16,25 @@ export default async function handler(req, res) {
     if (data && data.length > 0) {
       const { data: soldData } = await supabase
         .from('orders')
-        .select('id_produk, qty')
+        .select('id_produk, nama_produk, qty')
         .in('status', ['Selesai', 'Diambil']);
 
       const soldMap = {};
+      const soldByName = {};
       for (const o of soldData || []) {
-        const pid = o.id_produk;
-        if (pid) soldMap[pid] = (soldMap[pid] || 0) + Number(o.qty || 0);
+        const qty = Number(o.qty || 0);
+        if (o.id_produk) {
+          soldMap[o.id_produk] = (soldMap[o.id_produk] || 0) + qty;
+        } else if (o.nama_produk) {
+          const key = String(o.nama_produk).trim().toLowerCase();
+          soldByName[key] = (soldByName[key] || 0) + qty;
+        }
       }
 
       for (const p of data) {
-        p.sold_count = soldMap[p.id] || 0;
+        const byId = soldMap[p.id] || 0;
+        const byName = soldByName[String(p.nama).trim().toLowerCase()] || 0;
+        p.sold_count = byId + byName;
       }
     }
 
