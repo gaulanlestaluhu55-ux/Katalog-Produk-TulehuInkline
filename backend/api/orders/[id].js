@@ -19,6 +19,10 @@ export default async function handler(req, res) {
     return handleUpdatePayment(req, res, id);
   }
 
+  if (req.method === 'PUT' && action === 'details') {
+    return handleUpdateDetails(req, res, id);
+  }
+
   if (req.method === 'PUT') {
     return handleUpdateStatus(req, res, id);
   }
@@ -63,6 +67,46 @@ async function handleUpdateStatus(req, res, id) {
   if (updateErr) return res.status(500).json({ status: 'error', message: updateErr.message });
 
   return res.status(200).json({ status: 'success', data: { id, status: newStatus } });
+}
+
+/* Update detail atribut (size/warna/lengan/opsi/qty/harga). Dipakai grid fase 3.
+   Total WAJIB = harga_satuan x qty (pengaman D6). Nominal lama tak boleh
+   melebihi total baru. Tidak ada pergerakan uang → tanpa ledger. */
+async function handleUpdateDetails(req, res, id) {
+  const body = req.body || {};
+
+  const { data: order, error: readErr } = await supabase.from('orders').select('*').eq('id', id).single();
+  if (readErr) return res.status(500).json({ status: 'error', message: readErr.message });
+  if (!order) return res.status(404).json({ status: 'error', message: 'Pesanan tidak ditemukan' });
+
+  const qty = Math.max(1, Math.floor(toNumSafe(body.qty) || 1));
+  const hargaSatuan = Math.max(0, toNumSafe(body.harga_satuan));
+  const total = Math.max(0, toNumSafe(body.total));
+  if (Math.abs(total - hargaSatuan * qty) > 0.01) {
+    return res.status(400).json({ status: 'error', message: 'Total tidak cocok dengan harga_satuan x qty.' });
+  }
+  const dibayar = toNumSafe(order.nominal_dibayar);
+  if (dibayar > total) {
+    return res.status(400).json({ status: 'error', message: 'Nominal dibayar melebihi total baru. Koreksi pembayaran via Keuangan dulu.' });
+  }
+
+  const sisa = total - dibayar;
+  const patch = {
+    size: String(body.size || '').trim(),
+    warna: String(body.warna || '').trim(),
+    lengan: String(body.lengan || '').trim(),
+    opsi: String(body.opsi || '').trim(),
+    qty,
+    harga_satuan: hargaSatuan,
+    total,
+    sisa,
+    status_bayar: computeStatusBayar(dibayar, total),
+  };
+
+  const { error: updateErr } = await supabase.from('orders').update(patch).eq('id', id);
+  if (updateErr) return res.status(500).json({ status: 'error', message: updateErr.message });
+
+  return res.status(200).json({ status: 'success', data: { id, ...patch } });
 }
 
 async function handleUpdatePayment(req, res, id) {

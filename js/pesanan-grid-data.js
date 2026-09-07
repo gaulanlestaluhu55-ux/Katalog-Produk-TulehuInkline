@@ -7,6 +7,29 @@ window.GridApp = window.GridApp || {};
 
 GridApp.state = { products: [], orders: [], accounts: [], finance: [], lastAkunByOrder: {}, filter: 'semua' };
 GridApp.STATUS_LIST = ['Baru', 'Diproses', 'Selesai', 'Diambil', 'Batal'];
+GridApp.CUTTINGAN_LIST = ['Reguler', 'Oversize'];
+
+GridApp.optionsFrom = function (list, selected) {
+  return (list || []).map((v) => `<option value="${window.escapeHtml(v)}"${v === selected ? ' selected' : ''}>${window.escapeHtml(v)}</option>`).join('');
+};
+
+/* Surcharge kaos (aturan sama dengan pesanan.html/js/helpers.js). */
+GridApp.surcharge = function (size, sleeve) {
+  let extra = 0;
+  if (sleeve === 'Lengan Panjang') extra += CONFIG.surcharge.lenganPanjang;
+  if (size === 'XXL') extra += CONFIG.surcharge.xxl;
+  if (size === '3XL' || size === 'XXXL') extra += CONFIG.surcharge.xxxl;
+  return extra;
+};
+
+/* Hitung ulang harga satuan saat size/lengan berubah. Prioritas: harga dasar
+   produk; fallback: harga tersimpan + selisih surcharge. */
+GridApp.recalcUnit = function (o, size, sleeve) {
+  const prod = (GridApp.state.products || []).find((p) => String(p.id) === String(o.id_produk));
+  if (prod) return toNum(prod.harga) + GridApp.surcharge(size, sleeve);
+  const cur = GridApp.parseOpsi(o.opsi);
+  return toNum(o.harga_satuan) + (GridApp.surcharge(size, sleeve) - GridApp.surcharge(cur.size, cur.lengan));
+};
 
 GridApp.authHeaders = function (json) {
   const h = { Authorization: `Bearer ${window.adminToken}` };

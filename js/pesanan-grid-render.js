@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
-   PESANAN GRID — render layer (fase 2: sel editable)
+   PESANAN GRID — render layer (fase 3: sel atribut editable)
    Tanggung jawab: gambar tabel desktop + kartu mobile + filter.
-   PUT/POST + debounce ada di pesanan-grid-edit.js.
+   PUT/POST + debounce ada di pesanan-grid-edit.js / details / new.
    ═══════════════════════════════════════════════════════ */
 window.GridApp = window.GridApp || {};
 
@@ -20,7 +20,11 @@ function gridMoney(n) {
   return window.escapeHtml(fmt(Number(n || 0)));
 }
 
-/* Satu baris <tr> desktop. Dibayar/Akun/Status editable (fase 2). */
+function attrSelect(cls, id, list, val, label, locked) {
+  return `<select class="status-select ${cls}" data-id="${id}" ${locked} aria-label="${label}">${GridApp.optionsFrom(list, val)}</select>`;
+}
+
+/* Satu baris <tr> desktop. Atribut kaos + qty editable (fase 3). */
 function gridRowHtml(o) {
   const p = GridApp.parseOpsi(o.opsi);
   const id = window.escapeHtml(o.id);
@@ -30,19 +34,26 @@ function gridRowHtml(o) {
     ? Number(o.sisa) : total - dibayar;
   const statusBayar = o.status_bayar || 'Belum Bayar';
   const locked = o.status === 'Batal' ? 'disabled' : '';
+  const kaos = isKaos(o);
+  const warnaVal = o.warna || p.warna;
   const cust = window.escapeHtml(o.nama_customer || '-');
   const kontak = o.kontak ? `<span class="sub">${window.escapeHtml(o.kontak)}</span>` : '';
   const ts = GridApp.orderDate(o);
   const dateSub = ts ? `<span class="sub">${window.escapeHtml(ts)}</span>` : '';
 
+  const sizeCell = kaos ? attrSelect('attr-size', id, CONFIG.kaos.sizes, p.size, 'Size', locked) : gridCell(p.size);
+  const cutCell = kaos ? attrSelect('attr-cuttingan', id, GridApp.CUTTINGAN_LIST, p.cuttingan, 'Cuttingan', locked) : gridCell(p.cuttingan);
+  const sleeveCell = kaos ? attrSelect('attr-sleeve', id, CONFIG.kaos.sleeves, p.lengan, 'Lengan', locked) : gridCell(p.lengan);
+  const warnaCell = kaos ? attrSelect('attr-warna', id, CONFIG.kaos.colors, warnaVal, 'Warna', locked) : gridCell(warnaVal);
+
   return `<tr data-id="${id}">`
     + `<td>${gridCell(o.nama_produk)}${dateSub}</td>`
-    + `<td>${gridCell(p.size)}</td>`
-    + `<td>${gridCell(p.cuttingan)}</td>`
-    + `<td>${gridCell(p.lengan)}</td>`
-    + `<td>${gridCell(o.warna || p.warna)}</td>`
-    + `<td class="num">${window.escapeHtml(o.qty ?? 0)}</td>`
-    + `<td class="num">${gridMoney(total)}</td>`
+    + `<td>${sizeCell}</td>`
+    + `<td>${cutCell}</td>`
+    + `<td>${sleeveCell}</td>`
+    + `<td>${warnaCell}</td>`
+    + `<td class="num"><input class="cell-num attr-qty" data-id="${id}" type="number" min="1" step="1" value="${o.qty || 1}" ${locked} aria-label="Qty" /></td>`
+    + `<td class="num total-cell">${gridMoney(total)}</td>`
     + `<td class="num"><input class="cell-num pay-input" data-id="${id}" type="number" min="0" step="500" value="${dibayar}" ${locked} aria-label="Nominal dibayar" /></td>`
     + `<td><select class="status-select pay-akun" data-id="${id}" ${locked} aria-label="Akun pembayaran">${GridApp.accountOptions(GridApp.lastAkun(o.id))}</select></td>`
     + `<td class="num sisa-cell">${gridMoney(Math.max(0, sisa))}</td>`
@@ -52,7 +63,7 @@ function gridRowHtml(o) {
     + `</tr>`;
 }
 
-/* Satu kartu mobile (reuse pola .order-row pesanan.html + editor fase 2). */
+/* Satu kartu mobile (editor: bayar/akun/status + qty; atribut lain teks). */
 function gridCardHtml(o) {
   const p = GridApp.parseOpsi(o.opsi);
   const id = window.escapeHtml(o.id);
@@ -75,6 +86,7 @@ function gridCardHtml(o) {
     + `<span class="status-badge bayar-badge ${window.safeClassToken(statusBayar, 'belum-bayar')}">${window.escapeHtml(statusBayar)}</span>`
     + `</div>`
     + `<div class="order-edit">`
+    + `<label>Qty<input class="cell-num attr-qty" data-id="${id}" type="number" min="1" step="1" value="${o.qty || 1}" ${locked} /></label>`
     + `<label>Bayar<input class="cell-num pay-input" data-id="${id}" type="number" min="0" step="500" value="${dibayar}" ${locked} /></label>`
     + `<label>Akun<select class="status-select pay-akun" data-id="${id}" ${locked}>${GridApp.accountOptions(GridApp.lastAkun(o.id))}</select></label>`
     + `<label>Status<select class="status-select status-cell" data-id="${id}">${GridApp.statusOptions(o.status || 'Baru')}</select></label>`
@@ -109,6 +121,16 @@ GridApp.boot = async function () {
       `<div class="empty-state">Gagal memuat: ${window.escapeHtml(err.message || err)}</div>`;
     window.showStatus('Gagal konek ke server: ' + (err.message || err), false);
   }
+};
+
+GridApp.refreshOrders = async function () {
+  const json = await (async () => {
+    const res = await apiFetch(`${CONFIG.apiUrl}/api/orders`, { headers: GridApp.authHeaders() });
+    return res.json();
+  })();
+  if (json.status !== 'success') throw new Error(json.message || 'gagal');
+  GridApp.state.orders = json.data || [];
+  GridApp.renderAll();
 };
 
 document.getElementById('filterBtns').addEventListener('click', (e) => {

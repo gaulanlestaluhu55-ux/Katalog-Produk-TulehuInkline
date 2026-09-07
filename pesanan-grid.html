@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link href="css/admin.css" rel="stylesheet" />
   <style>
-    /* ── Grid spreadsheet (fase 2: edit per sel, reuse token admin.css) ── */
+    /* ── Grid spreadsheet (fase 3, reuse token admin.css) ── */
     .grid-card { margin-bottom: 1.5rem; }
     .table-wrap { max-height: 65vh; overflow: auto; }
     thead th { position: sticky; top: 0; z-index: 2; }
@@ -32,6 +32,7 @@
     .cell-saving { border-color: var(--info-text) !important; }
     .cell-saved { border-color: var(--accent-text) !important; }
     .cell-error { border-color: var(--err-text) !important; }
+    #gridNewRow td { background: var(--accent-bg); }
     .grid-note {
       font-size: 12px; color: var(--ink-muted);
       padding: 10px 14px; border-top: 1px solid var(--border);
@@ -54,7 +55,7 @@
     }
     #gridCards .order-pay { font-size: 12px; color: var(--ink-soft); margin-top: 6px; }
     #gridCards .order-pay b { color: var(--ink); }
-    @media (max-width: 767px) { #gridTableCard { display: none; } }
+    @media (max-width: 767px) { #gridTableCard, #addRowBtn { display: none; } }
     @media (min-width: 768px) { #gridCards { display: none; } }
   </style>
 </head>
@@ -89,6 +90,7 @@
           <button class="filter-btn" data-status="Diambil">Diambil</button>
           <button class="filter-btn" data-status="Batal">Batal</button>
         </div>
+        <button class="icon-btn primary" id="addRowBtn">+ Baris</button>
       </div>
 
       <!-- Desktop: tabel grid -->
@@ -117,7 +119,7 @@
             </tbody>
           </table>
         </div>
-        <div class="grid-note">Fase 2: sel Dibayar / Akun / Status bisa diedit, auto-save ±600ms. Kolom Akun default = akun pembayaran terakhir di ledger. Ganti akun saja (tanpa ubah nominal) tak catat ledger — koreksi akun lama via Keuangan.</div>
+        <div class="grid-note">Fase 3: sel atribut + qty editable (auto-save), tombol + Baris untuk order baru (desktop). Order baru di mobile tetap via Mode Kartu.</div>
       </div>
 
       <!-- Mobile: kartu stacked -->
@@ -131,6 +133,8 @@
   <script src="js/pesanan-grid-data.js"></script>
   <script src="js/pesanan-grid-render.js"></script>
   <script src="js/pesanan-grid-edit.js"></script>
+  <script src="js/pesanan-grid-details.js"></script>
+  <script src="js/pesanan-grid-new.js"></script>
   <script>
     window.requireAuth(GridApp.boot);
   </script>
