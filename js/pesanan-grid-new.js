@@ -26,6 +26,7 @@ function newRowDraftVals() {
     size: q('.new-size'), cuttingan: q('.new-cuttingan'), sleeve: q('.new-sleeve'),
     warna: q('.new-warna'), nameset: q('.new-nameset'),
     qty: Math.max(1, parseInt(q('.new-qty') || '1', 10) || 1),
+    dp: Math.max(0, parseInt(q('.new-dp') || '0', 10) || 0),
     customer: q('.new-customer').trim(), akun: q('.new-akun'),
   };
 }
@@ -59,7 +60,7 @@ function newRowPreview() {
   const v = newRowDraftVals();
   const total = newRowUnit(p, v) * v.qty;
   const t = row.querySelector('.new-total'); if (t) t.textContent = fmt(total);
-  const s = row.querySelector('.new-sisa'); if (s) s.textContent = fmt(total);
+  const s = row.querySelector('.new-sisa'); if (s) s.textContent = fmt(Math.max(0, total - v.dp));
 }
 
 function newRowHtml() {
@@ -74,7 +75,7 @@ function newRowHtml() {
     + `<td class="new-attr-kaos"><select class="status-select new-warna" aria-label="Warna">${GridApp.optionsFrom(CONFIG.kaos.colors, '')}</select></td>`
     + `<td class="num"><input class="cell-num new-qty" type="number" min="1" step="1" value="1" aria-label="Qty" /></td>`
     + `<td class="num new-total">${fmt(0)}</td>`
-    + `<td class="num">${fmt(0)}</td>`
+    + `<td class="num"><input class="cell-num new-dp" type="number" min="0" step="500" value="0" aria-label="DP awal" /></td>`
     + `<td><select class="status-select new-akun" aria-label="Akun">${GridApp.accountOptions('Kas')}</select></td>`
     + `<td class="num new-sisa">${fmt(0)}</td>`
     + `<td>–</td>`
@@ -100,6 +101,7 @@ async function newRowSave() {
   }
   const unit = newRowUnit(p, v);
   const total = unit * v.qty;
+  if (v.dp > total) { window.showStatus('DP tidak boleh lebih besar dari total.', false); return; }
   const btn = document.getElementById('newRowSave');
   btn.disabled = true;
   try {
@@ -109,7 +111,7 @@ async function newRowSave() {
         id_produk: p.id || '', nama_produk: p.nama, kategori: p.kategori || '',
         opsi, size, warna, lengan: sleeve, qty: v.qty,
         harga_satuan: unit, total, nama_customer: v.customer,
-        kontak: '', catatan: '', status: 'Baru', nominal_dibayar: 0, akun: v.akun,
+        kontak: '', catatan: '', status: 'Baru', nominal_dibayar: v.dp, akun: v.akun,
       }),
     });
     const json = await res.json();
