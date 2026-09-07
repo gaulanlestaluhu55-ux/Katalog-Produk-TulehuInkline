@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase.js';
 import { handleCors, isAdmin, requireAdmin } from '../../lib/auth.js';
+import { pipeList } from '../../lib/helpers.js';
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;
@@ -63,6 +64,8 @@ export default async function handler(req, res) {
         harga_nama: Math.max(0, Number(body.harga_nama) || 0),
         harga_angka: Math.max(0, Number(body.harga_angka) || 0),
         harga_nama_angka: Math.max(0, Number(body.harga_nama_angka) || 0),
+        sizes: pipeList(body.sizes),
+        colors: pipeList(body.colors),
         aktif: true,
       })
       .select('id')

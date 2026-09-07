@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase.js';
 import { handleCors, requireAdmin } from '../../lib/auth.js';
+import { pipeList } from '../../lib/helpers.js';
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;
@@ -15,6 +16,7 @@ export default async function handler(req, res) {
     const patch = {};
     updatable.forEach((k) => { if (body.hasOwnProperty(k)) patch[k] = body[k]; });
     numericFields.forEach((k) => { if (body.hasOwnProperty(k)) patch[k] = Math.max(0, Number(body[k]) || 0); });
+    ['sizes', 'colors'].forEach((k) => { if (body.hasOwnProperty(k)) patch[k] = pipeList(body[k]); });
 
     const { error } = await supabase.from('products').update(patch).eq('id', id);
     if (error) return res.status(500).json({ status: 'error', message: error.message });

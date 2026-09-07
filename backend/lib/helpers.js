@@ -93,8 +93,7 @@ const NORM_WARNA = ['Putih', 'Hitam', 'Abu-abu', 'Navy', 'Maroon', 'Kuning', 'Hi
 const NORM_LENGAN = ['Lengan Pendek', 'Lengan Panjang'];
 const NORM_CUTTINGAN = ['Reguler', 'Oversize'];
 
-export function normVariant(field, value) {
-  const s = String(value ?? '').trim().replace(/\s+/g, ' ');
+export function normVariant(field, value) {  const s = String(value ?? '').trim().replace(/\s+/g, ' ');
   if (!s) return '';
   if (field === 'size') {
     const u = s.toUpperCase();
@@ -103,4 +102,11 @@ export function normVariant(field, value) {
   const list = field === 'warna' ? NORM_WARNA : field === 'lengan' ? NORM_LENGAN : field === 'cuttingan' ? NORM_CUTTINGAN : [];
   const hit = list.find((c) => c.toLowerCase() === s.toLowerCase());
   return hit || s;
+}
+
+/* Normalisasi daftar pipe-separated (D1: sizes/colors per produk).
+   Trim + buang kosong + dedupe. '' = fallback global. */
+export function pipeList(value) {
+  const parts = String(value ?? '').split('|').map((s) => s.trim()).filter(Boolean);
+  return [...new Set(parts)].join('|');
 }

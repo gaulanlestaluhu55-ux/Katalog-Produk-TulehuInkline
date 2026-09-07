@@ -152,6 +152,15 @@
           </div>
         </div>
         <div class="field">
+          <label>Ukuran tersedia (kaos)</label>
+          <div class="pill-row" id="f_size_pills"></div>
+        </div>
+        <div class="field">
+          <label>Warna tersedia (kaos)</label>
+          <div class="pill-row" id="f_warna_pills"></div>
+          <div class="field-hint">Semua terpilih (atau tak ada) = pakai daftar global. Pilih sebagian = khusus produk ini.</div>
+        </div>
+        <div class="field">
           <label>Gambar (pisah pakai | buat multi gambar)</label>
           <textarea id="f_gambar" placeholder="https://.../1.jpg|https://.../2.jpg"></textarea>
           <div class="field-hint">Contoh: link1.jpg|link2.jpg|link3.jpg</div>
@@ -325,6 +334,7 @@
     function openModal(p) {
       editingId = p ? p.id : null;
       modalTitle.textContent = p ? 'Edit Produk' : 'Tambah Produk';
+      renderOptionPills(p);
 
       document.getElementById('f_nama').value = p ? p.nama || '' : '';
       document.getElementById('f_kategori').value = p ? p.kategori || '' : '';
@@ -348,7 +358,34 @@
 
     document.getElementById('addBtn').addEventListener('click', () => openModal(null));
     document.getElementById('cancelBtn').addEventListener('click', closeModal);
-    modalBackdrop.addEventListener('click', e => { if (e.target === modalBackdrop) closeModal(); });
+    /* Pills opsi per produk (D1). '' = fallback daftar global CONFIG. */
+    function splitPipe(s) {
+      return String(s || '').split('|').map(x => x.trim()).filter(Boolean);
+    }
+
+    function renderOptionPills(p) {
+      const sizes = p && p.sizes ? splitPipe(p.sizes) : [...CONFIG.kaos.sizes];
+      const colors = p && p.colors ? splitPipe(p.colors) : [...CONFIG.kaos.colors];
+      const html = (list, sel, group) => list.map(v =>
+        `<button type="button" class="pill ${sel.includes(v) ? 'selected' : ''}" data-group="${group}" data-val="${v}">${v}</button>`).join('');
+      document.getElementById('f_size_pills').innerHTML = html(CONFIG.kaos.sizes, sizes, 'size');
+      document.getElementById('f_warna_pills').innerHTML = html(CONFIG.kaos.colors, colors, 'warna');
+    }
+
+    function pickedVals(id) {
+      return [...document.querySelectorAll(`#${id} .pill.selected`)].map(b => b.dataset.val);
+    }
+
+    function subsetOrGlobal(picked, full) {
+      if (!picked.length || picked.length >= full.length) return '';
+      return picked.join('|');
+    }
+
+    modalBackdrop.addEventListener('click', e => {
+      const pill = e.target.closest('.pill');
+      if (pill) pill.classList.toggle('selected');
+      if (e.target === modalBackdrop) closeModal();
+    });
 
     form.addEventListener('submit', async e => {
       e.preventDefault();
@@ -367,6 +404,8 @@
         harga_nama: document.getElementById('f_harga_nama').value,
         harga_angka: document.getElementById('f_harga_angka').value,
         harga_nama_angka: document.getElementById('f_harga_nama_angka').value,
+        sizes: subsetOrGlobal(pickedVals('f_size_pills'), CONFIG.kaos.sizes),
+        colors: subsetOrGlobal(pickedVals('f_warna_pills'), CONFIG.kaos.colors),
       };
 
       try {
