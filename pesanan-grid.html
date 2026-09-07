@@ -56,7 +56,13 @@
     #gridCards .order-pay { font-size: 12px; color: var(--ink-soft); margin-top: 6px; }
     #gridCards .order-pay b { color: var(--ink); }
     @media (max-width: 767px) { #gridTableCard, #addRowBtn { display: none; } }
-    @media (min-width: 768px) { #gridCards { display: none; } }
+    @media (min-width: 768px) {
+      #gridCards { display: none; }
+      /* Grid full-width: lepas kunci 1200px .container, gutter konsisten 28px.
+         Toolbar (h2/filter/+Baris) ikut melebar karena di dalam .container. */
+      .container { max-width: none; padding-left: 28px; padding-right: 28px; }
+      #gridTable { min-width: 1200px; }
+    }
   </style>
 </head>
 
