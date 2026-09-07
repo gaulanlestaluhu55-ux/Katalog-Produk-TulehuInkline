@@ -15,6 +15,17 @@ export default async function handler(req, res) {
     return res.status(200).json({ status: 'success', data: { id } });
   }
 
+  // B3: riwayat cicilan per order (DP/Pelunasan/Koreksi/Reversal + akun).
+  if (req.method === 'GET' && action === 'payments') {
+    const { data, error } = await supabase
+      .from('order_payments')
+      .select('*')
+      .eq('id_pesanan', id)
+      .order('created_at', { ascending: true });
+    if (error) return res.status(500).json({ status: 'error', message: error.message });
+    return res.status(200).json({ status: 'success', data: data || [] });
+  }
+
   if (req.method === 'PUT' && action === 'payment') {
     return handleUpdatePayment(req, res, id);
   }
