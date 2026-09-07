@@ -118,7 +118,8 @@ async function newRowSave() {
     if (json.status !== 'success') throw new Error(json.message || 'gagal');
     document.getElementById('gridNewRow').remove();
     await GridApp.refreshOrders();
-    window.showStatus('Pesanan tersimpan.', true);
+    if (json.warning) window.showStatus('Tersimpan dengan catatan: ' + json.warning, false);
+    else window.showStatus('Pesanan tersimpan.', true);
   } catch (err) {
     btn.disabled = false;
     window.showStatus('Gagal simpan: ' + (err.message || err), false);
