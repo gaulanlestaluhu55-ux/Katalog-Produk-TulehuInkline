@@ -41,8 +41,7 @@ export function paymentNetPerAkun(rows) {
   return out;
 }
 
-/* Reversal pembatalan per akun asal (B2 — ganti hardcode Kas).
-   Fallback: tanpa riwayat cicilan → single reversal Kas (perilaku lama). */
+/* Reversal pembatalan per akun asal (B2 — ganti hardcode Kas). */
 export async function reversePaymentsToLedger(supabase, idPesanan, order) {
   const { data: rows, error: readErr } = await supabase
     .from('order_payments')
@@ -84,4 +83,24 @@ export async function reversePaymentsToLedger(supabase, idPesanan, order) {
     if (payErr) throw payErr;
   }
   return { fallback: false, akuns };
+}
+
+/* Normalisasi varian (C2). Aturan = cermin migrasi 003 + js/config.js:
+   trim + collapse spasi; size → uppercase (XXXL → 3XL);
+   warna/lengan/cuttingan → nilai kanonis bila cocok case-insensitive,
+   nilai asing dipertahankan apa adanya (jangan ditebak). */
+const NORM_WARNA = ['Putih', 'Hitam', 'Abu-abu', 'Navy', 'Maroon', 'Kuning', 'Hijau Botol', 'Baby Blue', 'Krem', 'Merah'];
+const NORM_LENGAN = ['Lengan Pendek', 'Lengan Panjang'];
+const NORM_CUTTINGAN = ['Reguler', 'Oversize'];
+
+export function normVariant(field, value) {
+  const s = String(value ?? '').trim().replace(/\s+/g, ' ');
+  if (!s) return '';
+  if (field === 'size') {
+    const u = s.toUpperCase();
+    return u === 'XXXL' ? '3XL' : u;
+  }
+  const list = field === 'warna' ? NORM_WARNA : field === 'lengan' ? NORM_LENGAN : field === 'cuttingan' ? NORM_CUTTINGAN : [];
+  const hit = list.find((c) => c.toLowerCase() === s.toLowerCase());
+  return hit || s;
 }

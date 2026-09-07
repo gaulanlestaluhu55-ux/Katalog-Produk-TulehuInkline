@@ -109,7 +109,7 @@ async function newRowSave() {
       method: 'POST', headers: GridApp.authHeaders(true),
       body: JSON.stringify({
         id_produk: p.id || '', nama_produk: p.nama, kategori: p.kategori || '',
-        opsi, size, warna, lengan: sleeve, qty: v.qty,
+        opsi, size, warna, lengan: sleeve, cuttingan: v.cuttingan || '', qty: v.qty,
         harga_satuan: unit, total, nama_customer: v.customer,
         kontak: '', catatan: '', status: 'Baru', nominal_dibayar: v.dp, akun: v.akun,
       }),

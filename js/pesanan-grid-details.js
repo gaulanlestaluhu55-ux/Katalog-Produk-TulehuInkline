@@ -44,7 +44,7 @@ async function detailsSave(id, scope) {
     return;
   }
   const payload = {
-    size, warna, lengan: sleeve,
+    size, warna, lengan: sleeve, cuttingan,
     opsi: GridApp.formatOpsi({ size, cuttingan, lengan: sleeve, warna }),
     qty: vals.qty, harga_satuan: unit, total,
   };

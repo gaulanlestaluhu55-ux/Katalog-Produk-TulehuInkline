@@ -1,6 +1,6 @@
 import { supabase } from '../../lib/supabase.js';
 import { handleCors, requireAdmin } from '../../lib/auth.js';
-import { toNumSafe, computeStatusBayar, appendLedger, reversePaymentsToLedger } from '../../lib/helpers.js';
+import { toNumSafe, computeStatusBayar, appendLedger, reversePaymentsToLedger, normVariant } from '../../lib/helpers.js';
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;
@@ -94,9 +94,10 @@ async function handleUpdateDetails(req, res, id) {
 
   const sisa = total - dibayar;
   const patch = {
-    size: String(body.size || '').trim(),
-    warna: String(body.warna || '').trim(),
-    lengan: String(body.lengan || '').trim(),
+    size: normVariant('size', body.size),
+    warna: normVariant('warna', body.warna),
+    lengan: normVariant('lengan', body.lengan),
+    cuttingan: normVariant('cuttingan', body.cuttingan),
     opsi: String(body.opsi || '').trim(),
     qty,
     harga_satuan: hargaSatuan,
