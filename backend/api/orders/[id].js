@@ -1,6 +1,6 @@
 import { supabase } from '../../lib/supabase.js';
 import { handleCors, requireAdmin } from '../../lib/auth.js';
-import { toNumSafe, computeStatusBayar, appendLedger } from '../../lib/helpers.js';
+import { toNumSafe, computeStatusBayar, appendLedger, reversePaymentsToLedger } from '../../lib/helpers.js';
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;
@@ -41,20 +41,11 @@ async function handleUpdateStatus(req, res, id) {
   const patch = { status: newStatus };
   if (body.hasOwnProperty('catatan')) patch.catatan = body.catatan;
 
-  // Reversal otomatis kalau dibatalkan & sempat ada pembayaran. Reversal di-tag ke akun "Kas"
-  // secara default (sistem gak nyimpen riwayat per-akun dari pembayaran cicilan) — koreksi
-  // manual di Keuangan kalau aslinya masuk ke akun lain.
+  // Reversal otomatis kalau dibatalkan & sempat ada pembayaran.
+  // Sejak B2: reversal per akun asal (order_payments), bukan hardcode Kas.
   if (newStatus === 'Batal' && toNumSafe(order.nominal_dibayar) > 0) {
     try {
-      await appendLedger(supabase, {
-        tipe: 'Keluar',
-        sumber: 'Pesanan',
-        id_pesanan: id,
-        kategori: 'Pembatalan Pesanan',
-        keterangan: `Reversal pembayaran — ${order.nama_produk} (${order.nama_customer}) dibatalkan`,
-        nominal: toNumSafe(order.nominal_dibayar),
-        akun: 'Kas',
-      });
+      await reversePaymentsToLedger(supabase, id, order);
     } catch (ledgerErr) {
       return res.status(500).json({ status: 'error', message: 'Gagal mencatat reversal: ' + ledgerErr.message });
     }
@@ -121,17 +112,29 @@ async function handleUpdatePayment(req, res, id) {
   const newNominal = toNumSafe(body.nominal_dibayar);
   const delta = newNominal - oldNominal;
 
+  // Sejak B2: tiap delta dicatat juga ke order_payments (riwayat per cicilan/akun).
   if (delta !== 0) {
+    const akun = body.akun || 'Kas';
+    const isMasuk = delta > 0;
+    const keterangan = `${isMasuk ? 'Pembayaran tambahan' : 'Koreksi pembayaran'} — ${order.nama_produk} (${order.nama_customer})`;
     try {
       await appendLedger(supabase, {
-        tipe: delta > 0 ? 'Masuk' : 'Keluar',
+        tipe: isMasuk ? 'Masuk' : 'Keluar',
         sumber: 'Pesanan',
         id_pesanan: id,
         kategori: 'Pembayaran Pesanan',
-        keterangan: `${delta > 0 ? 'Pembayaran tambahan' : 'Koreksi pembayaran'} — ${order.nama_produk} (${order.nama_customer})`,
+        keterangan,
         nominal: Math.abs(delta),
-        akun: body.akun || 'Kas',
+        akun,
       });
+      const { error: payErr } = await supabase.from('order_payments').insert({
+        id_pesanan: id,
+        nominal: delta,
+        akun,
+        tipe: isMasuk ? (oldNominal > 0 ? 'Pelunasan' : 'DP') : 'Koreksi',
+        keterangan,
+      });
+      if (payErr) throw payErr;
     } catch (ledgerErr) {
       return res.status(500).json({ status: 'error', message: 'Gagal mencatat ledger: ' + ledgerErr.message });
     }

@@ -55,16 +55,27 @@ export default async function handler(req, res) {
     if (error) return res.status(500).json({ status: 'error', message: error.message });
 
     if (nominalDibayar > 0) {
+      const akunDp = body.akun || 'Kas';
+      const keteranganDp = `DP awal — ${body.nama_produk || ''} (${body.nama_customer || ''})`;
       try {
         await appendLedger(supabase, {
           tipe: 'Masuk',
           sumber: 'Pesanan',
           id_pesanan: data.id,
           kategori: 'Pembayaran Pesanan',
-          keterangan: `DP awal — ${body.nama_produk || ''} (${body.nama_customer || ''})`,
+          keterangan: keteranganDp,
           nominal: nominalDibayar,
-          akun: body.akun || 'Kas',
+          akun: akunDp,
         });
+        // B2: cicilan pertama tercatat juga di order_payments.
+        const { error: payErr } = await supabase.from('order_payments').insert({
+          id_pesanan: data.id,
+          nominal: nominalDibayar,
+          akun: akunDp,
+          tipe: 'DP',
+          keterangan: keteranganDp,
+        });
+        if (payErr) throw payErr;
       } catch (ledgerErr) {
         // Order-nya udah tersimpan; ledger gagal jangan bikin seluruh request gagal, tapi kasih tau.
         return res.status(200).json({ status: 'success', data: { id: data.id }, warning: 'Order tersimpan tapi ledger keuangan gagal: ' + ledgerErr.message });
