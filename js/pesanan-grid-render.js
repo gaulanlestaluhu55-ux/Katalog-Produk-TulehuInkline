@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
-   PESANAN GRID — render layer (fase 1: read-only)
+   PESANAN GRID — render layer (fase 2: sel editable)
    Tanggung jawab: gambar tabel desktop + kartu mobile + filter.
-   Tidak ada PUT/POST di sini; edit + auto-save menyusul fase 2.
+   PUT/POST + debounce ada di pesanan-grid-edit.js.
    ═══════════════════════════════════════════════════════ */
 window.GridApp = window.GridApp || {};
 
@@ -20,22 +20,22 @@ function gridMoney(n) {
   return window.escapeHtml(fmt(Number(n || 0)));
 }
 
-/* Satu baris <tr> desktop. Kolom Akun menyusul fase 2 (orders tak simpan akun). */
+/* Satu baris <tr> desktop. Dibayar/Akun/Status editable (fase 2). */
 function gridRowHtml(o) {
   const p = GridApp.parseOpsi(o.opsi);
+  const id = window.escapeHtml(o.id);
   const total = Number(o.total || 0);
   const dibayar = Number(o.nominal_dibayar || 0);
   const sisa = o.sisa !== undefined && o.sisa !== '' && o.sisa !== null
     ? Number(o.sisa) : total - dibayar;
   const statusBayar = o.status_bayar || 'Belum Bayar';
-  const statusCls = window.safeClassToken(o.status, 'baru');
-  const bayarCls = window.safeClassToken(statusBayar, 'belum-bayar');
+  const locked = o.status === 'Batal' ? 'disabled' : '';
   const cust = window.escapeHtml(o.nama_customer || '-');
   const kontak = o.kontak ? `<span class="sub">${window.escapeHtml(o.kontak)}</span>` : '';
   const ts = GridApp.orderDate(o);
   const dateSub = ts ? `<span class="sub">${window.escapeHtml(ts)}</span>` : '';
 
-  return `<tr data-id="${window.escapeHtml(o.id)}">`
+  return `<tr data-id="${id}">`
     + `<td>${gridCell(o.nama_produk)}${dateSub}</td>`
     + `<td>${gridCell(p.size)}</td>`
     + `<td>${gridCell(p.cuttingan)}</td>`
@@ -43,36 +43,43 @@ function gridRowHtml(o) {
     + `<td>${gridCell(o.warna || p.warna)}</td>`
     + `<td class="num">${window.escapeHtml(o.qty ?? 0)}</td>`
     + `<td class="num">${gridMoney(total)}</td>`
-    + `<td class="num">${gridMoney(dibayar)}</td>`
-    + `<td class="num">${gridMoney(Math.max(0, sisa))}</td>`
-    + `<td><span class="status-badge ${bayarCls}">${window.escapeHtml(statusBayar)}</span></td>`
+    + `<td class="num"><input class="cell-num pay-input" data-id="${id}" type="number" min="0" step="500" value="${dibayar}" ${locked} aria-label="Nominal dibayar" /></td>`
+    + `<td><select class="status-select pay-akun" data-id="${id}" ${locked} aria-label="Akun pembayaran">${GridApp.accountOptions(GridApp.lastAkun(o.id))}</select></td>`
+    + `<td class="num sisa-cell">${gridMoney(Math.max(0, sisa))}</td>`
+    + `<td class="bayar-cell"><span class="status-badge ${window.safeClassToken(statusBayar, 'belum-bayar')}">${window.escapeHtml(statusBayar)}</span></td>`
     + `<td>${cust}${kontak}</td>`
-    + `<td><span class="status-badge ${statusCls}">${window.escapeHtml(o.status || 'Baru')}</span></td>`
+    + `<td><select class="status-select status-cell" data-id="${id}" aria-label="Status pesanan">${GridApp.statusOptions(o.status || 'Baru')}</select></td>`
     + `</tr>`;
 }
 
-/* Satu kartu mobile (reuse pola .order-row pesanan.html). */
+/* Satu kartu mobile (reuse pola .order-row pesanan.html + editor fase 2). */
 function gridCardHtml(o) {
   const p = GridApp.parseOpsi(o.opsi);
+  const id = window.escapeHtml(o.id);
   const total = Number(o.total || 0);
   const dibayar = Number(o.nominal_dibayar || 0);
   const sisa = o.sisa !== undefined && o.sisa !== '' && o.sisa !== null
     ? Number(o.sisa) : total - dibayar;
   const statusBayar = o.status_bayar || 'Belum Bayar';
+  const locked = o.status === 'Batal' ? 'disabled' : '';
   const meta = [p.size, p.cuttingan, p.lengan, o.warna || p.warna, `Qty ${o.qty || 0}`]
     .filter(Boolean).map(window.escapeHtml).join(' · ');
   const ts = GridApp.orderDate(o);
 
-  return `<div class="order-row" data-id="${window.escapeHtml(o.id)}">`
+  return `<div class="order-row" data-id="${id}">`
     + `<div class="order-top"><div>`
     + `<div class="order-name">${gridCell(o.nama_produk)}</div>`
     + `<div class="order-meta">${meta}${ts ? ' · ' + window.escapeHtml(ts) : ''}</div>`
     + `</div><div class="order-total">${gridMoney(total)}</div></div>`
     + `<div class="order-badges">`
-    + `<span class="status-badge ${window.safeClassToken(o.status, 'baru')}">${window.escapeHtml(o.status || 'Baru')}</span>`
-    + `<span class="status-badge ${window.safeClassToken(statusBayar, 'belum-bayar')}">${window.escapeHtml(statusBayar)}</span>`
+    + `<span class="status-badge bayar-badge ${window.safeClassToken(statusBayar, 'belum-bayar')}">${window.escapeHtml(statusBayar)}</span>`
     + `</div>`
-    + `<div class="order-pay">Dibayar: <b>${gridMoney(dibayar)}</b> · Sisa: <b>${gridMoney(Math.max(0, sisa))}</b></div>`
+    + `<div class="order-edit">`
+    + `<label>Bayar<input class="cell-num pay-input" data-id="${id}" type="number" min="0" step="500" value="${dibayar}" ${locked} /></label>`
+    + `<label>Akun<select class="status-select pay-akun" data-id="${id}" ${locked}>${GridApp.accountOptions(GridApp.lastAkun(o.id))}</select></label>`
+    + `<label>Status<select class="status-select status-cell" data-id="${id}">${GridApp.statusOptions(o.status || 'Baru')}</select></label>`
+    + `</div>`
+    + `<div class="order-pay">Dibayar: <b class="paid-val">${gridMoney(dibayar)}</b> · Sisa: <b class="sisa-val">${gridMoney(Math.max(0, sisa))}</b></div>`
     + (o.nama_customer ? `<div class="order-meta">👤 ${window.escapeHtml(o.nama_customer)}</div>` : '')
     + `</div>`;
 }
@@ -82,7 +89,7 @@ GridApp.renderAll = function () {
   const body = document.getElementById('gridBody');
   const cards = document.getElementById('gridCards');
   if (!rows.length) {
-    body.innerHTML = '<tr><td colspan="12">Belum ada pesanan.</td></tr>';
+    body.innerHTML = '<tr><td colspan="13">Belum ada pesanan.</td></tr>';
     cards.innerHTML = '<div class="empty-state">Belum ada pesanan.</div>';
     return;
   }
@@ -97,7 +104,7 @@ GridApp.boot = async function () {
     GridApp.renderAll();
   } catch (err) {
     document.getElementById('gridBody').innerHTML =
-      `<tr><td colspan="12">Gagal memuat: ${window.escapeHtml(err.message || err)}</td></tr>`;
+      `<tr><td colspan="13">Gagal memuat: ${window.escapeHtml(err.message || err)}</td></tr>`;
     document.getElementById('gridCards').innerHTML =
       `<div class="empty-state">Gagal memuat: ${window.escapeHtml(err.message || err)}</div>`;
     window.showStatus('Gagal konek ke server: ' + (err.message || err), false);
