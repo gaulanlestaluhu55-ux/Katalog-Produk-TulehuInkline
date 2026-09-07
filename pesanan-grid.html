@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1a1a1a" />
+  <link rel="icon" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>Pesanan Grid — Katalog Sablon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="css/admin.css" rel="stylesheet" />
+  <style>
+    /* ── Grid spreadsheet (fase 1: read-only, reuse token admin.css) ── */
+    .grid-card { margin-bottom: 1.5rem; }
+    .table-wrap { max-height: 65vh; overflow: auto; }
+    thead th { position: sticky; top: 0; z-index: 2; }
+    td.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    td .sub { display: block; font-size: 11px; color: var(--ink-muted); white-space: nowrap; }
+    .grid-note {
+      font-size: 12px; color: var(--ink-muted);
+      padding: 10px 14px; border-top: 1px solid var(--border);
+    }
+    /* Mobile = kartu stacked, tabel hanya desktop */
+    #gridCards { display: flex; flex-direction: column; gap: 10px; }
+    #gridCards .order-row {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px 14px;
+    }
+    #gridCards .order-top { display: flex; justify-content: space-between; gap: 10px; }
+    #gridCards .order-name { font-size: 14px; font-weight: 600; }
+    #gridCards .order-meta { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+    #gridCards .order-total { font-size: 14px; font-weight: 600; white-space: nowrap; }
+    #gridCards .order-badges { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+    #gridCards .order-pay { font-size: 12px; color: var(--ink-soft); margin-top: 6px; }
+    #gridCards .order-pay b { color: var(--ink); }
+    @media (max-width: 767px) { #gridTableCard { display: none; } }
+    @media (min-width: 768px) { #gridCards { display: none; } }
+  </style>
+</head>
+
+<body>
+
+  <!-- ═══ APP ═══ -->
+  <div class="admin-app" id="adminApp">
+    <header>
+      <div class="header-inner">
+        <div class="brand">Pesanan Grid<div class="brand-sub">Tulehu Inkline · beta</div>
+        </div>
+        <div class="header-actions">
+          <a class="link-btn" href="pesanan.html">Mode Kartu</a>
+          <a class="link-btn" href="dashboard.html">Dashboard</a>
+          <a class="link-btn" href="keuangan.html">Keuangan</a>
+          <button class="logout-btn" id="logoutBtn">Keluar</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="status-msg" id="statusMsg"></div>
+
+      <div class="toolbar-row">
+        <h2>Pesanan — Spreadsheet</h2>
+        <div class="filter-btns" id="filterBtns">
+          <button class="filter-btn active" data-status="semua">Semua</button>
+          <button class="filter-btn" data-status="Baru">Baru</button>
+          <button class="filter-btn" data-status="Diproses">Diproses</button>
+          <button class="filter-btn" data-status="Selesai">Selesai</button>
+          <button class="filter-btn" data-status="Diambil">Diambil</button>
+          <button class="filter-btn" data-status="Batal">Batal</button>
+        </div>
+      </div>
+
+      <!-- Desktop: tabel grid -->
+      <div class="table-card grid-card" id="gridTableCard">
+        <div class="table-wrap">
+          <table id="gridTable" aria-label="Grid pesanan">
+            <thead>
+              <tr>
+                <th>Produk</th>
+                <th>Size</th>
+                <th>Cuttingan</th>
+                <th>Lengan</th>
+                <th>Warna</th>
+                <th>Qty</th>
+                <th>Total</th>
+                <th>Dibayar</th>
+                <th>Sisa</th>
+                <th>Bayar</th>
+                <th>Customer</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="gridBody">
+              <tr><td colspan="12">Memuat pesanan...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="grid-note">Fase 1: tampil saja (read-only). Edit per sel + auto-save menyusul di fase 2. Kolom Akun juga ikut fase 2.</div>
+      </div>
+
+      <!-- Mobile: kartu stacked -->
+      <div id="gridCards"><div class="empty-state">Memuat pesanan...</div></div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/helpers.js"></script>
+  <script src="js/admin-core.js?v=9"></script>
+  <script src="js/pesanan-grid-data.js"></script>
+  <script src="js/pesanan-grid-render.js"></script>
+  <script>
+    window.requireAuth(GridApp.boot);
+  </script>
+</body>
+
+</html>
