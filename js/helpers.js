@@ -38,6 +38,23 @@ function getImageUrls(p) {
     .map(cloudinaryOptimize);
 }
 
+/* D2: opsi per produk (kolom DB sizes/colors, pipe-separated).
+   '' / kosong = fallback daftar global CONFIG. Sleeves tetap global. */
+function splitPipeList(value) {
+  const parts = String(value ?? '').split('|').map(s => s.trim()).filter(Boolean);
+  return [...new Set(parts)];
+}
+
+function productSizes(p) {
+  const list = splitPipeList(p && p.sizes);
+  return list.length ? list : [...CONFIG.kaos.sizes];
+}
+
+function productColors(p) {
+  const list = splitPipeList(p && p.colors);
+  return list.length ? list : [...CONFIG.kaos.colors];
+}
+
 function fmt(n) {
   if (isNaN(n) || n === null) return '–';
   return 'Rp\u00a0' + Math.round(n).toLocaleString('id-ID');

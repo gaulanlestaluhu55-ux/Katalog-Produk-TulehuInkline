@@ -119,7 +119,7 @@ function renderCard(p, idx) {
       <div class="options-block">
         <div class="opt-group">
           <div class="opt-label">Ukuran</div>
-          <div class="pill-row">${pillsHtml(CONFIG.kaos.sizes, 'size', idx, sizeSurchargeLabel)}</div>
+          <div class="pill-row">${pillsHtml(productSizes(p), 'size', idx, sizeSurchargeLabel)}</div>
         </div>
         <div class="opt-group">
           <div class="opt-label">Jenis Lengan</div>
@@ -127,7 +127,7 @@ function renderCard(p, idx) {
         </div>
         <div class="opt-group">
           <div class="opt-label">Warna</div>
-          <div class="pill-row">${pillsHtml(CONFIG.kaos.colors, 'color', idx, null)}</div>
+          <div class="pill-row">${pillsHtml(productColors(p), 'color', idx, null)}</div>
         </div>
         <div class="opt-group">
           <div class="opt-label">Jumlah</div>
