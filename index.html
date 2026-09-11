@@ -51,8 +51,11 @@
 <body>
 
 <main class="landing-hero">
-  <!-- DUMMY hero: URL final (Cloudinary) cukup ganti di CONFIG.landing.heroImage -->
-  <img class="landing-bg" id="heroImg" alt="Sablon kaos Tulehu Inkline" />
+  <!-- Hero responsif: mobile/desktop dari CONFIG.landing -->
+  <picture>
+    <source id="heroSrcMobile" media="(max-width: 767px)" />
+    <img class="landing-bg" id="heroImg" alt="Sablon kaos Tulehu Inkline" />
+  </picture>
   <div class="landing-overlay"></div>
   <div class="landing-content">
     <img src="icon-192.png" alt="Logo Tulehu Inkline" width="88" height="88" style="border-radius:24px;display:block;margin:0 auto 1rem" />
@@ -84,9 +87,12 @@
     if (landing.instagram) document.getElementById('igBtn').href = landing.instagram;
     if (landing.shopee) document.getElementById('shopeeBtn').href = landing.shopee;
     var hero = document.getElementById('heroImg');
-    if (landing.heroImage) {
-      hero.onerror = function () { hero.remove(); };
-      hero.src = landing.heroImage;
+    var heroSrc = document.getElementById('heroSrcMobile');
+    var heroUrl = landing.heroDesktop || landing.heroImage;
+    hero.onerror = function () { hero.remove(); };
+    if (heroUrl) {
+      if (landing.heroMobile && heroSrc) heroSrc.srcset = landing.heroMobile;
+      hero.src = heroUrl;
     } else {
       hero.remove();
     }

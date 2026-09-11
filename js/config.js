@@ -26,8 +26,9 @@ const CONFIG = {
   landing: {
     instagram: 'https://www.instagram.com/sablonkaostulehu?stkn=czVyc3ptZTVvZWQ5',
     shopee: 'https://id.shp.ee/ezeEQjji',
-    /* DUMMY hero — ganti URL Cloudinary final di sini */
-    heroImage: 'https://picsum.photos/seed/tulehu-inkline/1200/800',
+    /* Hero responsif: mobile ≤767px, desktop di atasnya */
+    heroMobile: 'https://res.cloudinary.com/rodryv2e/image/upload/v1789106937/mobile_ub38cy.webp',
+    heroDesktop: 'https://res.cloudinary.com/rodryv2e/image/upload/v1789106937/desktop_b6wayg.webp',
   }
 };
 window.CONFIG = CONFIG;
