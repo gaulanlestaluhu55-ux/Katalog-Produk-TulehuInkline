@@ -41,6 +41,8 @@ function newRowSyncAttrs() {
     if (cells[0].dataset.orig && !cells[0].querySelector('.new-size')) {
       cells.forEach((c) => { c.innerHTML = c.dataset.orig; });
     }
+    /* D3: daftar size/warna ikut produk terpilih (null = belum pilih → global). */
+    newRowSyncAttrOptions(p && isKaos(p) ? p : null);
     return;
   }
   cells.forEach((c) => { if (!c.dataset.orig) c.dataset.orig = c.innerHTML; });
@@ -49,6 +51,23 @@ function newRowSyncAttrs() {
     cells[1].textContent = '–'; cells[2].textContent = '–'; cells[3].textContent = '–';
   } else {
     cells.forEach((c) => { c.textContent = '–'; });
+  }
+}
+
+/* D3: refresh opsi size/warna draft sesuai produk (fallback global).
+   Seleksi dipertahankan bila masih valid, else dikosongkan. */
+function newRowSyncAttrOptions(p) {
+  const row = document.getElementById('gridNewRow');
+  if (!row) return;
+  const sizeSel = row.querySelector('.new-size');
+  if (sizeSel) {
+    const list = productSizes(p);
+    sizeSel.innerHTML = GridApp.optionsFrom(list, list.includes(sizeSel.value) ? sizeSel.value : '');
+  }
+  const warnaSel = row.querySelector('.new-warna');
+  if (warnaSel) {
+    const list = productColors(p);
+    warnaSel.innerHTML = GridApp.optionsFrom(list, list.includes(warnaSel.value) ? warnaSel.value : '');
   }
 }
 

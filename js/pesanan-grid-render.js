@@ -36,15 +36,17 @@ function gridRowHtml(o) {
   const locked = o.status === 'Batal' ? 'disabled' : '';
   const kaos = isKaos(o);
   const warnaVal = o.warna || p.warna;
+  /* D3: opsi size/warna ikut produk (fallback global bila ''/kosong). */
+  const prod = (GridApp.state.products || []).find((x) => String(x.id) === String(o.id_produk)) || null;
   const cust = window.escapeHtml(o.nama_customer || '-');
   const kontak = o.kontak ? `<span class="sub">${window.escapeHtml(o.kontak)}</span>` : '';
   const ts = GridApp.orderDate(o);
   const dateSub = ts ? `<span class="sub">${window.escapeHtml(ts)}</span>` : '';
 
-  const sizeCell = kaos ? attrSelect('attr-size', id, CONFIG.kaos.sizes, p.size, 'Size', locked) : gridCell(p.size);
+  const sizeCell = kaos ? attrSelect('attr-size', id, productSizes(prod), p.size, 'Size', locked) : gridCell(p.size);
   const cutCell = kaos ? attrSelect('attr-cuttingan', id, GridApp.CUTTINGAN_LIST, p.cuttingan, 'Cuttingan', locked) : gridCell(p.cuttingan);
   const sleeveCell = kaos ? attrSelect('attr-sleeve', id, CONFIG.kaos.sleeves, p.lengan, 'Lengan', locked) : gridCell(p.lengan);
-  const warnaCell = kaos ? attrSelect('attr-warna', id, CONFIG.kaos.colors, warnaVal, 'Warna', locked) : gridCell(warnaVal);
+  const warnaCell = kaos ? attrSelect('attr-warna', id, productColors(prod), warnaVal, 'Warna', locked) : gridCell(warnaVal);
 
   return `<tr data-id="${id}">`
     + `<td>${gridCell(o.nama_produk)}${dateSub}</td>`
