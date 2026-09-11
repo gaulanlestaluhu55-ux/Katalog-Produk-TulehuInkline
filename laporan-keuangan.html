@@ -193,7 +193,14 @@
 
       <!-- ═══ TABEL TRANSAKSI ═══ -->
       <div class="table-card">
-        <h3>Semua Transaksi</h3>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <h3 style="margin:0;">Semua Transaksi</h3>
+          <div class="month-pager" style="display:flex;align-items:center;gap:8px;">
+            <button class="filter-btn" id="txPrevBtn" aria-label="Bulan sebelumnya">‹</button>
+            <span id="txMonthLabel" style="font-size:12px;font-weight:600;min-width:120px;text-align:center;"></span>
+            <button class="filter-btn" id="txNextBtn" aria-label="Bulan berikutnya">›</button>
+          </div>
+        </div>
         <div class="table-wrap">
           <table id="txTable">
             <thead>
@@ -231,6 +238,7 @@
   <script>
     let kategoriChart = null;
     let financeMonthlyChart = null;
+    let txMonthKey = null; // pagination tabel transaksi per bulan (YYYY-MM)
 
     function adminRequestHeaders(json) {
       const h = { Authorization: `Bearer ${window.adminToken}` };
@@ -437,14 +445,64 @@
       });
     }
 
+    /* Pagination tabel transaksi per bulan (desc, default bulan terbaru ada data). */
+    function txMonthKeyOf(t) {
+      const raw = t.created_at || t.timestamp || '';
+      const d = new Date(raw);
+      if (!raw || isNaN(d.getTime())) return '';
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function txMonthList(list) {
+      const set = new Set();
+      (list || []).forEach(t => { const k = txMonthKeyOf(t); if (k) set.add(k); });
+      return [...set].sort().reverse();
+    }
+
+    function txMonthLabel(k) {
+      if (!k) return 'Belum ada data';
+      const [y, m] = k.split('-');
+      return new Date(y, m - 1).toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+    }
+
+    function txStep(dir, list) {
+      const months = txMonthList(list);
+      const i = months.indexOf(txMonthKey);
+      const n = i < 0 ? 0 : Math.min(months.length - 1, Math.max(0, i + dir));
+      txMonthKey = months[n] || null;
+      renderTxTable({ transaksi: list });
+    }
+
+    function renderTxPager(months, count) {
+      const label = document.getElementById('txMonthLabel');
+      const prev = document.getElementById('txPrevBtn');
+      const next = document.getElementById('txNextBtn');
+      if (!label || !prev || !next) return;
+      const i = months.indexOf(txMonthKey);
+      label.textContent = txMonthKey ? `${txMonthLabel(txMonthKey)} (${count})` : 'Belum ada data';
+      prev.disabled = i <= 0;
+      next.disabled = i < 0 || i >= months.length - 1;
+      prev.style.opacity = prev.disabled ? '.4' : '';
+      next.style.opacity = next.disabled ? '.4' : '';
+    }
+
+    let txCache = [];
+    document.getElementById('txPrevBtn').addEventListener('click', () => txStep(1, txCache));
+    document.getElementById('txNextBtn').addEventListener('click', () => txStep(-1, txCache));
+
     function renderTxTable(data) {
       const allTx = (data.transaksi || []);
+      txCache = allTx;
+      const months = txMonthList(allTx);
+      if (!months.includes(txMonthKey)) txMonthKey = months[0] || null;
+      const shown = txMonthKey ? allTx.filter(t => txMonthKeyOf(t) === txMonthKey) : allTx;
+      renderTxPager(months, shown.length);
       const tbody = document.querySelector('#txTable tbody');
-      if (!allTx.length) {
+      if (!shown.length) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--ink-muted);padding:2rem;">Belum ada transaksi.</td></tr>';
         return;
       }
-      tbody.innerHTML = allTx.map(t => {
+      tbody.innerHTML = shown.map(t => {
         const isMasuk = t.tipe !== 'Keluar';
         const date = t.created_at ? new Date(t.created_at).toLocaleString('id-ID', { dateStyle: 'medium' }) : '-';
         return `<tr>
