@@ -26,6 +26,7 @@ const CONFIG = {
   landing: {
     instagram: 'https://www.instagram.com/sablonkaostulehu?stkn=czVyc3ptZTVvZWQ5',
     shopee: 'https://id.shp.ee/ezeEQjji',
+    tiktok: 'https://www.tiktok.com/@sablonkaostulehu?_r=1&_t=ZS-99dWMAwKxOO',
     /* Hero responsif: mobile ≤767px, desktop di atasnya */
     heroMobile: 'https://res.cloudinary.com/rodryv2e/image/upload/v1789106937/mobile_ub38cy.webp',
     heroDesktop: 'https://res.cloudinary.com/rodryv2e/image/upload/v1789106937/desktop_b6wayg.webp',
