@@ -167,7 +167,7 @@
           </div>
         </div>
         <div class="laporan-chart">
-          <h3>Tren Keuangan Bulanan</h3>
+          <h3 id="finTrendTitle">Tren Keuangan Bulanan</h3>
           <div class="chart-wrap">
             <canvas id="financeMonthlyChart"></canvas>
           </div>
@@ -266,7 +266,7 @@
         if (json.status !== 'success') throw new Error(json.message);
         renderKPI(json.data);
         renderKategoriPie(json.data);
-        renderMonthlyChart(json.data);
+        renderMonthlyChart(json.data, range);
         renderKategoriRekap(json.data);
         renderTxTable(json.data);
       } catch (err) {
@@ -327,18 +327,26 @@
       });
     }
 
-    function renderMonthlyChart(data) {
+    function renderMonthlyChart(data, range) {
       const ctx = document.getElementById('financeMonthlyChart').getContext('2d');
       if (financeMonthlyChart) financeMonthlyChart.destroy();
 
-      const bulanan = (data.bulanan || []).slice(-12);
-      if (!bulanan.length) {
+      /* Tren harian bila range bukan 12 bulan; bulanan bila 12 bulan. */
+      const useHarian = range !== '12m' && Array.isArray(data.harian) && data.harian.length;
+      document.getElementById('finTrendTitle').textContent =
+        useHarian ? 'Tren Keuangan Harian' : 'Tren Keuangan Bulanan';
+      const points = useHarian ? data.harian : (data.bulanan || []).slice(-12);
+      if (!points.length) {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         return;
       }
 
-      const labels = bulanan.map(b => {
-        const [y, m] = b.bulan.split('-');
+      const labels = points.map(pt => {
+        if (useHarian) {
+          const [y, m, d] = pt.tanggal.split('-');
+          return new Date(y, m - 1, d).toLocaleString('id-ID', { day: 'numeric', month: 'short' });
+        }
+        const [y, m] = pt.bulan.split('-');
         return new Date(y, m - 1).toLocaleString('id-ID', { month: 'short', year: 'numeric' });
       });
 
@@ -348,7 +356,7 @@
           labels,
           datasets: [{
             label: 'Pemasukan',
-            data: bulanan.map(b => b.masuk),
+            data: points.map(pt => pt.masuk),
             borderColor: '#15803d',
             backgroundColor: 'rgba(21, 128, 61, 0.1)',
             tension: 0.3,
@@ -357,7 +365,7 @@
             pointHoverRadius: 6
           }, {
             label: 'Pengeluaran',
-            data: bulanan.map(b => b.keluar),
+            data: points.map(pt => pt.keluar),
             borderColor: '#991b1b',
             backgroundColor: 'rgba(153, 27, 27, 0.1)',
             tension: 0.3,

@@ -171,6 +171,7 @@ async function handleFinance(req, res) {
       saldo: total_masuk - total_keluar,
       per_kategori: Object.values(per_kategori).sort((a, b) => b.total_keluar - a.total_keluar),
       bulanan: Object.values(bulanan).sort((a, b) => a.bulan.localeCompare(b.bulan)),
+      harian: buildFinanceDaily(tx || [], bounds),
       transaksi,
     }
   });
@@ -288,6 +289,28 @@ function buildMonthlySeries(orders, bounds) {
     if (!groups[key]) groups[key] = { bucket: key, orders: 0, revenue: 0 };
     groups[key].orders += 1;
     groups[key].revenue += Number(o.total || 0);
+  }
+
+  return Object.values(groups);
+}
+
+/* Series harian masuk/keluar dalam bounds (zero-filled per tanggal).
+   Pure function — diekspor agar bisa di-unit-test. */
+export function buildFinanceDaily(tx, bounds) {
+  const groups = {};
+  const current = new Date(bounds.start);
+  while (current < bounds.end) {
+    const key = toDateKey(current);
+    groups[key] = { tanggal: key, masuk: 0, keluar: 0 };
+    current.setDate(current.getDate() + 1);
+  }
+
+  for (const t of tx || []) {
+    const key = toDateKey(new Date(t.created_at));
+    if (!groups[key]) groups[key] = { tanggal: key, masuk: 0, keluar: 0 };
+    const nominal = Number(t.nominal || 0);
+    if (t.tipe === 'Keluar') groups[key].keluar += nominal;
+    else groups[key].masuk += nominal;
   }
 
   return Object.values(groups);
