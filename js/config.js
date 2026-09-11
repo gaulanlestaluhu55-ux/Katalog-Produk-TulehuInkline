@@ -21,6 +21,13 @@ const CONFIG = {
   categories: {
     Masuk: ['Penjualan', 'Modal', 'Pendapatan Lain'],
     Keluar: ['Bahan Baku', 'Ongkos Kirim', 'Gaji Karyawan', 'Operasional', 'Marketing', 'Biaya Hidup', 'Angsuran', 'Lainnya'],
+  },
+  /* Landing page (index.html) — link publik, aman di git */
+  landing: {
+    instagram: 'https://www.instagram.com/sablonkaostulehu?stkn=czVyc3ptZTVvZWQ5',
+    shopee: 'https://id.shp.ee/ezeEQjji',
+    /* DUMMY hero — ganti URL Cloudinary final di sini */
+    heroImage: 'https://picsum.photos/seed/tulehu-inkline/1200/800',
   }
 };
 window.CONFIG = CONFIG;

@@ -1,8 +1,9 @@
-const CACHE = 'tulehu-v10';
+const CACHE = 'tulehu-v11';
 
 const PRECACHE_URLS = [
   '/',
   '/index.html',
+  '/katalog.html',
   '/admin.html',
   '/dashboard.html',
   '/pesanan.html',

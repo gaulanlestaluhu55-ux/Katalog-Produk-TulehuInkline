@@ -3,80 +3,106 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Katalog Sablon – Tulehu Inkline</title>
+  <title>Tulehu Inkline — Sablon Kaos Custom</title>
+  <meta name="description" content="Tulehu Inkline — sablon kaos custom Negeri Tulehu, Maluku Tengah. Lihat katalog, Instagram, dan Shopee kami." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
-  </head>
+  <style>
+    /* ── Landing link-in-bio (bold hero + foto) ── */
+    .landing-hero {
+      position: relative; min-height: 100vh; min-height: 100svh;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--ink); overflow: hidden;
+    }
+    .landing-bg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; object-position: center;
+    }
+    .landing-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(10,10,10,.55) 0%, rgba(10,10,10,.35) 40%, rgba(10,10,10,.78) 100%);
+    }
+    .landing-content {
+      position: relative; z-index: 1; width: 100%; max-width: 440px;
+      padding: 3rem 1.5rem 2.5rem; text-align: center; color: #fff;
+    }
+    .landing-badge {
+      width: 76px; height: 76px; margin: 0 auto 1rem; border-radius: 22px;
+      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.35);
+      backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center;
+    }
+    .landing-content h1 { font-size: clamp(1.8rem, 6vw, 2.6rem); font-weight: 700; letter-spacing: -0.5px; line-height: 1.15; }
+    .landing-content .tagline { margin: 0.6rem 0 1.8rem; font-size: 14px; color: rgba(255,255,255,.82); }
+    .landing-links { display: flex; flex-direction: column; gap: 10px; }
+    .landing-btn {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      min-height: 52px; padding: 0 18px; border-radius: 16px;
+      font-size: 15px; font-weight: 600; text-decoration: none;
+      transition: transform 0.12s, background 0.15s;
+    }
+    .landing-btn:active { transform: scale(0.98); }
+    .landing-btn.primary { background: #fff; color: var(--ink); }
+    .landing-btn.primary:hover { background: #f0f0ee; }
+    .landing-btn.ghost {
+      background: rgba(255,255,255,.12); color: #fff;
+      border: 1px solid rgba(255,255,255,.4); backdrop-filter: blur(6px);
+    }
+    .landing-btn.ghost:hover { background: rgba(255,255,255,.22); }
+    .landing-foot { margin-top: 1.8rem; font-size: 12px; color: rgba(255,255,255,.65); }
+  </style>
+</head>
 <body>
 
-<header>
-  <div class="header-inner">
-    <a href="#" class="brand">
-      <div class="brand-icon">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-          <rect x="2" y="2" width="6" height="6" rx="1.5" fill="white"/>
-          <rect x="10" y="2" width="6" height="6" rx="1.5" fill="white" opacity="0.5"/>
-          <rect x="2" y="10" width="6" height="6" rx="1.5" fill="white" opacity="0.5"/>
-          <rect x="10" y="10" width="6" height="6" rx="1.5" fill="white"/>
-        </svg>
-      </div>
-      <div>
-        <div class="brand-name">Tulehu Inkline</div>
-        <div class="brand-sub">Custom Screen Printing</div>
-      </div>
-    </a>
-    <div style="display:flex; align-items:center; gap:8px;">
-      <a class="header-ongkir" href="https://tulehu-inbox-chatbot-production.up.railway.app/shipping-calculator" target="_blank" rel="noopener">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-        <span>Cek Ongkir</span>
+<main class="landing-hero">
+  <!-- DUMMY hero: URL final (Cloudinary) cukup ganti di CONFIG.landing.heroImage -->
+  <img class="landing-bg" id="heroImg" alt="Sablon kaos Tulehu Inkline" />
+  <div class="landing-overlay"></div>
+  <div class="landing-content">
+    <div class="landing-badge">
+      <svg width="34" height="34" viewBox="0 0 18 18" fill="none">
+        <rect x="2" y="2" width="6" height="6" rx="1.5" fill="white"/>
+        <rect x="10" y="2" width="6" height="6" rx="1.5" fill="white" opacity="0.5"/>
+        <rect x="2" y="10" width="6" height="6" rx="1.5" fill="white" opacity="0.5"/>
+        <rect x="10" y="10" width="6" height="6" rx="1.5" fill="white"/>
+      </svg>
+    </div>
+    <h1>Tulehu Inkline</h1>
+    <p class="tagline">Sablon kaos custom · Negeri Tulehu, Maluku Tengah</p>
+    <div class="landing-links">
+      <a class="landing-btn primary" href="katalog.html">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span>Katalog Produk</span>
       </a>
-      <a class="header-wa" id="headerWaBtn" href="#" target="_blank" rel="noopener">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        <span>Konsultasi WA</span>
+      <a class="landing-btn ghost" id="igBtn" href="#" target="_blank" rel="noopener">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        <span>Instagram</span>
+      </a>
+      <a class="landing-btn ghost" id="shopeeBtn" href="#" target="_blank" rel="noopener">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        <span>Shopee</span>
       </a>
     </div>
-  </div>
-</header>
-
-<main>
-  <div class="hero">
-    <h1>Katalog Produk Sablon</h1>
-    <p>Pilih produk, tentukan spesifikasi, lalu order langsung via WhatsApp.</p>
-  </div>
-
-  <div class="toolbar">
-    <div class="search-wrap">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="searchInput" placeholder="Cari produk..." />
-    </div>
-    <div class="filter-btns" id="filterBtns">
-      <button class="filter-btn active" data-cat="semua">Semua</button>
-    </div>
-  </div>
-
-  <div class="info-banner" id="infoBanner"></div>
-
-  <div class="grid-wrap">
-    <div class="product-grid" id="productGrid">
-      <div class="loading">Memuat katalog...</div>
-    </div>
+    <div class="landing-foot">&copy; 2026 Tulehu Inkline</div>
   </div>
 </main>
 
-<footer>&copy; 2026 Tulehu Inkline · Negeri Tulehu, Maluku Tengah</footer>
-
-<script src="js/config.js" defer></script>
-<script src="js/state.js" defer></script>
-<script src="js/helpers.js" defer></script>
-<script src="js/whatsapp.js" defer></script>
-<script src="js/render.js" defer></script>
-<script src="js/collapse.js" defer></script>
-<script src="js/gallery.js" defer></script>
-<script src="js/events.js" defer></script>
-<script src="js/filter.js" defer></script>
-<script src="js/data.js" defer></script>
-<script src="js/main.js" defer></script>
+<script src="js/config.js"></script>
+<script>
+  /* Link + foto dibaca dari CONFIG.landing (satu-satunya tempat edit) */
+  (function () {
+    var landing = (window.CONFIG && CONFIG.landing) || {};
+    if (landing.instagram) document.getElementById('igBtn').href = landing.instagram;
+    if (landing.shopee) document.getElementById('shopeeBtn').href = landing.shopee;
+    var hero = document.getElementById('heroImg');
+    if (landing.heroImage) {
+      hero.onerror = function () { hero.remove(); };
+      hero.src = landing.heroImage;
+    } else {
+      hero.remove();
+    }
+  })();
+</script>
 </body>
 </html>
