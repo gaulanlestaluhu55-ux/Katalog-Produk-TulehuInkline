@@ -343,19 +343,27 @@
       });
 
       financeMonthlyChart = new Chart(ctx, {
-        type: 'bar',
+        type: 'line',
         data: {
           labels,
           datasets: [{
             label: 'Pemasukan',
             data: bulanan.map(b => b.masuk),
-            backgroundColor: 'rgba(21, 128, 61, 0.7)',
-            borderRadius: 3,
+            borderColor: '#15803d',
+            backgroundColor: 'rgba(21, 128, 61, 0.1)',
+            tension: 0.3,
+            fill: true,
+            pointRadius: 4,
+            pointHoverRadius: 6
           }, {
             label: 'Pengeluaran',
             data: bulanan.map(b => b.keluar),
-            backgroundColor: 'rgba(153, 27, 27, 0.7)',
-            borderRadius: 3,
+            borderColor: '#991b1b',
+            backgroundColor: 'rgba(153, 27, 27, 0.1)',
+            tension: 0.3,
+            fill: true,
+            pointRadius: 4,
+            pointHoverRadius: 6
           }]
         },
         options: {
