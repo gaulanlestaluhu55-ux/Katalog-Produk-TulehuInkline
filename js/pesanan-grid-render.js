@@ -103,11 +103,46 @@ GridApp.renderAll = function () {
   if (!rows.length) {
     body.innerHTML = '<tr><td colspan="13">Belum ada pesanan.</td></tr>';
     cards.innerHTML = '<div class="empty-state">Belum ada pesanan.</div>';
+    GridApp.syncTopScroll();
     return;
   }
   body.innerHTML = rows.map(gridRowHtml).join('');
   cards.innerHTML = rows.map(gridCardHtml).join('');
+  GridApp.syncTopScroll();
 };
+
+/* Scrollbar horizontal ATAS, sinkron dua arah dengan .table-wrap.
+   Supaya geser kanan-kiri bisa dari atas tanpa scroll halaman ke bawah dulu.
+   Auto-sembunyi kalau tabel muat penuh (tidak overflow). */
+GridApp.syncTopScroll = function () {
+  const top = document.getElementById('gridTopScroll');
+  const wrap = document.querySelector('#gridTableCard .table-wrap');
+  const table = document.getElementById('gridTable');
+  const spacer = document.getElementById('gridTopSpacer');
+  if (!top || !wrap || !table || !spacer) return;
+  spacer.style.width = table.scrollWidth + 'px';
+  top.style.visibility = table.scrollWidth > wrap.clientWidth + 1 ? 'visible' : 'hidden';
+};
+
+(function initTopScroll() {
+  const top = document.getElementById('gridTopScroll');
+  const wrap = document.querySelector('#gridTableCard .table-wrap');
+  if (!top || !wrap) return;
+  let lock = false;
+  top.addEventListener('scroll', () => {
+    if (lock) return;
+    lock = true;
+    wrap.scrollLeft = top.scrollLeft;
+    lock = false;
+  });
+  wrap.addEventListener('scroll', () => {
+    if (lock) return;
+    lock = true;
+    top.scrollLeft = wrap.scrollLeft;
+    lock = false;
+  });
+  window.addEventListener('resize', () => GridApp.syncTopScroll());
+})();
 
 /* Entry point dipanggil via requireAuth di pesanan-grid.html. */
 GridApp.boot = async function () {
