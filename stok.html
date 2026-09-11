@@ -330,10 +330,13 @@
         const lenganV = String(g.lengan || '-').replace(/^lengan\s+/i, '').trim() || '-';
         const header = `${g.jenis || 'Kaos'} ${g.warna || '-'} lengan ${lenganV.toLowerCase()} :`;
         const lines = g.sizes.map(x => `${x.size} = ${x.qty}`).join('\n');
-        return `${header}\n${lines}`;
+        const subtotal = g.sizes.reduce((a, x) => a + (Number(x.qty) || 0), 0);
+        return `${header}\n${lines}\nSubtotal: ${subtotal} pcs`;
       });
+      const grandTotal = Object.values(groups)
+        .reduce((a, g) => a + g.sizes.reduce((x, s) => x + (Number(s.qty) || 0), 0), 0);
 
-      return `${getPembukaText()}\n\n${sections.join('\n\n')}`;
+      return `${getPembukaText()}\n\n${sections.join('\n\n')}\n\nTotal semua: ${grandTotal} pcs`;
     }
 
     function updatePreview() {
