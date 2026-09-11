@@ -597,7 +597,7 @@
 
       const labels = bulanan.map(b => {
         const [y, m] = b.bulan.split('-');
-        return new Date(y, m - 1).toLocaleString('id-ID', { month: 'short', year: '2-digit' });
+        return new Date(y, m - 1).toLocaleString('id-ID', { month: 'short', year: 'numeric' });
       });
 
       financeMonthlyChart = new Chart(ctx, {
