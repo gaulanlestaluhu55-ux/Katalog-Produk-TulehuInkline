@@ -327,7 +327,8 @@
 
       const sections = Object.values(groups).map(g => {
         g.sizes.sort((a, b) => sizeSortIndex(a.size) - sizeSortIndex(b.size));
-        const header = `${g.jenis || 'Kaos'} ${g.warna || '-'} lengan ${(g.lengan || '-').toLowerCase()} :`;
+        const lenganV = String(g.lengan || '-').replace(/^lengan\s+/i, '').trim() || '-';
+        const header = `${g.jenis || 'Kaos'} ${g.warna || '-'} lengan ${lenganV.toLowerCase()} :`;
         const lines = g.sizes.map(x => `${x.size} = ${x.qty}`).join('\n');
         return `${header}\n${lines}`;
       });
