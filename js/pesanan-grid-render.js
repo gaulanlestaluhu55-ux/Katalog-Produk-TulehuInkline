@@ -56,10 +56,11 @@ function gridRowHtml(o) {
     + `<td>${warnaCell}</td>`
     + `<td class="num"><input class="cell-num attr-qty" data-id="${id}" type="number" min="1" step="1" value="${o.qty || 1}" ${locked} aria-label="Qty" /></td>`
     + `<td class="num total-cell">${gridMoney(total)}</td>`
-    + `<td class="num"><input class="cell-num pay-input" data-id="${id}" type="number" min="0" step="500" value="${dibayar}" ${locked} aria-label="Nominal dibayar" /></td>`
-    + `<td><select class="status-select pay-akun" data-id="${id}" ${locked} aria-label="Akun pembayaran">${GridApp.accountOptions(GridApp.lastAkun(o.id))}</select></td>`
+    + `<td class="num paid-cell">${gridMoney(dibayar)}</td>`
+    + `<td><select class="status-select pay-akun" data-id="${id}" ${locked} aria-label="Akun untuk tambah bayar">${GridApp.accountOptions(GridApp.lastAkun(o.id))}</select></td>`
+    + `<td class="num"><input class="cell-num tambah-input" data-id="${id}" type="number" min="0" step="500" value="" placeholder="0" ${locked} aria-label="Tambah bayar" /></td>`
     + `<td class="num sisa-cell">${gridMoney(Math.max(0, sisa))}</td>`
-    + `<td class="bayar-cell"><span class="status-badge ${window.safeClassToken(statusBayar, 'belum-bayar')}">${window.escapeHtml(statusBayar)}</span></td>`
+    + `<td class="bayar-cell"><span class="status-badge ${window.safeClassToken(statusBayar, 'belum-bayar')}">${window.escapeHtml(statusBayar)}</span> <button class="link-btn hist-btn" data-id="${id}">Riwayat</button></td>`
     + `<td>${cust}${kontak}</td>`
     + `<td><select class="status-select status-cell" data-id="${id}" aria-label="Status pesanan">${GridApp.statusOptions(o.status || 'Baru')}</select></td>`
     + `</tr>`;
@@ -86,10 +87,11 @@ function gridCardHtml(o) {
     + `</div><div class="order-total">${gridMoney(total)}</div></div>`
     + `<div class="order-badges">`
     + `<span class="status-badge bayar-badge ${window.safeClassToken(statusBayar, 'belum-bayar')}">${window.escapeHtml(statusBayar)}</span>`
+    + `<button class="link-btn hist-btn" data-id="${id}">Riwayat</button>`
     + `</div>`
     + `<div class="order-edit">`
     + `<label>Qty<input class="cell-num attr-qty" data-id="${id}" type="number" min="1" step="1" value="${o.qty || 1}" ${locked} /></label>`
-    + `<label>Bayar<input class="cell-num pay-input" data-id="${id}" type="number" min="0" step="500" value="${dibayar}" ${locked} /></label>`
+    + `<label>Tambah<input class="cell-num tambah-input" data-id="${id}" type="number" min="0" step="500" value="" placeholder="0" ${locked} /></label>`
     + `<label>Akun<select class="status-select pay-akun" data-id="${id}" ${locked}>${GridApp.accountOptions(GridApp.lastAkun(o.id))}</select></label>`
     + `<label>Status<select class="status-select status-cell" data-id="${id}">${GridApp.statusOptions(o.status || 'Baru')}</select></label>`
     + `</div>`
@@ -103,7 +105,7 @@ GridApp.renderAll = function () {
   const body = document.getElementById('gridBody');
   const cards = document.getElementById('gridCards');
   if (!rows.length) {
-    body.innerHTML = '<tr><td colspan="13">Belum ada pesanan.</td></tr>';
+    body.innerHTML = '<tr><td colspan="14">Belum ada pesanan.</td></tr>';
     cards.innerHTML = '<div class="empty-state">Belum ada pesanan.</div>';
     GridApp.syncTopScroll();
     return;
@@ -153,7 +155,7 @@ GridApp.boot = async function () {
     GridApp.renderAll();
   } catch (err) {
     document.getElementById('gridBody').innerHTML =
-      `<tr><td colspan="13">Gagal memuat: ${window.escapeHtml(err.message || err)}</td></tr>`;
+      `<tr><td colspan="14">Gagal memuat: ${window.escapeHtml(err.message || err)}</td></tr>`;
     document.getElementById('gridCards').innerHTML =
       `<div class="empty-state">Gagal memuat: ${window.escapeHtml(err.message || err)}</div>`;
     window.showStatus('Gagal konek ke server: ' + (err.message || err), false);

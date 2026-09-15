@@ -25,6 +25,7 @@ export default async function handler(req, res) {
     if (!namaCustomer) return res.status(400).json({ status: 'error', message: 'Nama customer wajib diisi.' });
     if (!kategori) return res.status(400).json({ status: 'error', message: 'Kategori wajib diisi.' });
     if (nominalDibayar > total) return res.status(400).json({ status: 'error', message: 'Nominal dibayar tidak boleh lebih besar dari total.' });
+    if (nominalDibayar > 0 && !String(body.akun || '').trim()) return res.status(400).json({ status: 'error', message: 'Akun wajib diisi untuk DP awal.' });
     const sisa = total - nominalDibayar;
     const statusBayar = computeStatusBayar(nominalDibayar, total);
 
@@ -56,7 +57,7 @@ export default async function handler(req, res) {
     if (error) return res.status(500).json({ status: 'error', message: error.message });
 
     if (nominalDibayar > 0) {
-      const akunDp = body.akun || 'Kas';
+      const akunDp = String(body.akun || '').trim();
       const keteranganDp = `DP awal — ${body.nama_produk || ''} (${body.nama_customer || ''})`;
       try {
         await appendLedger(supabase, {

@@ -41,6 +41,71 @@ export function paymentNetPerAkun(rows) {
   return out;
 }
 
+/* Validasi tambah-bayar (F1, pure — gampang di-unit-test tanpa DB).
+   Return { ok:true } atau { ok:false, message }. */
+export function validateTambahBayar({ total, oldNominal, tambah, akun }) {
+  if (!String(akun || '').trim()) return { ok: false, message: 'Akun wajib diisi untuk setiap pembayaran.' };
+  if (!(tambah > 0)) return { ok: false, message: 'Nominal tambah harus lebih dari 0.' };
+  const sisa = toNumSafe(total) - toNumSafe(oldNominal);
+  if (tambah - sisa > 0.01) return { ok: false, message: 'Nominal melebihi sisa pembayaran.' };
+  return { ok: true };
+}
+
+/* Sum riwayat cicilan per order (F1 — sumber kebenaran tunggal).
+   Signed: DP/Pelunasan/Cicilan positif, Koreksi/Reversal negatif. */
+export async function sumOrderPayments(supabase, idPesanan) {
+  const { data, error } = await supabase
+    .from('order_payments')
+    .select('nominal')
+    .eq('id_pesanan', idPesanan);
+  if (error) throw error;
+  return (data || []).reduce((acc, r) => acc + Number(r.nominal || 0), 0);
+}
+
+/* Void 1 baris cicilan (F3): insert Koreksi negatif + ledger Keluar ke akun ASAL.
+   Hanya tipe DP/Pelunasan/Cicilan bernominal positif yang belum pernah di-void
+   (penanda: belum ada Koreksi dengan keterangan memuat `void:<id>`).
+   Koreksi sebagian = void penuh lalu tambah baru yang benar. Throw bila tak valid. */
+export async function voidOrderPayment(supabase, idPesanan, paymentId, orderLabel) {
+  const { data: row, error: readErr } = await supabase
+    .from('order_payments')
+    .select('*')
+    .eq('id', paymentId)
+    .single();
+  if (readErr || !row) throw new Error('Baris pembayaran tidak ditemukan.');
+  if (String(row.id_pesanan) !== String(idPesanan)) throw new Error('Baris pembayaran bukan milik pesanan ini.');
+  if (!['DP', 'Pelunasan', 'Cicilan'].includes(row.tipe)) throw new Error('Hanya baris DP/Pelunasan yang bisa dikoreksi.');
+  const nominal = Number(row.nominal || 0);
+  if (!(nominal > 0)) throw new Error('Baris ini tidak punya nominal positif.');
+  const tag = `void:${paymentId}`;
+  const { data: existing, error: checkErr } = await supabase
+    .from('order_payments')
+    .select('id')
+    .eq('id_pesanan', idPesanan)
+    .like('keterangan', `%${tag}%`);
+  if (checkErr) throw checkErr;
+  if ((existing || []).length) throw new Error('Baris ini sudah pernah dikoreksi.');
+  const keterangan = `Koreksi ${tag} — ${orderLabel} (void ${row.tipe} ${row.akun})`;
+  await appendLedger(supabase, {
+    tipe: 'Keluar',
+    sumber: 'Pesanan',
+    id_pesanan: idPesanan,
+    kategori: 'Koreksi Pembayaran',
+    keterangan,
+    nominal,
+    akun: row.akun,
+  });
+  const { error: payErr } = await supabase.from('order_payments').insert({
+    id_pesanan: idPesanan,
+    nominal: -nominal,
+    akun: row.akun,
+    tipe: 'Koreksi',
+    keterangan,
+  });
+  if (payErr) throw payErr;
+  return { nominal, akun: row.akun };
+}
+
 /* Reversal pembatalan per akun asal (B2 — ganti hardcode Kas). */
 export async function reversePaymentsToLedger(supabase, idPesanan, order) {
   const { data: rows, error: readErr } = await supabase
