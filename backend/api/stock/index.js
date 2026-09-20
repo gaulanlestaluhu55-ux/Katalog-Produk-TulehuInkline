@@ -1,6 +1,7 @@
 import { supabase } from '../../lib/supabase.js';
 import { handleCors, requireAdmin } from '../../lib/auth.js';
 import { toNumSafe, ACTIVE_ORDER_STATUSES } from '../../lib/helpers.js';
+import { ACTIVE_BULK_STOCK_STATUSES } from '../../lib/bulk-orders.js';
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;
@@ -10,11 +11,12 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ status: 'error', message: 'Method not allowed' });
 
   // 1. Ambil semua pesanan aktif (Baru/Diproses) yang punya varian size/warna
-  const { data: orders, error: ordersErr } = await supabase
-    .from('orders')
-    .select('kategori, size, warna, lengan, qty, status')
-    .in('status', ACTIVE_ORDER_STATUSES);
+  const [{ data: orders, error: ordersErr }, { data: bulkItems, error: bulkErr }] = await Promise.all([
+    supabase.from('orders').select('kategori, size, warna, lengan, qty, status').in('status', ACTIVE_ORDER_STATUSES),
+    supabase.from('bulk_order_items').select('size, warna, lengan, qty, bulk_orders!inner(kategori,status)').in('bulk_orders.status', ACTIVE_BULK_STOCK_STATUSES),
+  ]);
   if (ordersErr) return res.status(500).json({ status: 'error', message: ordersErr.message });
+  if (bulkErr && !isMissingBulkSchema(bulkErr)) return res.status(500).json({ status: 'error', message: bulkErr.message });
 
   // 2. Agregasi di JS, dikelompokkan per jenis+size+warna+lengan
   const groups = {};
@@ -28,6 +30,17 @@ export default async function handler(req, res) {
     const key = `${jenis}|${size}|${warna}|${lengan}`;
     if (!groups[key]) groups[key] = { key, jenis, size, warna, lengan, qty: 0 };
     groups[key].qty += toNumSafe(o.qty);
+  }
+  for (const item of bulkItems || []) {
+    const parent = item.bulk_orders || {};
+    const size = item.size || '';
+    const warna = item.warna || '';
+    const lengan = item.lengan || '';
+    if (!size && !warna) continue;
+    const jenis = parent.kategori || '-';
+    const key = `${jenis}|${size}|${warna}|${lengan}`;
+    if (!groups[key]) groups[key] = { key, jenis, size, warna, lengan, qty: 0 };
+    groups[key].qty += toNumSafe(item.qty);
   }
 
   // 3. Gabung sama status checklist + vendor
@@ -58,6 +71,10 @@ export default async function handler(req, res) {
   });
 
   return res.status(200).json({ status: 'success', data: result });
+}
+
+function isMissingBulkSchema(error) {
+  return ['42P01', 'PGRST205'].includes(error?.code) || /bulk_order/i.test(String(error?.message || ''));
 }
 
 async function handleStatusPost(req, res) {

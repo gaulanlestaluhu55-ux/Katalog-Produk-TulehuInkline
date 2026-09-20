@@ -25,25 +25,16 @@ async function handleSummary(req, res) {
   const current = getRangeBounds(range);
   const previous = getPreviousRangeBounds(range, current);
 
-  const { data: currentOrders, error: currentErr } = await supabase
-    .from('orders')
-    .select('status, status_bayar, total, created_at')
-    .gte('created_at', current.start.toISOString())
-    .lt('created_at', current.end.toISOString());
-  if (currentErr) throw currentErr;
-
-  const { data: previousOrders, error: previousErr } = await supabase
-    .from('orders')
-    .select('status, status_bayar, total, created_at')
-    .gte('created_at', previous.start.toISOString())
-    .lt('created_at', previous.end.toISOString());
-  if (previousErr) throw previousErr;
+  const [currentOrders, previousOrders] = await Promise.all([
+    loadOrderParents(current),
+    loadOrderParents(previous),
+  ]);
 
   return res.status(200).json({
     status: 'success',
     data: {
-      range: aggregateOrders(currentOrders || []),
-      previous_range: aggregateOrders(previousOrders || []),
+      range: aggregateOrders(currentOrders),
+      previous_range: aggregateOrders(previousOrders),
       range_key: range
     }
   });
@@ -53,13 +44,7 @@ async function handleMonthly(req, res) {
   const range = normalizeRange(req.query.range);
   const bounds = getRangeBounds(range);
 
-  const { data: orders, error } = await supabase
-    .from('orders')
-    .select('total, created_at')
-    .gte('created_at', bounds.start.toISOString())
-    .lt('created_at', bounds.end.toISOString())
-    .order('created_at', { ascending: true });
-  if (error) throw error;
+  const orders = await loadOrderParents(bounds);
 
   const result = buildTimeSeries(range, orders || [], bounds);
   return res.status(200).json({ status: 'success', data: result, meta: { range } });
@@ -70,12 +55,12 @@ async function handleTopProducts(req, res) {
   const range = normalizeRange(req.query.range);
   const bounds = getRangeBounds(range);
 
-  const { data: orders, error } = await supabase
-    .from('orders')
-    .select('id_produk, nama_produk, kategori, qty, total, created_at')
-    .gte('created_at', bounds.start.toISOString())
-    .lt('created_at', bounds.end.toISOString());
+  const [{ data: orders, error }, { data: bulkItems, error: bulkErr }] = await Promise.all([
+    supabase.from('orders').select('id_produk, nama_produk, kategori, qty, total, created_at').gte('created_at', bounds.start.toISOString()).lt('created_at', bounds.end.toISOString()),
+    supabase.from('bulk_order_items').select('id_produk, nama_produk, kategori, qty, total, bulk_orders!inner(created_at)').gte('bulk_orders.created_at', bounds.start.toISOString()).lt('bulk_orders.created_at', bounds.end.toISOString()),
+  ]);
   if (error) throw error;
+  if (bulkErr && !isMissingBulkSchema(bulkErr)) throw bulkErr;
 
   const groups = {};
   for (const o of orders || []) {
@@ -95,6 +80,9 @@ async function handleTopProducts(req, res) {
     groups[key].total_revenue += Number(o.total || 0);
     if (!groups[key].product_id && o.id_produk) groups[key].product_id = o.id_produk;
   }
+  for (const item of bulkItems || []) {
+    addProductAggregate(groups, item);
+  }
 
   const result = Object.values(groups)
     .sort((a, b) => b.total_qty - a.total_qty || b.total_revenue - a.total_revenue)
@@ -106,14 +94,16 @@ async function handleTopProducts(req, res) {
 async function handleRecentOrders(req, res) {
   const limit = Math.min(parseInt(req.query.limit || '10', 10), 50);
 
-  const { data: orders, error } = await supabase
-    .from('orders')
-    .select('id, nama_produk, nama_customer, total, status, status_bayar, created_at')
-    .order('created_at', { ascending: false })
-    .limit(limit);
+  const [{ data: orders, error }, { data: bulkOrders, error: bulkErr }] = await Promise.all([
+    supabase.from('orders').select('id, nama_produk, nama_customer, total, status, status_bayar, created_at').order('created_at', { ascending: false }).limit(limit),
+    supabase.from('bulk_orders').select('id, nama_produk, nama_customer, total, status, status_bayar, created_at').order('created_at', { ascending: false }).limit(limit),
+  ]);
   if (error) throw error;
-
-  return res.status(200).json({ status: 'success', data: orders });
+  if (bulkErr && !isMissingBulkSchema(bulkErr)) throw bulkErr;
+  const combined = [...(orders || []), ...(bulkOrders || []).map((order) => ({ ...order, nama_produk: `${order.nama_produk} (Massal)` }))]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, limit);
+  return res.status(200).json({ status: 'success', data: combined });
 }
 
 async function handleFinance(req, res) {
@@ -182,16 +172,48 @@ function aggregateOrders(arr) {
   return arr.reduce((a, o) => {
     a.total += 1;
     a.revenue += Number(o.total || 0);
-    if (o.status === 'Baru') a.baru += 1;
-    else if (o.status === 'Diproses') a.diproses += 1;
-    else if (o.status === 'Selesai') a.selesai += 1;
-    else if (o.status === 'Diambil') a.diambil += 1;
-    else if (o.status === 'Batal') a.batal += 1;
+    const status = normalizeOrderStatus(o.status);
+    if (status === 'Baru') a.baru += 1;
+    else if (status === 'Diproses') a.diproses += 1;
+    else if (status === 'Selesai') a.selesai += 1;
+    else if (status === 'Diambil') a.diambil += 1;
+    else if (status === 'Batal') a.batal += 1;
     if (o.status_bayar === 'Lunas') a.lunas += 1;
     else if (o.status_bayar === 'DP') a.dp += 1;
     else a.belum_bayar += 1;
     return a;
   }, { total: 0, revenue: 0, baru: 0, diproses: 0, selesai: 0, diambil: 0, batal: 0, lunas: 0, dp: 0, belum_bayar: 0 });
+}
+
+async function loadOrderParents(bounds) {
+  const [{ data: orders, error }, { data: bulkOrders, error: bulkErr }] = await Promise.all([
+    supabase.from('orders').select('status, status_bayar, total, created_at').gte('created_at', bounds.start.toISOString()).lt('created_at', bounds.end.toISOString()),
+    supabase.from('bulk_orders').select('status, status_bayar, total, created_at').gte('created_at', bounds.start.toISOString()).lt('created_at', bounds.end.toISOString()),
+  ]);
+  if (error) throw error;
+  if (bulkErr && !isMissingBulkSchema(bulkErr)) throw bulkErr;
+  return [...(orders || []), ...(bulkOrders || [])];
+}
+
+function normalizeOrderStatus(status) {
+  if (status === 'Menunggu DP') return 'Baru';
+  if (status === 'Siap Produksi') return 'Diproses';
+  if (status === 'Selesai Produksi' || status === 'Siap Diambil') return 'Selesai';
+  return status;
+}
+
+function addProductAggregate(groups, o) {
+  const nama = String(o.nama_produk || '').trim();
+  if (!nama) return;
+  const key = nama.toLowerCase();
+  if (!groups[key]) groups[key] = { product_id: o.id_produk || null, nama, kategori: o.kategori || '-', total_qty: 0, total_revenue: 0 };
+  groups[key].total_qty += Number(o.qty || 0);
+  groups[key].total_revenue += Number(o.total || 0);
+  if (!groups[key].product_id && o.id_produk) groups[key].product_id = o.id_produk;
+}
+
+function isMissingBulkSchema(error) {
+  return ['42P01', 'PGRST205'].includes(error?.code) || /bulk_order/i.test(String(error?.message || ''));
 }
 
 function normalizeRange(range) {

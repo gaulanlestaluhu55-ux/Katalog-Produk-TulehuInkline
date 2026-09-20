@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1a1a1a" />
+  <link rel="icon" href="icon-192.png" />
+  <title>Pesanan Massal - Tulehu Inkline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="css/admin.css" rel="stylesheet" />
+  <style>
+    .bulk-layout { display: grid; gap: 16px; }
+    .bulk-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; }
+    .bulk-section h3 { font-size: 15px; margin-bottom: 14px; }
+    .matrix-toolbar { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+    .matrix-toolbar .field { margin: 0; min-width: 220px; flex: 1; }
+    .matrix-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+    .matrix-table { min-width: 760px; }
+    .matrix-table th, .matrix-table td { padding: 8px; }
+    .matrix-table td:first-child, .matrix-table td:nth-child(2) { min-width: 145px; }
+    .matrix-input { width: 72px; height: 34px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; font: inherit; text-align: right; }
+    .matrix-input:focus { outline: none; border-color: var(--ink); }
+    .matrix-row-select { min-width: 130px; height: 34px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); font: inherit; }
+    .remove-row { width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--err-text); cursor: pointer; font-size: 18px; line-height: 1; }
+    .bulk-totals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .bulk-total { border-top: 1px solid var(--border); padding-top: 10px; }
+    .bulk-total span { display: block; font-size: 11px; color: var(--ink-muted); text-transform: uppercase; }
+    .bulk-total strong { display: block; margin-top: 3px; font-size: 16px; font-variant-numeric: tabular-nums; }
+    .list-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .list-actions select, .list-actions input { height: 32px; max-width: 150px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); font: inherit; }
+    .detail-items { margin-top: 12px; }
+    .detail-items td { font-size: 12px; }
+    .warning { color: var(--err-text); font-size: 12px; min-height: 18px; margin-top: 8px; }
+    @media (max-width: 720px) {
+      .container { padding: 1rem; }
+      .bulk-section { padding: 14px; }
+      .bulk-totals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .matrix-wrap { margin: 0 -14px; border-left: 0; border-right: 0; border-radius: 0; }
+      .matrix-table { min-width: 690px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-app" id="adminApp">
+    <header>
+      <div class="header-inner">
+        <div class="brand">Pesanan Massal<div class="brand-sub">Tulehu Inkline</div></div>
+        <div class="header-actions">
+          <a class="link-btn" href="pesanan-grid.html">Pesanan Reguler</a>
+          <a class="link-btn" href="dashboard.html">Dashboard</a>
+          <a class="link-btn" href="keuangan.html">Keuangan</a>
+          <button class="logout-btn" id="logoutBtn">Keluar</button>
+        </div>
+      </div>
+    </header>
+    <main class="container">
+      <div class="status-msg" id="statusMsg"></div>
+      <div class="bulk-layout">
+        <section class="bulk-section" aria-labelledby="bulkFormTitle">
+          <div class="toolbar-row"><h2 id="bulkFormTitle">Pesanan Baru</h2></div>
+          <form id="bulkOrderForm">
+            <div class="field-row">
+              <div class="field"><label for="bulkProduct">Produk</label><select id="bulkProduct" required></select></div>
+              <div class="field"><label for="bulkStatus">Status</label><select id="bulkStatus"></select></div>
+              <div class="field"><label for="bulkCutting">Cuttingan</label><select id="bulkCutting"><option>Reguler</option><option>Oversize</option></select></div>
+              <div class="field"><label for="bulkExtra">Tambahan harga / pcs</label><input id="bulkExtra" inputmode="numeric" value="0" /></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label for="bulkCustomer">Customer</label><input id="bulkCustomer" required /></div>
+              <div class="field"><label for="bulkContact">Kontak</label><input id="bulkContact" /></div>
+              <div class="field"><label for="bulkDiscountType">Diskon / pcs</label><div class="field-row"><select id="bulkDiscountType"><option value="nominal">Rp</option><option value="percent">%</option></select><input id="bulkDiscountValue" inputmode="decimal" value="0" aria-label="Nilai diskon per pcs" /></div></div>
+            </div>
+            <div class="matrix-toolbar">
+              <div class="field"><label>Matrix varian</label></div>
+              <button class="btn-secondary" type="button" id="addMatrixRow">Tambah warna/lengan</button>
+            </div>
+            <div class="matrix-wrap"><table class="matrix-table" aria-label="Matrix qty pesanan massal"><thead id="matrixHead"></thead><tbody id="matrixBody"></tbody></table></div>
+            <div class="warning" id="bulkValidation" aria-live="polite"></div>
+            <div class="field-row" style="margin-top:14px;">
+              <div class="field"><label for="bulkPayment">Pembayaran awal</label><input id="bulkPayment" inputmode="numeric" value="0" /></div>
+              <div class="field"><label for="bulkAccount">Akun</label><select id="bulkAccount"></select></div>
+              <div class="field"><label for="bulkNote">Catatan</label><input id="bulkNote" /></div>
+            </div>
+            <div class="bulk-totals" aria-live="polite">
+              <div class="bulk-total"><span>Qty</span><strong id="totalQty">0 pcs</strong></div>
+              <div class="bulk-total"><span>Subtotal</span><strong id="totalSubtotal">Rp 0</strong></div>
+              <div class="bulk-total"><span>Diskon</span><strong id="totalDiscount">Rp 0</strong></div>
+              <div class="bulk-total"><span>Total</span><strong id="totalFinal">Rp 0</strong></div>
+            </div>
+            <div class="modal-actions"><button class="btn-primary" id="bulkSubmit" type="submit">Simpan Pesanan Massal</button></div>
+          </form>
+        </section>
+        <section class="bulk-section" aria-labelledby="bulkListTitle">
+          <div class="toolbar-row"><h2 id="bulkListTitle">Pesanan Massal Terbaru</h2><button class="icon-btn" type="button" id="refreshBulkList" title="Muat ulang">Muat ulang</button></div>
+          <div class="table-wrap"><table aria-label="Pesanan massal terbaru"><thead><tr><th>Produk / Customer</th><th>Qty</th><th>Total</th><th>Pembayaran</th><th>Status</th><th></th></tr></thead><tbody id="bulkOrderList"><tr><td colspan="6" class="empty-state">Memuat...</td></tr></tbody></table></div>
+          <div id="bulkDetail" hidden></div>
+        </section>
+      </div>
+    </main>
+  </div>
+  <script src="js/config.js"></script>
+  <script src="js/helpers.js"></script>
+  <script src="js/admin-core.js"></script>
+  <script src="js/pesanan-massal.js"></script>
+  <script>window.requireAuth(BulkOrderApp.boot);</script>
+</body>
+</html>

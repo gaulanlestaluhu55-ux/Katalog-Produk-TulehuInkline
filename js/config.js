@@ -7,8 +7,8 @@ const CONFIG = {
   waDefaultMsg: 'Halo Tulehu Inkline! Saya mau tanya tentang produk sablon.',
   surcharge: {
     lenganPanjang: 10000,
-    xxl: 10000,
-    xxxl: 20000,
+    xxl: 5000,
+    xxxl: 10000,
   },
   kaos: {
     sizes: ['S', 'M', 'L', 'XL', 'XXL', '3XL'],

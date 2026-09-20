@@ -1,4 +1,4 @@
-const CACHE = 'tulehu-v12';
+const CACHE = 'tulehu-v13';
 
 const PRECACHE_URLS = [
   '/',
@@ -8,11 +8,13 @@ const PRECACHE_URLS = [
   '/dashboard.html',
   '/pesanan.html',
   '/pesanan-grid.html',
+  '/pesanan-massal.html',
   '/js/pesanan-grid-data.js',
   '/js/pesanan-grid-render.js',
   '/js/pesanan-grid-edit.js',
   '/js/pesanan-grid-details.js',
   '/js/pesanan-grid-new.js',
+  '/js/pesanan-massal.js',
   '/keuangan.html',
   '/laporan-keuangan.html',
   '/stok.html',

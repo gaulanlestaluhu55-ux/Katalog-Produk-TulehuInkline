@@ -15,14 +15,24 @@ export default async function handler(req, res) {
 
     // attach sold_count from completed orders
     if (data && data.length > 0) {
-      const { data: soldData } = await supabase
-        .from('orders')
-        .select('id_produk, nama_produk, qty')
-        .in('status', ['Selesai', 'Diambil']);
+      const [{ data: soldData }, { data: soldBulkData, error: soldBulkErr }] = await Promise.all([
+        supabase.from('orders').select('id_produk, nama_produk, qty').in('status', ['Selesai', 'Diambil']),
+        supabase.from('bulk_order_items').select('id_produk, nama_produk, qty, bulk_orders!inner(status)').in('bulk_orders.status', ['Selesai Produksi', 'Siap Diambil', 'Diambil']),
+      ]);
+      if (soldBulkErr && !isMissingBulkSchema(soldBulkErr)) return res.status(500).json({ status: 'error', message: soldBulkErr.message });
 
       const soldMap = {};
       const soldByName = {};
       for (const o of soldData || []) {
+        const qty = Number(o.qty || 0);
+        if (o.id_produk) {
+          soldMap[o.id_produk] = (soldMap[o.id_produk] || 0) + qty;
+        } else if (o.nama_produk) {
+          const key = String(o.nama_produk).trim().toLowerCase();
+          soldByName[key] = (soldByName[key] || 0) + qty;
+        }
+      }
+      for (const o of soldBulkData || []) {
         const qty = Number(o.qty || 0);
         if (o.id_produk) {
           soldMap[o.id_produk] = (soldMap[o.id_produk] || 0) + qty;
@@ -76,4 +86,8 @@ export default async function handler(req, res) {
   }
 
   res.status(405).json({ status: 'error', message: 'Method not allowed' });
+}
+
+function isMissingBulkSchema(error) {
+  return ['42P01', 'PGRST205'].includes(error?.code) || /bulk_order/i.test(String(error?.message || ''));
 }

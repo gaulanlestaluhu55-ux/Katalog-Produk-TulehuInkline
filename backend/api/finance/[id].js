@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     if (readErr) return res.status(500).json({ status: 'error', message: readErr.message });
     if (!tx) return res.status(404).json({ status: 'error', message: 'Transaksi tidak ditemukan' });
 
-    if (tx.sumber === 'Pesanan') {
+    if (tx.sumber === 'Pesanan' || tx.sumber === 'Pesanan Massal') {
       return res.status(400).json({ status: 'error', message: 'Transaksi dari pesanan gak bisa dihapus langsung di sini. Koreksi lewat update pembayaran di pesanan.' });
     }
     if (tx.sumber === 'Transfer') {
