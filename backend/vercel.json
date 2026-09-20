@@ -5,6 +5,16 @@
       "maxDuration": 10
     }
   },
+  "rewrites": [
+    {
+      "source": "/api/accounts/:id",
+      "destination": "/api/accounts"
+    },
+    {
+      "source": "/api/bulk-orders/:id",
+      "destination": "/api/bulk-orders"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
