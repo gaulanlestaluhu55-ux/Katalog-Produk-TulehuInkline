@@ -185,7 +185,7 @@
       <div class="chart-grid">
         <div class="chart-card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-            <h3 id="trendTitle">Trend Bulan Ini (Pesanan & Revenue)</h3>
+            <h3 id="trendTitle">Trend Bulan Ini (Kaos & Revenue)</h3>
             <select class="filter-select" id="rangeSelect" style="width:auto;">
               <option value="1d">Hari Ini</option>
               <option value="1m" selected>Bulan Ini</option>
@@ -306,9 +306,9 @@
 
     function updateTrendTitle() {
       const labels = {
-        '1d': 'Trend Hari Ini (Pesanan & Revenue)',
-        '1m': 'Trend Bulan Ini (Pesanan & Revenue)',
-        '12m': 'Trend 12 Bulan (Pesanan & Revenue)'
+        '1d': 'Trend Hari Ini (Kaos & Revenue)',
+        '1m': 'Trend Bulan Ini (Kaos & Revenue)',
+        '12m': 'Trend 12 Bulan (Kaos & Revenue)'
       };
       document.getElementById('trendTitle').textContent = labels[currentRange()] || labels['12m'];
     }
@@ -372,16 +372,16 @@
 
         const kpiHtml = `
         <div class="kpi-card">
-          <div class="kpi-label">Total Pesanan (${rangeLabel()})</div>
-          <div class="kpi-value">${fmtNum(current.total)}</div>
+          <div class="kpi-label">Total Kaos (${rangeLabel()})</div>
+          <div class="kpi-value">${fmtNum(current.total)} pcs</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Total Revenue (${rangeLabel()})</div>
           <div class="kpi-value green">${fmt(current.revenue)}</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Pesanan ${rangeLabel()}</div>
-          <div class="kpi-value blue">${fmtNum(current.total)}</div>
+          <div class="kpi-label">Kaos ${rangeLabel()}</div>
+          <div class="kpi-value blue">${fmtNum(current.total)} pcs</div>
           <div class="kpi-delta ${current.total >= previous.total ? 'up' : 'down'}">
             ${deltaPct(current.total, previous.total)} ${compareLabel}
           </div>
@@ -458,7 +458,7 @@
         data: {
           labels,
           datasets: [{
-            label: 'Pesanan',
+            label: 'Kaos (pcs)',
             data: orders,
             borderColor: '#2563eb',
             backgroundColor: 'rgba(37, 99, 235, 0.1)',
@@ -489,13 +489,13 @@
               callbacks: {
                 label: ctx => {
                   if (ctx.datasetIndex === 1) return `Revenue: ${fmt(ctx.raw)}`;
-                  return `Pesanan: ${ctx.raw}`;
+                  return `Kaos: ${ctx.raw} pcs`;
                 }
               }
             }
           },
           scales: {
-            y: { type: 'linear', position: 'left', beginAtZero: true, title: { display: true, text: 'Pesanan', font: { size: 11 } }, grid: { color: '#e4e4e0' }, ticks: { font: { size: 10 } } },
+            y: { type: 'linear', position: 'left', beginAtZero: true, title: { display: true, text: 'Kaos (pcs)', font: { size: 11 } }, grid: { color: '#e4e4e0' }, ticks: { font: { size: 10 } } },
             y1: { type: 'linear', position: 'right', beginAtZero: true, title: { display: true, text: 'Revenue (Rp)', font: { size: 11 } }, grid: { drawOnChartArea: false }, ticks: { font: { size: 10 }, callback: v => fmt(v) } },
             x: { grid: { display: false }, ticks: { font: { size: 10 } } }
           }

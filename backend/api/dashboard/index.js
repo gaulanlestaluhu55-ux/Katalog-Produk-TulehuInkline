@@ -170,7 +170,7 @@ async function handleFinance(req, res) {
 
 function aggregateOrders(arr) {
   return arr.reduce((a, o) => {
-    a.total += 1;
+    a.total += orderQty(o);
     a.revenue += Number(o.total || 0);
     const status = normalizeOrderStatus(o.status);
     if (status === 'Baru') a.baru += 1;
@@ -186,13 +186,13 @@ function aggregateOrders(arr) {
 }
 
 async function loadOrderParents(bounds) {
-  const [{ data: orders, error }, { data: bulkOrders, error: bulkErr }] = await Promise.all([
-    supabase.from('orders').select('status, status_bayar, total, created_at').gte('created_at', bounds.start.toISOString()).lt('created_at', bounds.end.toISOString()),
-    supabase.from('bulk_orders').select('status, status_bayar, total, created_at').gte('created_at', bounds.start.toISOString()).lt('created_at', bounds.end.toISOString()),
+  const [{ data: orders, error }, { data: bulkItems, error: bulkErr }] = await Promise.all([
+    supabase.from('orders').select('status, status_bayar, total, created_at, qty').gte('created_at', bounds.start.toISOString()).lt('created_at', bounds.end.toISOString()),
+    supabase.from('bulk_order_items').select('bulk_order_id, qty, bulk_orders!inner(status,status_bayar,total,created_at)').gte('bulk_orders.created_at', bounds.start.toISOString()).lt('bulk_orders.created_at', bounds.end.toISOString()),
   ]);
   if (error) throw error;
   if (bulkErr && !isMissingBulkSchema(bulkErr)) throw bulkErr;
-  return [...(orders || []), ...(bulkOrders || [])];
+  return [...(orders || []), ...aggregateBulkParents(bulkItems || [])];
 }
 
 function normalizeOrderStatus(status) {
@@ -210,6 +210,22 @@ function addProductAggregate(groups, o) {
   groups[key].total_qty += Number(o.qty || 0);
   groups[key].total_revenue += Number(o.total || 0);
   if (!groups[key].product_id && o.id_produk) groups[key].product_id = o.id_produk;
+}
+
+function aggregateBulkParents(items) {
+  const parents = {};
+  for (const item of items) {
+    const parentRaw = item.bulk_orders;
+    const parent = Array.isArray(parentRaw) ? parentRaw[0] : parentRaw;
+    if (!parent || !item.bulk_order_id) continue;
+    if (!parents[item.bulk_order_id]) parents[item.bulk_order_id] = { ...parent, qty: 0 };
+    parents[item.bulk_order_id].qty += orderQty(item);
+  }
+  return Object.values(parents);
+}
+
+function orderQty(order) {
+  return Math.max(0, Number(order.qty || 0));
 }
 
 function isMissingBulkSchema(error) {
@@ -271,7 +287,7 @@ function buildHourlySeries(orders, bounds) {
   for (const o of orders) {
     const date = new Date(o.created_at);
     const key = String(date.getHours()).padStart(2, '0');
-    groups[key].orders += 1;
+    groups[key].orders += orderQty(o);
     groups[key].revenue += Number(o.total || 0);
   }
 
@@ -290,7 +306,7 @@ function buildDailySeries(orders, bounds) {
   for (const o of orders) {
     const key = toDateKey(new Date(o.created_at));
     if (!groups[key]) groups[key] = { bucket: key, orders: 0, revenue: 0 };
-    groups[key].orders += 1;
+    groups[key].orders += orderQty(o);
     groups[key].revenue += Number(o.total || 0);
   }
 
@@ -310,7 +326,7 @@ function buildMonthlySeries(orders, bounds) {
     const date = new Date(o.created_at);
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     if (!groups[key]) groups[key] = { bucket: key, orders: 0, revenue: 0 };
-    groups[key].orders += 1;
+    groups[key].orders += orderQty(o);
     groups[key].revenue += Number(o.total || 0);
   }
 
