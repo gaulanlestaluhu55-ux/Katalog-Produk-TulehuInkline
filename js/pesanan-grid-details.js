@@ -23,6 +23,8 @@ function detailsScopeVals(scope, id) {
     size: v(q('.attr-size')), cuttingan: v(q('.attr-cuttingan')),
     sleeve: v(q('.attr-sleeve')), warna: v(q('.attr-warna')),
     qty: Math.max(1, parseInt(v(q('.attr-qty')) || '1', 10) || 1),
+    discountType: v(q('.discount-type')) || 'nominal',
+    discountValue: v(q('.discount-value')),
   };
 }
 
@@ -36,7 +38,8 @@ async function detailsSave(id, scope) {
   const warna = vals.warna || o.warna || cur.warna;
   const cuttingan = vals.cuttingan || cur.cuttingan;
   const unit = GridApp.recalcUnit(o, size, sleeve);
-  const total = unit * vals.qty;
+  const pricing = GridApp.discountTotals(unit, vals.qty, vals.discountType, vals.discountValue);
+  const total = pricing.total;
   const dibayar = Number(o.nominal_dibayar || 0);
   if (dibayar > total) {
     window.showStatus('DP sudah melebihi total baru. Koreksi pembayaran via Keuangan dulu.', false);
@@ -47,23 +50,19 @@ async function detailsSave(id, scope) {
     size, warna, lengan: sleeve, cuttingan,
     opsi: GridApp.formatOpsi({ size, cuttingan, lengan: sleeve, warna }),
     qty: vals.qty, harga_satuan: unit, total,
+    discount_type: vals.discountType, discount_value: vals.discountValue,
   };
   scope.querySelectorAll(`[data-id="${id}"]`).forEach((el) => {
     if (el.classList.contains('attr-size') || el.classList.contains('attr-cuttingan')
       || el.classList.contains('attr-sleeve') || el.classList.contains('attr-warna')
-      || el.classList.contains('attr-qty')) el.classList.add('cell-saving');
+      || el.classList.contains('attr-qty') || el.classList.contains('discount-type')
+      || el.classList.contains('discount-value')) el.classList.add('cell-saving');
   });
   try {
     const json = await GridApp.putDetails(id, payload);
     if (json.status !== 'success') throw new Error(json.message || 'gagal');
     Object.assign(o, json.data);
-    const totalCell = scope.querySelector('.total-cell');
-    if (totalCell) totalCell.textContent = fmt(Number(o.total || 0));
-    GridApp.patchPaymentUI(o);
-    scope.querySelectorAll('.cell-saving').forEach((el) => {
-      el.classList.remove('cell-saving'); el.classList.add('cell-saved');
-      setTimeout(() => el.classList.remove('cell-saved'), 1200);
-    });
+    GridApp.renderAll();
   } catch (err) {
     GridApp.renderAll();
     window.showStatus('Gagal simpan detail: ' + (err.message || err), false);
@@ -83,8 +82,9 @@ function detailsSchedule(id, scope) {
     const t = e.target;
     if (!t.dataset || !t.dataset.id || !t.closest) return;
     const isAttr = t.classList.contains('attr-size') || t.classList.contains('attr-cuttingan')
-      || t.classList.contains('attr-sleeve') || t.classList.contains('attr-warna');
+      || t.classList.contains('attr-sleeve') || t.classList.contains('attr-warna')
+      || t.classList.contains('discount-type');
     if (isAttr) detailsSave(t.dataset.id, t.closest('tr, .order-row'));
-    else if (t.classList.contains('attr-qty')) detailsSchedule(t.dataset.id, t.closest('tr, .order-row'));
+    else if (t.classList.contains('attr-qty') || t.classList.contains('discount-value')) detailsSchedule(t.dataset.id, t.closest('tr, .order-row'));
   });
 });

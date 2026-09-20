@@ -122,7 +122,7 @@ async function handleFinance(req, res) {
 
   const { data: tx, error } = await supabase
     .from('finance_transactions')
-    .select('id, tipe, kategori, keterangan, nominal, akun, created_at')
+    .select('id, tipe, sumber, kategori, keterangan, nominal, akun, created_at')
     .gte('created_at', bounds.start.toISOString())
     .lt('created_at', bounds.end.toISOString())
     .order('created_at', { ascending: false });
@@ -133,7 +133,8 @@ async function handleFinance(req, res) {
   const bulanan = {};
   const limit = Math.min(parseInt(req.query.limit || '50', 10), 200);
 
-  for (const t of tx || []) {
+  const operationalTx = (tx || []).filter((t) => t.sumber !== 'Transfer');
+  for (const t of operationalTx) {
     const nominal = Number(t.nominal || 0);
     const kat = t.kategori || 'Lainnya';
     if (!per_kategori[kat]) per_kategori[kat] = { kategori: kat, total_masuk: 0, total_keluar: 0 };
@@ -153,7 +154,7 @@ async function handleFinance(req, res) {
     else bulanan[bulan].masuk += nominal;
   }
 
-  const transaksi = (tx || []).slice(0, limit).map(t => ({
+  const transaksi = operationalTx.slice(0, limit).map(t => ({
     id: t.id,
     kategori: t.kategori || 'Lainnya',
     keterangan: t.keterangan || '',
@@ -171,7 +172,7 @@ async function handleFinance(req, res) {
       saldo: total_masuk - total_keluar,
       per_kategori: Object.values(per_kategori).sort((a, b) => b.total_keluar - a.total_keluar),
       bulanan: Object.values(bulanan).sort((a, b) => a.bulan.localeCompare(b.bulan)),
-      harian: buildFinanceDaily(tx || [], bounds),
+      harian: buildFinanceDaily(operationalTx, bounds),
       transaksi,
     }
   });

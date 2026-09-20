@@ -1,6 +1,6 @@
 import { supabase } from '../../lib/supabase.js';
 import { handleCors, requireAdmin } from '../../lib/auth.js';
-import { toNumSafe, computeStatusBayar, appendLedger, normVariant } from '../../lib/helpers.js';
+import { toNumSafe, computeStatusBayar, appendLedger, normVariant, calculateOrderPricing } from '../../lib/helpers.js';
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;
@@ -17,9 +17,14 @@ export default async function handler(req, res) {
     const namaProduk = String(body.nama_produk || '').trim();
     const namaCustomer = String(body.nama_customer || '').trim();
     const kategori = String(body.kategori || '').trim();
-    const qty = Math.max(1, Math.floor(toNumSafe(body.qty) || 1));
-    const hargaSatuan = Math.max(0, toNumSafe(body.harga_satuan));
-    const total = Math.max(0, toNumSafe(body.total));
+    const pricing = calculateOrderPricing({
+      hargaSatuan: body.harga_satuan,
+      qty: body.qty,
+      discountType: body.discount_type,
+      discountValue: body.discount_value,
+    });
+    if (!pricing.ok) return res.status(400).json({ status: 'error', message: pricing.message });
+    const { qty, unit: hargaSatuan, total } = pricing;
     const nominalDibayar = Math.max(0, toNumSafe(body.nominal_dibayar));
     if (!namaProduk) return res.status(400).json({ status: 'error', message: 'Nama produk wajib diisi.' });
     if (!namaCustomer) return res.status(400).json({ status: 'error', message: 'Nama customer wajib diisi.' });
@@ -43,6 +48,8 @@ export default async function handler(req, res) {
         qty,
         harga_satuan: hargaSatuan,
         total,
+        discount_type: pricing.discountType,
+        discount_value: pricing.discountValue,
         nama_customer: namaCustomer,
         kontak: String(body.kontak || '').trim(),
         status: String(body.status || 'Baru').trim() || 'Baru',

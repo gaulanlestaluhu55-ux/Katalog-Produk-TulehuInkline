@@ -1,6 +1,6 @@
 import { supabase } from '../../lib/supabase.js';
 import { handleCors, requireAdmin } from '../../lib/auth.js';
-import { toNumSafe, computeStatusBayar, appendLedger, reversePaymentsToLedger, normVariant, validateTambahBayar, sumOrderPayments, voidOrderPayment } from '../../lib/helpers.js';
+import { toNumSafe, computeStatusBayar, appendLedger, reversePaymentsToLedger, normVariant, validateTambahBayar, sumOrderPayments, voidOrderPayment, calculateOrderPricing } from '../../lib/helpers.js';
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;
@@ -85,12 +85,14 @@ async function handleUpdateDetails(req, res, id) {
   if (readErr) return res.status(500).json({ status: 'error', message: readErr.message });
   if (!order) return res.status(404).json({ status: 'error', message: 'Pesanan tidak ditemukan' });
 
-  const qty = Math.max(1, Math.floor(toNumSafe(body.qty) || 1));
-  const hargaSatuan = Math.max(0, toNumSafe(body.harga_satuan));
-  const total = Math.max(0, toNumSafe(body.total));
-  if (Math.abs(total - hargaSatuan * qty) > 0.01) {
-    return res.status(400).json({ status: 'error', message: 'Total tidak cocok dengan harga_satuan x qty.' });
-  }
+  const pricing = calculateOrderPricing({
+    hargaSatuan: body.harga_satuan,
+    qty: body.qty,
+    discountType: body.hasOwnProperty('discount_type') ? body.discount_type : order.discount_type,
+    discountValue: body.hasOwnProperty('discount_value') ? body.discount_value : order.discount_value,
+  });
+  if (!pricing.ok) return res.status(400).json({ status: 'error', message: pricing.message });
+  const { qty, unit: hargaSatuan, total } = pricing;
   const dibayar = toNumSafe(order.nominal_dibayar);
   if (dibayar > total) {
     return res.status(400).json({ status: 'error', message: 'Nominal dibayar melebihi total baru. Koreksi pembayaran via Keuangan dulu.' });
@@ -106,6 +108,8 @@ async function handleUpdateDetails(req, res, id) {
     qty,
     harga_satuan: hargaSatuan,
     total,
+    discount_type: pricing.discountType,
+    discount_value: pricing.discountValue,
     sisa,
     status_bayar: computeStatusBayar(dibayar, total),
   };

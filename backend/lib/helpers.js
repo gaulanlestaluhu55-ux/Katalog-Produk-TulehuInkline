@@ -4,9 +4,43 @@ export function toNumSafe(v) {
 }
 
 export function computeStatusBayar(nominalDibayar, total) {
+  if (total <= 0) return 'Lunas';
   if (nominalDibayar <= 0) return 'Belum Bayar';
   if (nominalDibayar >= total) return 'Lunas';
   return 'DP';
+}
+
+export function calculateOrderPricing({ hargaSatuan, qty, discountType, discountValue }) {
+  const unit = Math.max(0, toNumSafe(hargaSatuan));
+  const quantity = Math.max(1, Math.floor(toNumSafe(qty) || 1));
+  const subtotal = unit * quantity;
+  const type = String(discountType || 'nominal').trim();
+  const value = Number(discountValue ?? 0);
+
+  if (!['nominal', 'percent'].includes(type)) {
+    return { ok: false, message: 'Tipe diskon tidak valid.' };
+  }
+  if (!Number.isFinite(value) || value < 0) {
+    return { ok: false, message: 'Nilai diskon tidak valid.' };
+  }
+  if (type === 'percent' && value > 100) {
+    return { ok: false, message: 'Diskon persen maksimal 100%.' };
+  }
+  if (type === 'nominal' && value > subtotal) {
+    return { ok: false, message: 'Diskon nominal tidak boleh melebihi subtotal.' };
+  }
+
+  const discountAmount = type === 'percent' ? subtotal * (value / 100) : value;
+  return {
+    ok: true,
+    unit,
+    qty: quantity,
+    subtotal,
+    discountType: type,
+    discountValue: value,
+    discountAmount,
+    total: Math.max(0, subtotal - discountAmount),
+  };
 }
 
 export const ACTIVE_ORDER_STATUSES = ['Baru', 'Diproses'];

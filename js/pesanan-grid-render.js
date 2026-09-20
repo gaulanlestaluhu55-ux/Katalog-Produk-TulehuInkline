@@ -29,6 +29,9 @@ function gridRowHtml(o) {
   const p = GridApp.parseOpsi(o.opsi);
   const id = window.escapeHtml(o.id);
   const total = Number(o.total || 0);
+  const pricing = GridApp.discountTotals(o.harga_satuan, o.qty, o.discount_type, o.discount_value);
+  const discountType = o.discount_type === 'percent' ? 'percent' : 'nominal';
+  const discountValue = Number(o.discount_value || 0);
   const dibayar = Number(o.nominal_dibayar || 0);
   const sisa = o.sisa !== undefined && o.sisa !== '' && o.sisa !== null
     ? Number(o.sisa) : total - dibayar;
@@ -55,7 +58,8 @@ function gridRowHtml(o) {
     + `<td>${sleeveCell}</td>`
     + `<td>${warnaCell}</td>`
     + `<td class="num"><input class="cell-num attr-qty" data-id="${id}" type="number" min="1" step="1" value="${o.qty || 1}" ${locked} aria-label="Qty" /></td>`
-    + `<td class="num total-cell">${gridMoney(total)}</td>`
+    + `<td><select class="status-select discount-type" data-id="${id}" ${locked} aria-label="Tipe diskon"><option value="nominal"${discountType === 'nominal' ? ' selected' : ''}>Rp</option><option value="percent"${discountType === 'percent' ? ' selected' : ''}>%</option></select><input class="cell-num discount-value" data-id="${id}" type="number" min="0" step="${discountType === 'percent' ? '0.01' : '500'}" value="${discountValue}" ${locked} aria-label="Nilai diskon" /></td>`
+    + `<td class="num"><span class="sub">Subtotal ${gridMoney(pricing.subtotal)}</span><b class="total-cell">${gridMoney(total)}</b><span class="sub">Potongan ${gridMoney(pricing.discount)}</span></td>`
     + `<td class="num paid-cell">${gridMoney(dibayar)}</td>`
     + `<td><select class="status-select pay-akun" data-id="${id}" ${locked} aria-label="Akun untuk tambah bayar">${GridApp.accountOptions(GridApp.lastAkun(o.id))}</select></td>`
     + `<td class="num"><input class="cell-num tambah-input" data-id="${id}" type="number" min="0" step="500" value="" placeholder="0" ${locked} aria-label="Tambah bayar" /></td>`
@@ -71,6 +75,9 @@ function gridCardHtml(o) {
   const p = GridApp.parseOpsi(o.opsi);
   const id = window.escapeHtml(o.id);
   const total = Number(o.total || 0);
+  const pricing = GridApp.discountTotals(o.harga_satuan, o.qty, o.discount_type, o.discount_value);
+  const discountType = o.discount_type === 'percent' ? 'percent' : 'nominal';
+  const discountValue = Number(o.discount_value || 0);
   const dibayar = Number(o.nominal_dibayar || 0);
   const sisa = o.sisa !== undefined && o.sisa !== '' && o.sisa !== null
     ? Number(o.sisa) : total - dibayar;
@@ -84,13 +91,14 @@ function gridCardHtml(o) {
     + `<div class="order-top"><div>`
     + `<div class="order-name">${gridCell(o.nama_produk)}</div>`
     + `<div class="order-meta">${meta}${ts ? ' · ' + window.escapeHtml(ts) : ''}</div>`
-    + `</div><div class="order-total">${gridMoney(total)}</div></div>`
+    + `</div><div class="order-total"><span class="sub">Subtotal ${gridMoney(pricing.subtotal)}</span>${gridMoney(total)}<span class="sub">Potongan ${gridMoney(pricing.discount)}</span></div></div>`
     + `<div class="order-badges">`
     + `<span class="status-badge bayar-badge ${window.safeClassToken(statusBayar, 'belum-bayar')}">${window.escapeHtml(statusBayar)}</span>`
     + `<button class="link-btn hist-btn" data-id="${id}">Riwayat</button>`
     + `</div>`
     + `<div class="order-edit">`
     + `<label>Qty<input class="cell-num attr-qty" data-id="${id}" type="number" min="1" step="1" value="${o.qty || 1}" ${locked} /></label>`
+    + `<label>Diskon<select class="status-select discount-type" data-id="${id}" ${locked}><option value="nominal"${discountType === 'nominal' ? ' selected' : ''}>Rupiah</option><option value="percent"${discountType === 'percent' ? ' selected' : ''}>Persen</option></select><input class="cell-num discount-value" data-id="${id}" type="number" min="0" step="${discountType === 'percent' ? '0.01' : '500'}" value="${discountValue}" ${locked} /></label>`
     + `<label>Tambah<input class="cell-num tambah-input" data-id="${id}" type="number" min="0" step="500" value="" placeholder="0" ${locked} /></label>`
     + `<label>Akun<select class="status-select pay-akun" data-id="${id}" ${locked}>${GridApp.accountOptions(GridApp.lastAkun(o.id))}</select></label>`
     + `<label>Status<select class="status-select status-cell" data-id="${id}">${GridApp.statusOptions(o.status || 'Baru')}</select></label>`
@@ -105,7 +113,7 @@ GridApp.renderAll = function () {
   const body = document.getElementById('gridBody');
   const cards = document.getElementById('gridCards');
   if (!rows.length) {
-    body.innerHTML = '<tr><td colspan="14">Belum ada pesanan.</td></tr>';
+    body.innerHTML = '<tr><td colspan="15">Belum ada pesanan.</td></tr>';
     cards.innerHTML = '<div class="empty-state">Belum ada pesanan.</div>';
     GridApp.syncTopScroll();
     return;
@@ -155,7 +163,7 @@ GridApp.boot = async function () {
     GridApp.renderAll();
   } catch (err) {
     document.getElementById('gridBody').innerHTML =
-      `<tr><td colspan="14">Gagal memuat: ${window.escapeHtml(err.message || err)}</td></tr>`;
+      `<tr><td colspan="15">Gagal memuat: ${window.escapeHtml(err.message || err)}</td></tr>`;
     document.getElementById('gridCards').innerHTML =
       `<div class="empty-state">Gagal memuat: ${window.escapeHtml(err.message || err)}</div>`;
     window.showStatus('Gagal konek ke server: ' + (err.message || err), false);

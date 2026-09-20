@@ -27,6 +27,7 @@ function newRowDraftVals() {
     warna: q('.new-warna'), nameset: q('.new-nameset'),
     qty: Math.max(1, parseInt(q('.new-qty') || '1', 10) || 1),
     dp: Math.max(0, parseInt(q('.new-dp') || '0', 10) || 0),
+    discountType: q('.new-discount-type') || 'nominal', discountValue: q('.new-discount-value'),
     customer: q('.new-customer').trim(), akun: q('.new-akun'),
   };
 }
@@ -77,9 +78,9 @@ function newRowPreview() {
   const row = document.getElementById('gridNewRow');
   if (!p || !row) return;
   const v = newRowDraftVals();
-  const total = newRowUnit(p, v) * v.qty;
-  const t = row.querySelector('.new-total'); if (t) t.textContent = fmt(total);
-  const s = row.querySelector('.new-sisa'); if (s) s.textContent = fmt(Math.max(0, total - v.dp));
+  const pricing = GridApp.discountTotals(newRowUnit(p, v), v.qty, v.discountType, v.discountValue);
+  const t = row.querySelector('.new-total'); if (t) t.textContent = fmt(pricing.total);
+  const s = row.querySelector('.new-sisa'); if (s) s.textContent = fmt(Math.max(0, pricing.total - v.dp));
 }
 
 function newRowHtml() {
@@ -93,9 +94,11 @@ function newRowHtml() {
     + `<td class="new-attr-kaos"><select class="status-select new-sleeve" aria-label="Lengan">${GridApp.optionsFrom(CONFIG.kaos.sleeves, '')}</select></td>`
     + `<td class="new-attr-kaos"><select class="status-select new-warna" aria-label="Warna">${GridApp.optionsFrom(CONFIG.kaos.colors, '')}</select></td>`
     + `<td class="num"><input class="cell-num new-qty" type="number" min="1" step="1" value="1" aria-label="Qty" /></td>`
+    + `<td><select class="status-select new-discount-type" aria-label="Tipe diskon"><option value="nominal">Rp</option><option value="percent">%</option></select><input class="cell-num new-discount-value" type="number" min="0" step="500" value="0" aria-label="Nilai diskon" /></td>`
     + `<td class="num new-total">${fmt(0)}</td>`
     + `<td class="num"><input class="cell-num new-dp" type="number" min="0" step="500" value="0" aria-label="DP awal" /></td>`
     + `<td><select class="status-select new-akun" aria-label="Akun">${GridApp.accountOptions('Kas')}</select></td>`
+    + `<td>–</td>`
     + `<td class="num new-sisa">${fmt(0)}</td>`
     + `<td>–</td>`
     + `<td><input class="cell-num new-customer" type="text" style="width:130px;text-align:left" placeholder="Nama customer" aria-label="Nama customer" /></td>`
@@ -119,7 +122,8 @@ async function newRowSave() {
     opsi = `Name set: ${v.nameset}`;
   }
   const unit = newRowUnit(p, v);
-  const total = unit * v.qty;
+  const pricing = GridApp.discountTotals(unit, v.qty, v.discountType, v.discountValue);
+  const total = pricing.total;
   if (v.dp > total) { window.showStatus('DP tidak boleh lebih besar dari total.', false); return; }
   const btn = document.getElementById('newRowSave');
   btn.disabled = true;
@@ -129,7 +133,7 @@ async function newRowSave() {
       body: JSON.stringify({
         id_produk: p.id || '', nama_produk: p.nama, kategori: p.kategori || '',
         opsi, size, warna, lengan: sleeve, cuttingan: v.cuttingan || '', qty: v.qty,
-        harga_satuan: unit, total, nama_customer: v.customer,
+        harga_satuan: unit, total, discount_type: v.discountType, discount_value: v.discountValue, nama_customer: v.customer,
         kontak: '', catatan: '', status: 'Baru', nominal_dibayar: v.dp, akun: v.akun,
       }),
     });

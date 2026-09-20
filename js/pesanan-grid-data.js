@@ -22,6 +22,14 @@ GridApp.surcharge = function (size, sleeve) {
   return extra;
 };
 
+GridApp.discountTotals = function (unit, qty, type, value) {
+  const subtotal = Math.max(0, Number(unit || 0)) * Math.max(1, Number(qty || 1));
+  const raw = Number(value || 0);
+  const discountValue = Number.isFinite(raw) && raw > 0 ? raw : 0;
+  const discount = type === 'percent' ? subtotal * Math.min(100, discountValue) / 100 : discountValue;
+  return { subtotal, discount: Math.min(subtotal, discount), total: Math.max(0, subtotal - discount) };
+};
+
 /* Hitung ulang harga satuan saat size/lengan berubah. Prioritas: harga dasar
    produk; fallback: harga tersimpan + selisih surcharge. */
 GridApp.recalcUnit = function (o, size, sleeve) {

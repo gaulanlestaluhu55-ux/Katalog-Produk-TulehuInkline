@@ -364,6 +364,22 @@
         </form>
       </div>
 
+      <div class="form-card">
+        <h3>Transfer Dana</h3>
+        <form id="transferForm">
+          <div class="field-row">
+            <div class="field"><label>Akun Sumber</label><select id="f_transfer_sumber" required></select></div>
+            <div class="field"><label>Akun Tujuan</label><select id="f_transfer_tujuan" required></select></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Nominal</label><input type="number" id="f_transfer_nominal" min="1" required /></div>
+            <div class="field"><label>Tanggal</label><input type="date" id="f_transfer_tanggal" required /></div>
+          </div>
+          <div class="field"><label>Keterangan</label><input type="text" id="f_transfer_keterangan" placeholder="Catatan transfer (opsional)" /></div>
+          <button type="submit" class="btn-primary" id="saveTransferBtn">Simpan Transfer</button>
+        </form>
+      </div>
+
       <!-- ── Rekap per Kategori ── -->
       <div class="form-card kategori-summary">
         <h3>Rekap per Kategori</h3>
@@ -388,6 +404,7 @@
           <button class="filter-btn active" data-tipe="semua">Semua</button>
           <button class="filter-btn" data-tipe="Masuk">Pemasukan</button>
           <button class="filter-btn" data-tipe="Keluar">Pengeluaran</button>
+          <button class="filter-btn" data-tipe="Transfer">Transfer</button>
         </div>
       </div>
       <div id="txList">
@@ -440,6 +457,14 @@
       const res = await apiFetch(`${CONFIG.apiUrl}/api/finance/${id}`, { method: 'DELETE', headers: adminRequestHeaders() });
       return res.json();
     }
+    async function apiCreateTransfer(data) {
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/finance?action=transfer`, { method: 'POST', headers: adminRequestHeaders(true), body: JSON.stringify(data) });
+      return res.json();
+    }
+    async function apiVoidTransfer(id) {
+      const res = await apiFetch(`${CONFIG.apiUrl}/api/finance/${id}?action=void-transfer`, { method: 'PUT', headers: adminRequestHeaders(true) });
+      return res.json();
+    }
 
     async function tryLoginCb(token) {
       const [txJson, accJson] = await Promise.all([apiGetTransactions(), apiGetAccounts()]);
@@ -448,6 +473,7 @@
       transactions = txJson.data;
       accounts = accJson.data;
       populateCategorySelect(selectedTipe);
+      document.getElementById('f_transfer_tanggal').value = new Date().toISOString().slice(0, 10);
       renderAll();
     }
 
@@ -475,6 +501,12 @@
         : '<option value="Kas">Kas</option>';
     }
 
+    function populateTransferSelects() {
+      populateAccountSelect(document.getElementById('f_transfer_sumber'), null);
+      const tujuan = document.getElementById('f_transfer_tujuan');
+      populateAccountSelect(tujuan, accounts[1] ? accounts[1].nama : null);
+    }
+
     document.getElementById('addAccountBtn').addEventListener('click', async () => {
       const input = document.getElementById('f_akun_baru');
       const nama = input.value.trim();
@@ -485,6 +517,7 @@
         accounts.push({ id: json.data.id, nama: json.data.nama });
         renderAccountTags();
         populateAccountSelect(document.getElementById('f_akun_tx'), null);
+        populateTransferSelects();
         input.value = '';
         showStatus('Akun ditambahkan.', true);
       } else {
@@ -503,6 +536,7 @@
         accounts = accounts.filter(a => String(a.id) !== String(id));
         renderAccountTags();
         populateAccountSelect(document.getElementById('f_akun_tx'), null);
+        populateTransferSelects();
         showStatus('Akun dihapus.', true);
       } else {
         showStatus('Gagal: ' + json.message, false);
@@ -562,6 +596,33 @@
       btn.disabled = false; btn.textContent = 'Simpan Transaksi';
     });
 
+    document.getElementById('transferForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const data = {
+        akun_sumber: document.getElementById('f_transfer_sumber').value,
+        akun_tujuan: document.getElementById('f_transfer_tujuan').value,
+        nominal: parseInt(document.getElementById('f_transfer_nominal').value || '0', 10),
+        tanggal: document.getElementById('f_transfer_tanggal').value,
+        keterangan: document.getElementById('f_transfer_keterangan').value.trim(),
+      };
+      if (data.akun_sumber === data.akun_tujuan) { showStatus('Akun sumber dan tujuan harus berbeda.', false); return; }
+      if (!data.nominal || data.nominal <= 0) { showStatus('Nominal harus lebih dari 0.', false); return; }
+      const btn = document.getElementById('saveTransferBtn');
+      btn.disabled = true; btn.textContent = 'Menyimpan...';
+      try {
+        const json = await apiCreateTransfer(data);
+        if (json.status !== 'success') throw new Error(json.message || 'gagal');
+        document.getElementById('transferForm').reset();
+        document.getElementById('f_transfer_tanggal').value = new Date().toISOString().slice(0, 10);
+        populateTransferSelects();
+        await refreshTransactions();
+        showStatus('Transfer dana tercatat.', true);
+      } catch (err) {
+        showStatus('Gagal simpan transfer: ' + (err.message || err), false);
+      }
+      btn.disabled = false; btn.textContent = 'Simpan Transfer';
+    });
+
     /* ═══════════════════════════════════════════════════════
        LIST & RINGKASAN
     ═══════════════════════════════════════════════════════ */
@@ -582,6 +643,7 @@
     function renderAll() {
       renderAccountTags();
       populateAccountSelect(document.getElementById('f_akun_tx'), null);
+      populateTransferSelects();
       renderSummary();
       renderKategoriSummary();
       renderAccountBalances();
@@ -589,7 +651,7 @@
     }
 
     function renderKategoriSummary() {
-      const filtered = currentFilter === 'semua' ? transactions : transactions.filter(t => t.tipe === currentFilter);
+      const filtered = transactions.filter(t => t.sumber !== 'Transfer' && (currentFilter === 'semua' || t.tipe === currentFilter));
       const map = {};
       filtered.forEach(t => {
         const kat = t.kategori || 'Lainnya';
@@ -620,6 +682,7 @@
     function renderSummary() {
       let masuk = 0, keluar = 0;
       transactions.forEach(t => {
+        if (t.sumber === 'Transfer') return;
         const nominal = Number(t.nominal || 0);
         if (t.tipe === 'Keluar') keluar += nominal;
         else masuk += nominal;
@@ -671,7 +734,7 @@
       renderTxPager(months);
       const filtered = transactions.filter(t =>
         (!txMonthKey || txMonthKeyOf(t) === txMonthKey) &&
-        (currentFilter === 'semua' || t.tipe === currentFilter));
+        (currentFilter === 'semua' || (currentFilter === 'Transfer' ? t.sumber === 'Transfer' : t.sumber !== 'Transfer' && t.tipe === currentFilter)));
 
       if (!filtered.length) {
         wrap.innerHTML = '<div class="empty-state">Belum ada transaksi.</div>';
@@ -679,10 +742,13 @@
       }
 
       wrap.innerHTML = filtered.map(t => {
-        const ts = t.timestamp ? new Date(t.timestamp).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '';
+        const rawDate = t.created_at || t.timestamp;
+        const ts = rawDate ? new Date(rawDate).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '';
         const isMasuk = t.tipe !== 'Keluar';
         const sumber = (t.sumber || 'Manual').toLowerCase();
         const isManual = sumber === 'manual';
+        const isTransfer = sumber === 'transfer';
+        const canVoidTransfer = isTransfer && !t.transfer_reversal_of;
         return `
     <div class="tx-row" data-id="${t.id}">
       <div class="tx-left">
@@ -694,6 +760,7 @@
         <div class="tx-amount ${isMasuk ? 'masuk' : 'keluar'}">${isMasuk ? '+' : '−'} ${fmt(Number(t.nominal || 0))}</div>
         <span class="source-badge ${sumber}">${t.sumber || 'Manual'}</span>
         ${isManual ? `<button class="icon-btn danger" data-action="delete" data-id="${t.id}">Hapus</button>` : ''}
+        ${canVoidTransfer ? `<button class="icon-btn danger" data-action="void-transfer" data-id="${t.id}">Batalkan</button>` : ''}
       </div>
     </div>`;
       }).join('');
@@ -745,9 +812,19 @@
     document.getElementById('txNextBtn').addEventListener('click', () => txStep(-1));
 
     document.getElementById('txList').addEventListener('click', async e => {
-      const btn = e.target.closest('.icon-btn[data-action="delete"]');
+      const btn = e.target.closest('.icon-btn[data-action]');
       if (!btn) return;
       const id = btn.dataset.id;
+      if (btn.dataset.action === 'void-transfer') {
+        if (!confirm('Batalkan transfer ini? Kedua sisi akun akan dikoreksi bersama.')) return;
+        btn.disabled = true;
+        const json = await apiVoidTransfer(id);
+        btn.disabled = false;
+        if (json.status === 'success') { await refreshTransactions(); showStatus('Transfer dibatalkan dengan koreksi berpasangan.', true); }
+        else showStatus('Gagal: ' + json.message, false);
+        return;
+      }
+      if (btn.dataset.action !== 'delete') return;
       if (!confirm('Hapus transaksi ini? Tindakan tidak bisa dibatalkan.')) return;
       btn.disabled = true;
       const json = await apiDeleteTransaction(id);
