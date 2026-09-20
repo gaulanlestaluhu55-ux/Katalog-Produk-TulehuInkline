@@ -58,8 +58,8 @@ function gridRowHtml(o) {
     + `<td>${sleeveCell}</td>`
     + `<td>${warnaCell}</td>`
     + `<td class="num"><input class="cell-num attr-qty" data-id="${id}" type="number" min="1" step="1" value="${o.qty || 1}" ${locked} aria-label="Qty" /></td>`
-    + `<td><select class="status-select discount-type" data-id="${id}" ${locked} aria-label="Tipe diskon"><option value="nominal"${discountType === 'nominal' ? ' selected' : ''}>Rp</option><option value="percent"${discountType === 'percent' ? ' selected' : ''}>%</option></select><input class="cell-num discount-value" data-id="${id}" type="number" min="0" step="${discountType === 'percent' ? '0.01' : '500'}" value="${discountValue}" ${locked} aria-label="Nilai diskon" /></td>`
-    + `<td class="num"><span class="sub">Subtotal ${gridMoney(pricing.subtotal)}</span><b class="total-cell">${gridMoney(total)}</b><span class="sub">Potongan ${gridMoney(pricing.discount)}</span></td>`
+    + `<td><select class="status-select discount-type" data-id="${id}" ${locked} aria-label="Tipe diskon per pcs"><option value="nominal"${discountType === 'nominal' ? ' selected' : ''}>Rp</option><option value="percent"${discountType === 'percent' ? ' selected' : ''}>%</option></select><input class="cell-num discount-value" data-id="${id}" type="number" min="0" step="${discountType === 'percent' ? '0.01' : '500'}" value="${discountValue}" ${locked} aria-label="Nilai diskon per pcs" /></td>`
+    + `<td class="num"><span class="sub">Subtotal ${gridMoney(pricing.subtotal)}</span><b class="total-cell">${gridMoney(total)}</b><span class="sub">Potongan total ${gridMoney(pricing.discount)}</span></td>`
     + `<td class="num paid-cell">${gridMoney(dibayar)}</td>`
     + `<td><select class="status-select pay-akun" data-id="${id}" ${locked} aria-label="Akun untuk tambah bayar">${GridApp.accountOptions(GridApp.lastAkun(o.id))}</select></td>`
     + `<td class="num"><input class="cell-num tambah-input" data-id="${id}" type="number" min="0" step="500" value="" placeholder="0" ${locked} aria-label="Tambah bayar" /></td>`
@@ -98,7 +98,7 @@ function gridCardHtml(o) {
     + `</div>`
     + `<div class="order-edit">`
     + `<label>Qty<input class="cell-num attr-qty" data-id="${id}" type="number" min="1" step="1" value="${o.qty || 1}" ${locked} /></label>`
-    + `<label>Diskon<select class="status-select discount-type" data-id="${id}" ${locked}><option value="nominal"${discountType === 'nominal' ? ' selected' : ''}>Rupiah</option><option value="percent"${discountType === 'percent' ? ' selected' : ''}>Persen</option></select><input class="cell-num discount-value" data-id="${id}" type="number" min="0" step="${discountType === 'percent' ? '0.01' : '500'}" value="${discountValue}" ${locked} /></label>`
+    + `<label>Diskon / pcs<select class="status-select discount-type" data-id="${id}" ${locked}><option value="nominal"${discountType === 'nominal' ? ' selected' : ''}>Rupiah</option><option value="percent"${discountType === 'percent' ? ' selected' : ''}>Persen</option></select><input class="cell-num discount-value" data-id="${id}" type="number" min="0" step="${discountType === 'percent' ? '0.01' : '500'}" value="${discountValue}" ${locked} /></label>`
     + `<label>Tambah<input class="cell-num tambah-input" data-id="${id}" type="number" min="0" step="500" value="" placeholder="0" ${locked} /></label>`
     + `<label>Akun<select class="status-select pay-akun" data-id="${id}" ${locked}>${GridApp.accountOptions(GridApp.lastAkun(o.id))}</select></label>`
     + `<label>Status<select class="status-select status-cell" data-id="${id}">${GridApp.statusOptions(o.status || 'Baru')}</select></label>`

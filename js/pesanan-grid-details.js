@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    PESANAN GRID — details layer (fase 3: edit atribut + qty)
    Select atribut langsung save; qty debounce. Harga satuan dihitung ulang
-   client (aturan surcharge CONFIG), backend verifikasi total = hs x qty.
+   client (aturan surcharge CONFIG), lalu diskon per pcs; backend memverifikasi.
    Error → renderAll (kembalikan nilai server, fokus boleh hilang).
    ═══════════════════════════════════════════════════════ */
 window.GridApp = window.GridApp || {};

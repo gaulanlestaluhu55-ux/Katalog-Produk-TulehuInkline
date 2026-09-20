@@ -1,5 +1,5 @@
 -- TULEHU INKLINE - 005_order_discounts
--- Additive order-discount fields. Existing orders remain nominal discount 0.
+-- Additive order-discount fields. discount_value is the raw discount per pcs.
 
 alter table public.orders
   add column if not exists discount_type text not null default 'nominal',

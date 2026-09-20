@@ -23,11 +23,16 @@ GridApp.surcharge = function (size, sleeve) {
 };
 
 GridApp.discountTotals = function (unit, qty, type, value) {
-  const subtotal = Math.max(0, Number(unit || 0)) * Math.max(1, Number(qty || 1));
+  const safeUnit = Math.max(0, Number(unit || 0));
+  const safeQty = Math.max(1, Number(qty || 1));
+  const subtotal = safeUnit * safeQty;
   const raw = Number(value || 0);
   const discountValue = Number.isFinite(raw) && raw > 0 ? raw : 0;
-  const discount = type === 'percent' ? subtotal * Math.min(100, discountValue) / 100 : discountValue;
-  return { subtotal, discount: Math.min(subtotal, discount), total: Math.max(0, subtotal - discount) };
+  const discountPerUnit = type === 'percent'
+    ? safeUnit * Math.min(100, discountValue) / 100
+    : Math.min(safeUnit, discountValue);
+  const discount = discountPerUnit * safeQty;
+  return { subtotal, discountPerUnit, discount, total: Math.max(0, subtotal - discount) };
 };
 
 /* Hitung ulang harga satuan saat size/lengan berubah. Prioritas: harga dasar

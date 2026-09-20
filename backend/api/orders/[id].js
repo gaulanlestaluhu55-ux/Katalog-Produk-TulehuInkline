@@ -76,7 +76,7 @@ async function handleUpdateStatus(req, res, id) {
 }
 
 /* Update detail atribut (size/warna/lengan/opsi/qty/harga). Dipakai grid fase 3.
-   Total WAJIB = harga_satuan x qty (pengaman D6). Nominal lama tak boleh
+   Total WAJIB = (harga_satuan - diskon per pcs) x qty. Nominal lama tak boleh
    melebihi total baru. Tidak ada pergerakan uang → tanpa ledger. */
 async function handleUpdateDetails(req, res, id) {
   const body = req.body || {};

@@ -26,11 +26,12 @@ export function calculateOrderPricing({ hargaSatuan, qty, discountType, discount
   if (type === 'percent' && value > 100) {
     return { ok: false, message: 'Diskon persen maksimal 100%.' };
   }
-  if (type === 'nominal' && value > subtotal) {
-    return { ok: false, message: 'Diskon nominal tidak boleh melebihi subtotal.' };
+  if (type === 'nominal' && value > unit) {
+    return { ok: false, message: 'Diskon nominal tidak boleh melebihi harga satuan.' };
   }
 
-  const discountAmount = type === 'percent' ? subtotal * (value / 100) : value;
+  const discountPerUnit = type === 'percent' ? unit * (value / 100) : value;
+  const discountAmount = discountPerUnit * quantity;
   return {
     ok: true,
     unit,
@@ -38,6 +39,7 @@ export function calculateOrderPricing({ hargaSatuan, qty, discountType, discount
     subtotal,
     discountType: type,
     discountValue: value,
+    discountPerUnit,
     discountAmount,
     total: Math.max(0, subtotal - discountAmount),
   };
