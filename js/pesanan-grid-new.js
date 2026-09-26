@@ -14,7 +14,7 @@ function newRowProduct() {
 function newRowUnit(p, draft) {
   if (!p) return 0;
   if (isKaos(p)) {
-    return toNum(p.harga) + GridApp.surcharge(draft.size, draft.sleeve);
+    return GridApp.kaosBase(p, draft.size) + GridApp.surcharge(draft.size, draft.sleeve);
   }
   if (isJersey(p)) return toNum(p.harga) + getNameSetPrice(p, draft.nameset);
   return toNum(p.harga);

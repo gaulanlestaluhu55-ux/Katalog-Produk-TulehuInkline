@@ -3,10 +3,25 @@ import { calculateOrderPricing, computeStatusBayar, normVariant, toNumSafe } fro
 export const BULK_ORDER_STATUSES = ['Menunggu DP', 'Siap Produksi', 'Diproses', 'Selesai Produksi', 'Siap Diambil', 'Diambil', 'Batal'];
 export const ACTIVE_BULK_STOCK_STATUSES = ['Siap Produksi', 'Diproses'];
 
-const DEFAULT_SIZES = ['S', 'M', 'L', 'XL', 'XXL', '3XL'];
+const DEFAULT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '2', '4', '6', '8', '10', '12', '14'];
 const DEFAULT_COLORS = ['Putih', 'Hitam', 'Abu-abu', 'Navy', 'Maroon', 'Kuning', 'Hijau Botol', 'Baby Blue', 'Krem', 'Merah'];
 const DEFAULT_SLEEVES = ['Lengan Pendek', 'Lengan Panjang'];
 const SURCHARGE = { lenganPanjang: 10000, xxl: 5000, xxxl: 10000 };
+/* Harga anak flat absolut (cermin js/config.js): 2-8 = 70rb, 10-14 = 80rb. */
+const HARGA_ANAK_KECIL = 70000;
+const HARGA_ANAK_BESAR = 80000;
+const SIZES_ANAK = ['2', '4', '6', '8', '10', '12', '14'];
+
+function isAnakSize(size) {
+  return SIZES_ANAK.includes(String(size));
+}
+
+function kidsBase(size) {
+  const s = String(size);
+  if (['2', '4', '6', '8'].includes(s)) return HARGA_ANAK_KECIL;
+  if (['10', '12', '14'].includes(s)) return HARGA_ANAK_BESAR;
+  return 0;
+}
 
 function productOptions(value, fallback) {
   const values = String(value || '').split('|').map((part) => part.trim()).filter(Boolean);
@@ -15,9 +30,15 @@ function productOptions(value, fallback) {
 
 function unitSurcharge(size, sleeve) {
   let extra = sleeve === 'Lengan Panjang' ? SURCHARGE.lenganPanjang : 0;
+  if (isAnakSize(size)) return extra;
   if (size === 'XXL') extra += SURCHARGE.xxl;
   if (size === '3XL') extra += SURCHARGE.xxxl;
   return extra;
+}
+
+function basePrice(product, size) {
+  if (isAnakSize(size)) return kidsBase(size);
+  return Math.max(0, toNumSafe(product.harga));
 }
 
 function isKaosProduct(product) {
@@ -50,7 +71,7 @@ export function buildBulkOrderPayload(body, product, accountNames) {
     if (!DEFAULT_SLEEVES.includes(lengan)) throw new Error('Pilihan lengan tidak valid.');
 
     const surcharge = isKaosProduct(product) ? unitSurcharge(size, lengan) : 0;
-    const hargaSatuanNormal = Math.max(0, toNumSafe(product.harga)) + surcharge + tambahanHarga;
+    const hargaSatuanNormal = basePrice(product, size) + surcharge + tambahanHarga;
     const pricing = calculateOrderPricing({ hargaSatuan: hargaSatuanNormal, qty, discountType, discountValue });
     if (!pricing.ok) throw new Error(pricing.message);
     return {

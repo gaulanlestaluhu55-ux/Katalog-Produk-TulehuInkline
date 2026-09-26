@@ -65,17 +65,43 @@ function toNum(raw) {
   return isNaN(n) ? 0 : n;
 }
 
+/* Ukuran anak: No.2-14 (flat 70/80rb, abaikan harga produk). XS = harga S-XL. */
+function isAnakSize(size) {
+  return Array.isArray(CONFIG.kaos.sizesAnak) && CONFIG.kaos.sizesAnak.includes(String(size));
+}
+
+function getKidsBase(size) {
+  const s = String(size);
+  if (['2', '4', '6', '8'].includes(s)) return CONFIG.kaos.hargaAnak.kecil;
+  if (['10', '12', '14'].includes(s)) return CONFIG.kaos.hargaAnak.besar;
+  return 0;
+}
+
+function getKaosBase(p, size) {
+  if (isAnakSize(size)) return getKidsBase(size);
+  return toNum(p.harga);
+}
+
+/* Label pills: anak tampil usia, mis. "2 · 1-2 thn". Nilai data-val tetap angka. */
+function sizeDisplayLabel(size) {
+  const s = String(size);
+  const usia = CONFIG.kaos.usiaAnak && CONFIG.kaos.usiaAnak[s];
+  return usia ? `${s} · ${usia}` : s;
+}
+
 function getSurcharge(s) {
   let extra = 0;
   if (s.sleeve === 'Lengan Panjang') extra += CONFIG.surcharge.lenganPanjang;
+  if (isAnakSize(s.size)) return extra;
   if (s.size === 'XXL') extra += CONFIG.surcharge.xxl;
   if (s.size === '3XL') extra += CONFIG.surcharge.xxxl;
   return extra;
 }
 
 function getUnitPriceKaos(p, idx) {
-  const base = toNum(p.harga);
-  return base + getSurcharge(state[idx]);
+  const s = state[idx] || {};
+  const base = getKaosBase(p, s.size);
+  return base + getSurcharge(s);
 }
 
 function getNameSetPrice(p, ns) {

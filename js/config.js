@@ -11,7 +11,13 @@ const CONFIG = {
     xxxl: 10000,
   },
   kaos: {
-    sizes: ['S', 'M', 'L', 'XL', 'XXL', '3XL'],
+    /* Dewasa: XS sama harga dengan S-XL. Anak: No.2-14 harga flat (lihat hargaAnak). */
+    sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '2', '4', '6', '8', '10', '12', '14'],
+    sizesDewasa: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'],
+    sizesAnak: ['2', '4', '6', '8', '10', '12', '14'],
+    /* Flat absolut semua produk: 2-8 = 70rb, 10-14 = 80rb; lengan panjang +10rb. */
+    hargaAnak: { kecil: 70000, besar: 80000 },
+    usiaAnak: { '2': '1-2 thn', '4': '3-4 thn', '6': '5-6 thn', '8': '7-8 thn', '10': '9-10 thn', '12': '11-12 thn', '14': '13-14 thn' },
     sleeves: ['Lengan Pendek', 'Lengan Panjang'],
     colors: ['Putih', 'Hitam', 'Abu-abu', 'Navy', 'Maroon', 'Kuning', 'Hijau Botol', 'Baby Blue', 'Krem', 'Merah'],
   },

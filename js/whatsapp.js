@@ -14,8 +14,9 @@ function buildOrderMsg(p, idx) {
 
   if (isKaos(p)) {
     const surcharge = getSurcharge(s);
-    const base = toNum(p.harga);
-    lines.push(`Ukuran   : ${s.size}`);
+    const base = getKaosBase(p, s.size);
+    const usia = CONFIG.kaos.usiaAnak && CONFIG.kaos.usiaAnak[String(s.size)];
+    lines.push(`Ukuran   : ${s.size}${usia ? ` (${usia})` : ''}`);
     lines.push(`Lengan   : ${s.sleeve}`);
     lines.push(`Warna    : ${s.color}`);
     lines.push(`Qty      : ${s.qty} pcs`);

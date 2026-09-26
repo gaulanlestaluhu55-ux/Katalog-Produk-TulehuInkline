@@ -34,14 +34,27 @@ BulkOrderApp.num = function(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+BulkOrderApp.isAnakSize = function(size) {
+  return Array.isArray(CONFIG.kaos.sizesAnak) && CONFIG.kaos.sizesAnak.includes(String(size));
+};
+
 BulkOrderApp.unitPrice = function(size, sleeve) {
   const product = BulkOrderApp.selectedProduct();
   if (!product) return 0;
-  let price = BulkOrderApp.num(product.harga) + BulkOrderApp.num(document.getElementById('bulkExtra').value);
+  const s = String(size);
+  let base;
+  if (BulkOrderApp.isAnakSize(s)) {
+    base = ['2', '4', '6', '8'].includes(s) ? CONFIG.kaos.hargaAnak.kecil : CONFIG.kaos.hargaAnak.besar;
+  } else {
+    base = BulkOrderApp.num(product.harga);
+  }
+  let price = base + BulkOrderApp.num(document.getElementById('bulkExtra').value);
   if (String(product.kategori || '').toLowerCase().includes('kaos')) {
     if (sleeve === 'Lengan Panjang') price += CONFIG.surcharge.lenganPanjang;
-    if (size === 'XXL') price += CONFIG.surcharge.xxl;
-    if (size === '3XL') price += CONFIG.surcharge.xxxl;
+    if (!BulkOrderApp.isAnakSize(s)) {
+      if (size === 'XXL') price += CONFIG.surcharge.xxl;
+      if (size === '3XL') price += CONFIG.surcharge.xxxl;
+    }
   }
   return Math.max(0, price);
 };
@@ -68,7 +81,7 @@ BulkOrderApp.renderMatrix = function() {
   const sizes = BulkOrderApp.sizes();
   const colors = BulkOrderApp.colors();
   BulkOrderApp.state.rows = BulkOrderApp.state.rows.map((row) => ({ ...row, warna: colors.includes(row.warna) ? row.warna : colors[0], lengan: row.lengan || 'Lengan Pendek' }));
-  document.getElementById('matrixHead').innerHTML = `<tr><th>Warna</th><th>Lengan</th>${sizes.map((size) => `<th>${BulkOrderApp.esc(size)}</th>`).join('')}<th></th></tr>`;
+  document.getElementById('matrixHead').innerHTML = `<tr><th>Warna</th><th>Lengan</th>${sizes.map((size) => { const usia = CONFIG.kaos.usiaAnak && CONFIG.kaos.usiaAnak[String(size)]; return `<th>${BulkOrderApp.esc(size)}${usia ? `<br><small>${BulkOrderApp.esc(usia)}</small>` : ''}</th>`; }).join('')}<th></th></tr>`;
   document.getElementById('matrixBody').innerHTML = BulkOrderApp.state.rows.map((row, index) => `<tr data-row="${index}"><td><select class="matrix-row-select" data-row-color="${index}">${colors.map((color) => `<option${color === row.warna ? ' selected' : ''}>${BulkOrderApp.esc(color)}</option>`).join('')}</select></td><td><select class="matrix-row-select" data-row-sleeve="${index}"><option${row.lengan === 'Lengan Pendek' ? ' selected' : ''}>Lengan Pendek</option><option${row.lengan === 'Lengan Panjang' ? ' selected' : ''}>Lengan Panjang</option></select></td>${sizes.map((size) => `<td><input class="matrix-input" type="number" min="0" step="1" value="${row.qty?.[size] || ''}" data-row-qty="${index}" data-size="${BulkOrderApp.esc(size)}" aria-label="Qty ${BulkOrderApp.esc(row.warna)} ${BulkOrderApp.esc(row.lengan)} ukuran ${BulkOrderApp.esc(size)}" /></td>`).join('')}<td><button class="remove-row" type="button" data-remove-row="${index}" title="Hapus baris" aria-label="Hapus baris">x</button></td></tr>`).join('');
   BulkOrderApp.recalculate();
 };

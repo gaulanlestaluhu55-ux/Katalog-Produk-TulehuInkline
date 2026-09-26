@@ -21,6 +21,8 @@ function pillsHtml(items, group, idx, labelFn) {
 function sizeSurchargeLabel(val) {
   if (val === 'XXL') return `+${fmt(CONFIG.surcharge.xxl).replace('Rp\u00a0','')}`;
   if (val === '3XL') return `+${fmt(CONFIG.surcharge.xxxl).replace('Rp\u00a0','')}`;
+  const usia = CONFIG.kaos.usiaAnak && CONFIG.kaos.usiaAnak[String(val)];
+  if (usia) return usia;
   return '';
 }
 
@@ -43,7 +45,7 @@ function priceBlockHtml(p, idx) {
   const s = state[idx];
   const unit  = getUnitPrice(p, idx);
   const total = getTotalPrice(p, idx);
-  const base  = toNum(p.harga);
+  const base  = isKaos(p) ? getKaosBase(p, s.size) : toNum(p.harga);
 
   if (!isOrderReady(p, idx) && isKaos(p)) {
     return `<div class="price-block">

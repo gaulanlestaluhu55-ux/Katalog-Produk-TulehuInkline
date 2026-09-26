@@ -13,10 +13,24 @@ GridApp.optionsFrom = function (list, selected) {
   return (list || []).map((v) => `<option value="${window.escapeHtml(v)}"${v === selected ? ' selected' : ''}>${window.escapeHtml(v)}</option>`).join('');
 };
 
-/* Surcharge kaos (aturan sama dengan pesanan.html/js/helpers.js). */
+/* Surcharge kaos (cermin js/helpers.js). Anak: hanya lengan; XS = S-XL. */
+GridApp.isAnakSize = function (size) {
+  return Array.isArray(CONFIG.kaos.sizesAnak) && CONFIG.kaos.sizesAnak.includes(String(size));
+};
+
+GridApp.kaosBase = function (prod, size) {
+  const s = String(size);
+  if (GridApp.isAnakSize(s)) {
+    if (['2', '4', '6', '8'].includes(s)) return CONFIG.kaos.hargaAnak.kecil;
+    return CONFIG.kaos.hargaAnak.besar;
+  }
+  return toNum(prod && prod.harga);
+};
+
 GridApp.surcharge = function (size, sleeve) {
   let extra = 0;
   if (sleeve === 'Lengan Panjang') extra += CONFIG.surcharge.lenganPanjang;
+  if (GridApp.isAnakSize(size)) return extra;
   if (size === 'XXL') extra += CONFIG.surcharge.xxl;
   if (size === '3XL' || size === 'XXXL') extra += CONFIG.surcharge.xxxl;
   return extra;
@@ -39,7 +53,7 @@ GridApp.discountTotals = function (unit, qty, type, value) {
    produk; fallback: harga tersimpan + selisih surcharge. */
 GridApp.recalcUnit = function (o, size, sleeve) {
   const prod = (GridApp.state.products || []).find((p) => String(p.id) === String(o.id_produk));
-  if (prod) return toNum(prod.harga) + GridApp.surcharge(size, sleeve);
+  if (prod) return GridApp.kaosBase(prod, size) + GridApp.surcharge(size, sleeve);
   const cur = GridApp.parseOpsi(o.opsi);
   return toNum(o.harga_satuan) + (GridApp.surcharge(size, sleeve) - GridApp.surcharge(cur.size, cur.lengan));
 };
