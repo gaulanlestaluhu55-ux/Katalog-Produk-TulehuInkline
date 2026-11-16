@@ -54,6 +54,8 @@ BulkOrderApp.unitPrice = function(size, sleeve) {
     if (!BulkOrderApp.isAnakSize(s)) {
       if (size === 'XXL') price += CONFIG.surcharge.xxl;
       if (size === '3XL') price += CONFIG.surcharge.xxxl;
+      if (size === '4XL') price += CONFIG.surcharge.fourxl;
+      if (size === '5XL') price += CONFIG.surcharge.fivexl;
     }
   }
   return Math.max(0, price);

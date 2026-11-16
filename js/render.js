@@ -21,6 +21,8 @@ function pillsHtml(items, group, idx, labelFn) {
 function sizeSurchargeLabel(val) {
   if (val === 'XXL') return `+${fmt(CONFIG.surcharge.xxl).replace('Rp\u00a0','')}`;
   if (val === '3XL') return `+${fmt(CONFIG.surcharge.xxxl).replace('Rp\u00a0','')}`;
+  if (val === '4XL') return `+${fmt(CONFIG.surcharge.fourxl).replace('Rp\u00a0','')}`;
+  if (val === '5XL') return `+${fmt(CONFIG.surcharge.fivexl).replace('Rp\u00a0','')}`;
   const usia = CONFIG.kaos.usiaAnak && CONFIG.kaos.usiaAnak[String(val)];
   if (usia) return usia;
   return '';

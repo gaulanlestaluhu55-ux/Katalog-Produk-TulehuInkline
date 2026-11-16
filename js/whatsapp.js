@@ -26,6 +26,8 @@ function buildOrderMsg(p, idx) {
       if (s.sleeve === 'Lengan Panjang') lines.push(`+ Lengan panjang : ${fmt(CONFIG.surcharge.lenganPanjang)}`);
       if (s.size === 'XXL')  lines.push(`+ Oversize XXL   : ${fmt(CONFIG.surcharge.xxl)}`);
       if (s.size === '3XL')  lines.push(`+ Oversize 3XL   : ${fmt(CONFIG.surcharge.xxxl)}`);
+      if (s.size === '4XL')  lines.push(`+ Oversize 4XL   : ${fmt(CONFIG.surcharge.fourxl)}`);
+      if (s.size === '5XL')  lines.push(`+ Oversize 5XL   : ${fmt(CONFIG.surcharge.fivexl)}`);
       lines.push(`Harga satuan : ${fmt(unitPrice)}${p.satuan||'/pcs'}`);
     }
     lines.push(`*Total (${s.qty} pcs) : ${fmt(totalPrice)}*`);

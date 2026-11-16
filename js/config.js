@@ -9,11 +9,13 @@ const CONFIG = {
     lenganPanjang: 10000,
     xxl: 5000,
     xxxl: 10000,
+    fourxl: 15000,
+    fivexl: 20000,
   },
   kaos: {
     /* Dewasa: XS sama harga dengan S-XL. Anak: No.2-14 harga flat (lihat hargaAnak). */
-    sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '2', '4', '6', '8', '10', '12', '14'],
-    sizesDewasa: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'],
+    sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL', '2', '4', '6', '8', '10', '12', '14'],
+    sizesDewasa: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL'],
     sizesAnak: ['2', '4', '6', '8', '10', '12', '14'],
     /* Flat absolut semua produk: 2-8 = 70rb, 10-14 = 80rb; lengan panjang +10rb. */
     hargaAnak: { kecil: 70000, besar: 80000 },

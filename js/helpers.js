@@ -95,6 +95,8 @@ function getSurcharge(s) {
   if (isAnakSize(s.size)) return extra;
   if (s.size === 'XXL') extra += CONFIG.surcharge.xxl;
   if (s.size === '3XL') extra += CONFIG.surcharge.xxxl;
+  if (s.size === '4XL') extra += CONFIG.surcharge.fourxl;
+  if (s.size === '5XL') extra += CONFIG.surcharge.fivexl;
   return extra;
 }
 

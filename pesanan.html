@@ -298,6 +298,8 @@
       if (opts.sleeve === 'Lengan Panjang') extra += CONFIG.surcharge.lenganPanjang;
       if (opts.size === 'XXL') extra += CONFIG.surcharge.xxl;
       if (opts.size === '3XL') extra += CONFIG.surcharge.xxxl;
+      if (opts.size === '4XL') extra += CONFIG.surcharge.fourxl;
+      if (opts.size === '5XL') extra += CONFIG.surcharge.fivexl;
       return extra;
     }
     function getNameSetPrice(p, ns) {

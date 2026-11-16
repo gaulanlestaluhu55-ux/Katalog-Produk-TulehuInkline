@@ -3,10 +3,10 @@ import { calculateOrderPricing, computeStatusBayar, normVariant, toNumSafe } fro
 export const BULK_ORDER_STATUSES = ['Menunggu DP', 'Siap Produksi', 'Diproses', 'Selesai Produksi', 'Siap Diambil', 'Diambil', 'Batal'];
 export const ACTIVE_BULK_STOCK_STATUSES = ['Siap Produksi', 'Diproses'];
 
-const DEFAULT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '2', '4', '6', '8', '10', '12', '14'];
+const DEFAULT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL', '2', '4', '6', '8', '10', '12', '14'];
 const DEFAULT_COLORS = ['Putih', 'Hitam', 'Abu-abu', 'Navy', 'Maroon', 'Kuning', 'Hijau Botol', 'Baby Blue', 'Krem', 'Merah'];
 const DEFAULT_SLEEVES = ['Lengan Pendek', 'Lengan Panjang'];
-const SURCHARGE = { lenganPanjang: 10000, xxl: 5000, xxxl: 10000 };
+const SURCHARGE = { lenganPanjang: 10000, xxl: 5000, xxxl: 10000, fourxl: 15000, fivexl: 20000 };
 /* Harga anak flat absolut (cermin js/config.js): 2-8 = 70rb, 10-14 = 80rb. */
 const HARGA_ANAK_KECIL = 70000;
 const HARGA_ANAK_BESAR = 80000;
@@ -33,6 +33,8 @@ function unitSurcharge(size, sleeve) {
   if (isAnakSize(size)) return extra;
   if (size === 'XXL') extra += SURCHARGE.xxl;
   if (size === '3XL') extra += SURCHARGE.xxxl;
+  if (size === '4XL') extra += SURCHARGE.fourxl;
+  if (size === '5XL') extra += SURCHARGE.fivexl;
   return extra;
 }
 

@@ -33,6 +33,8 @@ GridApp.surcharge = function (size, sleeve) {
   if (GridApp.isAnakSize(size)) return extra;
   if (size === 'XXL') extra += CONFIG.surcharge.xxl;
   if (size === '3XL' || size === 'XXXL') extra += CONFIG.surcharge.xxxl;
+  if (size === '4XL') extra += CONFIG.surcharge.fourxl;
+  if (size === '5XL') extra += CONFIG.surcharge.fivexl;
   return extra;
 };
 
