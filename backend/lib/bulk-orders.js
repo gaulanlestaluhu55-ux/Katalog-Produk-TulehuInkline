@@ -128,3 +128,66 @@ export function bulkPaymentSnapshot(total, paid) {
     status_bayar: computeStatusBayar(nominalDibayar, totalFinal),
   };
 }
+
+// Read-only MCP contract. Pricing remains sourced from the existing bulk-order builder.
+export function getBulkBusinessRules() {
+  return {
+    contract: 'bulk-pricing-v1',
+    currency: 'IDR',
+    pricing_scope: 'bulk order backend; actual product price and options come from catalog',
+    default_sizes: [...DEFAULT_SIZES],
+    default_colors: [...DEFAULT_COLORS],
+    sleeves: [...DEFAULT_SLEEVES],
+    cuttingan: ['Reguler', 'Oversize'],
+    adult_base: 'catalog product price',
+    kaos_surcharge: {...SURCHARGE},
+    kids_base: { '2-8': HARGA_ANAK_KECIL, '10-14': HARGA_ANAK_BESAR },
+    kids_sizes: [...SIZES_ANAK],
+    discount_types: ['nominal', 'percent'],
+    discount_basis: 'per pcs',
+    bulk_statuses: [...BULK_ORDER_STATUSES],
+    active_bulk_stock_statuses: [...ACTIVE_BULK_STOCK_STATUSES],
+  };
+}
+
+export function validateBulkPreviewInput(body) {
+  const allowed = ['id_produk','cuttingan','tambahan_harga_per_pcs','discount_type','discount_value','items'];
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const invalid = () => { throw new Error('Input simulasi tidak valid.'); };
+  if (!body || typeof body !== 'object' || Array.isArray(body) ||
+      Object.keys(body).some(k => !allowed.includes(k)) || typeof body.id_produk !== 'string' || !uuid.test(body.id_produk)) invalid();
+  if (body.cuttingan !== undefined && !['Reguler','Oversize'].includes(body.cuttingan)) invalid();
+  const extra = body.tambahan_harga_per_pcs ?? 0;
+  const discount = body.discount_value ?? 0;
+  const type = body.discount_type ?? 'nominal';
+  if (!Number.isSafeInteger(extra) || extra < 0 || extra > 10000000 ||
+      !Number.isFinite(discount) || discount < 0 || discount > 10000000 ||
+      !['nominal','percent'].includes(type) || (type === 'percent' && discount > 100)) invalid();
+  if (!Array.isArray(body.items) || body.items.length < 1 || body.items.length > 100) invalid();
+  const seen = new Set();
+  const items = body.items.map(item => {
+    if (!item || typeof item !== 'object' || Array.isArray(item) ||
+        Object.keys(item).some(k => !['size','warna','lengan','qty'].includes(k)) ||
+        !Number.isSafeInteger(item.qty) || item.qty < 1 || item.qty > 10000 ||
+        ['size','warna','lengan'].some(k => typeof item[k] !== 'string' || !item[k].trim() || item[k].length > 80)) invalid();
+    const normalized = {size:normVariant('size',item.size),warna:normVariant('warna',item.warna),lengan:normVariant('lengan',item.lengan),qty:item.qty};
+    const key = JSON.stringify([normalized.size,normalized.warna,normalized.lengan]);
+    if (seen.has(key)) throw new Error('Varian duplikat. Gabungkan qty untuk varian yang sama.');
+    seen.add(key);
+    return normalized;
+  });
+  return {id_produk:body.id_produk,cuttingan:body.cuttingan ?? 'Reguler',tambahan_harga_per_pcs:extra,discount_type:type,discount_value:discount,items};
+}
+
+export function previewBulkOrder(body, product) {
+  const input = validateBulkPreviewInput(body);
+  if (!product || product.id !== input.id_produk || product.aktif !== true) throw new Error('Produk aktif tidak ditemukan.');
+  // No customer, contact, payment, DB insert, or ledger mutation.
+  const payload = buildBulkOrderPayload({...input,nama_customer:'Preview',nominal_dibayar:0}, product, []);
+  const sums = payload.items.reduce((a,item)=>({
+    qty_total:a.qty_total+item.qty,subtotal:a.subtotal+item.subtotal,
+    total_discount:a.total_discount+item.total_discount,total:a.total+item.total
+  }),{qty_total:0,subtotal:0,total_discount:0,total:0});
+  return {contract:'bulk-pricing-v1',preview:true,persisted:false,id_produk:product.id,nama_produk:product.nama,
+    cuttingan:payload.cuttingan,items:payload.items,...sums};
+}

@@ -1,3 +1,4 @@
+import { handleMcpStatus } from '../../lib/mcp-order-status.js';
 import { supabase } from '../../lib/supabase.js';
 import { handleCors, requireAdmin } from '../../lib/auth.js';
 import { toNumSafe, computeStatusBayar, appendLedger, reversePaymentsToLedger, normVariant, validateTambahBayar, sumOrderPayments, voidOrderPayment, calculateOrderPricing } from '../../lib/helpers.js';
@@ -8,6 +9,8 @@ export default async function handler(req, res) {
 
   const { id, action } = req.query;
   if (!id) return res.status(400).json({ status: 'error', message: 'id wajib diisi' });
+
+  if (req.method === 'PATCH' && action === 'mcp-status-audited') return handleMcpStatus(supabase, 'regular', id, req, res);
 
   if (req.method === 'DELETE') {
     const { error } = await supabase.from('orders').delete().eq('id', id);

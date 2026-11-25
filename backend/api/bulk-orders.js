@@ -1,6 +1,7 @@
+import { handleMcpStatus } from '../lib/mcp-order-status.js';
 import { supabase } from '../lib/supabase.js';
 import { handleCors, requireAdmin } from '../lib/auth.js';
-import { buildBulkOrderPayload, BULK_ORDER_STATUSES } from '../lib/bulk-orders.js';
+import { buildBulkOrderPayload, BULK_ORDER_STATUSES, getBulkBusinessRules, validateBulkPreviewInput, previewBulkOrder } from '../lib/bulk-orders.js';
 import { toNumSafe } from '../lib/helpers.js';
 
 export default async function handler(req, res) {
@@ -9,6 +10,9 @@ export default async function handler(req, res) {
 
   const id = String(req.query.id || '').trim();
   if (id) return handleById(req, res, id);
+  if (req.method === 'GET' && req.query.action === 'mcp-rules') return res.status(200).json({status:'success',data:getBulkBusinessRules()});
+  // PATCH is intentional: an older deployment returns 405 instead of creating an order.
+  if (req.method === 'PATCH' && req.query.action === 'mcp-preview') return handlePreview(req,res);
   if (req.method === 'GET') return listOrders(res);
   if (req.method === 'POST') return createOrder(req, res);
   return res.status(405).json({ status: 'error', message: 'Method not allowed' });
@@ -50,6 +54,7 @@ async function createOrder(req, res) {
 
 async function handleById(req, res, id) {
   const action = String(req.query.action || '').trim();
+  if (req.method === 'PATCH' && action === 'mcp-status-audited') return handleMcpStatus(supabase, 'bulk', id, req, res);
   if (req.method === 'GET') return getDetails(res, id, action);
   if (req.method === 'PUT' && action === 'payment') return addPayment(req, res, id);
   if (req.method === 'PUT' && action === 'void-payment') return voidPayment(req, res, id);
@@ -98,4 +103,17 @@ async function updateStatus(req, res, id) {
   const { data, error } = await supabase.rpc('set_bulk_order_status', { p_order_id: id, p_status: status });
   if (error) return res.status(400).json({ status: 'error', message: error.message });
   return res.status(200).json({ status: 'success', data });
+}
+
+async function handlePreview(req,res) {
+  let input;
+  try {input=validateBulkPreviewInput(req.body);}
+  catch(error){return res.status(400).json({status:'error',message:error.message});}
+  try {
+    const {data:product,error}=await supabase.from('products').select('id,nama,kategori,harga,sizes,colors,aktif').eq('id',input.id_produk).maybeSingle();
+    if(error) return res.status(500).json({status:'error',message:'Gagal membaca produk.'});
+    if(!product || product.aktif!==true) return res.status(404).json({status:'error',message:'Produk aktif tidak ditemukan.'});
+    try {return res.status(200).json({status:'success',data:previewBulkOrder(input,product)});}
+    catch(error){return res.status(400).json({status:'error',message:error.message});}
+  } catch {return res.status(500).json({status:'error',message:'Simulasi harga gagal.'});}
 }

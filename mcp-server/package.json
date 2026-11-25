@@ -1,0 +1,17 @@
+{
+  "name": "tulehu-inkline-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "check": "node --check api/mcp.js && node --check lib/mcp/auth.js && node --check lib/mcp/read-service.js && node --check lib/mcp/server.js && node --check lib/mcp/status-write-service.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.4.0",
+    "zod": "4.6.7"
+  }
+}
