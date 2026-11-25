@@ -20,5 +20,9 @@ export function authorize(request, env = process.env) {
   const queryKey = env.MCP_ALLOW_QUERY_KEY === 'true' ? new URL(request.url).searchParams.get('key') || '' : '';
   const presented = token || queryKey;
   if (!presented || !safeEqual(presented, key)) return { status: 401 };
-  return { authInfo: { token: presented, clientId: 'tulehu-inkline-private', scopes: ['mcp:read', ...(env.MCP_ENABLE_STATUS_WRITE === 'true' && scopes.includes('mcp:write') ? ['mcp:write'] : [])], extra: { ownerId } } };
+  const write=env.MCP_ENABLE_STATUS_WRITE==='true'&&scopes.includes('mcp:write');
+  const operations=write&&env.MCP_ENABLE_OPERATIONS==='true';
+  const high=operations&&env.MCP_ENABLE_FINANCE_WRITE==='true'&&scopes.includes('mcp:high-impact');
+  const media=operations&&env.MCP_ENABLE_MEDIA_WRITE==='true';
+  return { authInfo: { token: presented, clientId: 'tulehu-inkline-private', scopes: ['mcp:read', ...(write?['mcp:write']:[]),...(operations?['mcp:operations']:[]),...(high?['mcp:high-impact']:[]),...(media?['mcp:media']:[])], extra: { ownerId } } };
 }

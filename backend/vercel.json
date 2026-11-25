@@ -1,6 +1,9 @@
 {
   "version": 2,
   "functions": {
+    "api/orders/index.js": {
+      "maxDuration": 30
+    },
     "api/**/*.js": {
       "maxDuration": 10
     }

@@ -86,6 +86,31 @@ export function createReadService({ fetchImpl = fetch, env = process.env } = {})
       if (!row) throw new Error('Product not found in records returned by API.');
       return row;
     },
+    async getVendor(id) {
+      const rows=await read('vendors');
+      const row=rows.find(r=>r.id===id);
+      if(!row)throw Error('Backend vendor not found in returned records.');
+      return row;
+    },
+    async accountBalances(){
+      const [accounts,rows]=await Promise.all([read('accounts'),read('finance')]);
+      if(!Array.isArray(accounts)||!Array.isArray(rows))throw Error('Expected account and finance lists.');
+      const balances=new Map(accounts.map(a=>[a.nama,{id:a.id,akun:a.nama,masuk:0,keluar:0}]));
+      for(const r of rows){
+        if(!['Masuk','Keluar'].includes(r.tipe)||!Number.isFinite(Number(r.nominal)))continue;
+        const k=r.akun||'Kas';
+        if(!balances.has(k))balances.set(k,{akun:k,masuk:0,keluar:0,unregistered:true});
+        const b=balances.get(k);b[r.tipe==='Masuk'?'masuk':'keluar']+=Number(r.nominal);
+      }
+      return {items:[...balances.values()].map(b=>({...b,saldo:b.masuk-b.keluar})),loadedTransactions:rows.length,completeness:'Observed ledger balances only, including transfer pairs; API truncation not verified. Not live bank balances.'};
+    },
+    async salesSummary(input){
+      const {rows,loadedCounts}=await combinedOrders(input,row=>row.status!=='Batal');
+      const start=Date.parse(input.from+'T00:00:00+09:00'),end=Date.parse(input.to+'T00:00:00+09:00')+86400000;
+      if(!Number.isFinite(start)||!Number.isFinite(end)||start>=end)throw Error('Backend invalid date range.');
+      const filtered=rows.filter(r=>Date.parse(r.created_at)>=start&&Date.parse(r.created_at)<end);
+      return {from:input.from,to:input.to,timezone:'Asia/Jayapura',orders:filtered.length,pieces:filtered.reduce((a,r)=>a+Number(r.order_type==='bulk'?r.qty_total||0:r.qty||0),0),revenue:filtered.reduce((a,r)=>a+Number(r.total||0),0),paid:filtered.reduce((a,r)=>a+Number(r.nominal_dibayar||0),0),outstanding:filtered.reduce((a,r)=>a+Number(r.sisa||0),0),loadedCounts,completeness:'Non-cancelled orders created in selected dates; amounts are current snapshots, limited to returned API records.'};
+    },
     listAccounts:()=>read('accounts'),
     async listTransactions(input) {
       const rows=await read('finance');

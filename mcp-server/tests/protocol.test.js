@@ -2,8 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createInklineMcpServer } from '../lib/mcp/server.js';
 
-for(const writable of [false,true]) test('MCP initialize and tools/list expose '+(writable?23:21)+' scoped tools',async()=>{
-  const server=createInklineMcpServer({ownerId:'test',scopes:writable?['mcp:read','mcp:write']:['mcp:read']});
+for(const [scopes,count] of [
+ [['mcp:read'],28],
+ [['mcp:read','mcp:write'],30],
+ [['mcp:read','mcp:write','mcp:operations'],38],
+ [['mcp:read','mcp:write','mcp:operations','mcp:high-impact'],48],
+ [['mcp:read','mcp:write','mcp:operations','mcp:high-impact','mcp:media'],49]
+]) test('MCP initialize and tools/list expose '+count+' scoped tools',async()=>{
+  const writable=scopes.includes('mcp:write');
+  const server=createInklineMcpServer({ownerId:'test',scopes});
   const outbound=[];
   const transport={async start(){},async send(message){outbound.push(message);},async close(){}};
   await server.connect(transport);
@@ -22,11 +29,14 @@ for(const writable of [false,true]) test('MCP initialize and tools/list expose '
     await transport.onmessage?.({jsonrpc:'2.0',method:'notifications/initialized'});
     const result=await dispatch({jsonrpc:'2.0',id:2,method:'tools/list',params:{}});
     const tools=result.result.tools;
-    assert.equal(tools.length,writable?23:21);
+    assert.equal(tools.length,count);
     for(const name of ['get_bulk_order','get_business_rules','get_outstanding_payments','get_production_queue','preview_bulk_order']) assert.ok(tools.some(t=>t.name===name));
-    assert.equal(tools.filter(t=>t.annotations.readOnlyHint===true).length,21);
+    assert.equal(tools.filter(t=>t.annotations.readOnlyHint===true).length,28);
     assert.equal(tools.some(t=>t.name==='update_order_status'),writable);
     assert.equal(tools.some(t=>t.name==='update_bulk_order_status'),writable);
-    assert.ok(!tools.some(t=>/^(create|add|void|cancel|delete|transfer)_/.test(t.name)));
+    assert.equal(tools.some(t=>t.name==='create_order'),scopes.includes('mcp:operations'));
+    assert.equal(tools.some(t=>t.name==='transfer_funds'),scopes.includes('mcp:high-impact'));
+    assert.equal(tools.some(t=>t.name==='upload_product_image'),scopes.includes('mcp:media'));
+    assert.equal(new Set(tools.map(t=>t.name)).size,count);
   } finally {await server.close();}
 });

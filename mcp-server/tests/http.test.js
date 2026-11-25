@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import endpoint from '../api/mcp.js';
 const key='x'.repeat(40);
-const envKeys=['MCP_API_KEY','MCP_OWNER_ID','MCP_API_SCOPES','MCP_ENABLE_STATUS_WRITE','MCP_ALLOW_QUERY_KEY'];
+const envKeys=['MCP_API_KEY','MCP_OWNER_ID','MCP_API_SCOPES','MCP_ENABLE_STATUS_WRITE','MCP_ALLOW_QUERY_KEY','MCP_ENABLE_OPERATIONS','MCP_ENABLE_FINANCE_WRITE','MCP_ENABLE_MEDIA_WRITE'];
 function setEnv(values) {
   const saved=Object.fromEntries(envKeys.map(k=>[k,process.env[k]]));
   for(const k of envKeys) if(values[k]===undefined)delete process.env[k];else process.env[k]=values[k];
@@ -51,14 +51,14 @@ test('HTTP transport: auth, initialize, list, info call and scoped tool visibili
     const initialized=await call({jsonrpc:'2.0',method:'notifications/initialized'});
     assert.equal(initialized.statusCode,202,JSON.stringify(initialized.body));
     const list=await call(message(3,'tools/list'));
-    assert.equal(rpcResult(list,3).tools.length,21);
+    assert.equal(rpcResult(list,3).tools.length,28);
     const info=await call(message(4,'tools/call',{name:'get_mcp_info',arguments:{}}));
     const infoResult=rpcResult(info,4);
     assert.equal(JSON.parse(infoResult.content[0].text).mode,'read-only');
     process.env.MCP_ENABLE_STATUS_WRITE='true';
     const writable=await call(message(5,'tools/list'));
     const writableTools=rpcResult(writable,5).tools;
-    assert.equal(writableTools.length,23);
+    assert.equal(writableTools.length,30);
     assert.ok(writableTools.some(t=>t.name==='update_order_status'));
   } finally {restore();}
 });

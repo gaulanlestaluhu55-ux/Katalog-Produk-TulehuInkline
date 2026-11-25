@@ -9,7 +9,7 @@ alter table public.mcp_status_receipts
 
 -- Exercise the same privileges as PostgREST's backend service role, not the SQL editor owner.
 set local role service_role;
-do $
+do $mcp_test$
 declare
   v_id uuid := gen_random_uuid();
   v_bulk uuid := gen_random_uuid();
@@ -64,7 +64,7 @@ begin
      or has_function_privilege('authenticated','public.mcp_set_order_status_audited(uuid,text,text,uuid,text,text)','EXECUTE')
      or not has_function_privilege('service_role','public.mcp_set_order_status_audited(uuid,text,text,uuid,text,text)','EXECUTE') then raise exception 'Unexpected grants'; end if;
   raise notice 'MCP status audit smoke checks PASS; rolling back synthetic data.';
-end $;
+end $mcp_test$;
 reset role;
 rollback;
 -- A successful execution reports the PASS notice above; all fixtures/constraint are rolled back.

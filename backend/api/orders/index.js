@@ -1,3 +1,5 @@
+import { handleMcpUpload } from '../../lib/mcp-media.js';
+import { handleMcpOperation } from '../../lib/mcp-operations.js';
 import { supabase } from '../../lib/supabase.js';
 import { handleCors, requireAdmin } from '../../lib/auth.js';
 import { toNumSafe, computeStatusBayar, appendLedger, normVariant, calculateOrderPricing } from '../../lib/helpers.js';
@@ -5,6 +7,8 @@ import { toNumSafe, computeStatusBayar, appendLedger, normVariant, calculateOrde
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;
   if (!requireAdmin(req, res)) return;
+  if (req.method === 'PATCH' && req.query.action === 'mcp-upload-v2') return handleMcpUpload(req,res);
+  if (req.method === 'PATCH' && req.query.action === 'mcp-operation-v2') return handleMcpOperation(supabase,req,res);
 
   if (req.method === 'GET') {
     const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
