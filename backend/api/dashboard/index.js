@@ -1,3 +1,4 @@
+import { readAllRows, markPagedRead } from '../../lib/read-all.js';
 import { supabase } from '../../lib/supabase.js';
 import { handleCors, requireAdmin } from '../../lib/auth.js';
 
@@ -8,11 +9,11 @@ export default async function handler(req, res) {
 
   try {
     switch (req.query.type) {
-      case 'summary': return handleSummary(req, res);
-      case 'monthly': return handleMonthly(req, res);
-      case 'top-products': return handleTopProducts(req, res);
-      case 'recent-orders': return handleRecentOrders(req, res);
-      case 'finance': return handleFinance(req, res);
+      case 'summary': return await handleSummary(req, res);
+      case 'monthly': return await handleMonthly(req, res);
+      case 'top-products': return await handleTopProducts(req, res);
+      case 'recent-orders': return await handleRecentOrders(req, res);
+      case 'finance': return await handleFinance(req, res);
       default: return res.status(400).json({ status: 'error', message: 'Invalid type param' });
     }
   } catch (err) {
@@ -30,6 +31,7 @@ async function handleSummary(req, res) {
     loadOrderParents(previous),
   ]);
 
+  markPagedRead(res);
   return res.status(200).json({
     status: 'success',
     data: {
@@ -47,6 +49,7 @@ async function handleMonthly(req, res) {
   const orders = await loadOrderParents(bounds);
 
   const result = buildTimeSeries(range, orders || [], bounds);
+  markPagedRead(res);
   return res.status(200).json({ status: 'success', data: result, meta: { range } });
 }
 
@@ -56,11 +59,11 @@ async function handleTopProducts(req, res) {
   const bounds = getRangeBounds(range);
 
   const [{ data: orders, error }, { data: bulkItems, error: bulkErr }] = await Promise.all([
-    supabase.from('orders').select('id_produk, nama_produk, kategori, qty, total, created_at').gte('created_at', bounds.start.toISOString()).lt('created_at', bounds.end.toISOString()),
-    supabase.from('bulk_order_items').select('id_produk, nama_produk, kategori, qty, total, bulk_orders!inner(created_at)').gte('bulk_orders.created_at', bounds.start.toISOString()).lt('bulk_orders.created_at', bounds.end.toISOString()),
+    readAllRows(()=>supabase.from('orders').select('id, id_produk, nama_produk, kategori, qty, total, created_at',{count:'exact'}).gte('created_at', bounds.start.toISOString()).lt('created_at', bounds.end.toISOString())),
+    readAllRows(()=>supabase.from('bulk_order_items').select('id, id_produk, nama_produk, kategori, qty, total, bulk_orders!inner(created_at)',{count:'exact'}).gte('bulk_orders.created_at', bounds.start.toISOString()).lt('bulk_orders.created_at', bounds.end.toISOString())),
   ]);
   if (error) throw error;
-  if (bulkErr && !isMissingBulkSchema(bulkErr)) throw bulkErr;
+  if (bulkErr) throw bulkErr;
 
   const groups = {};
   for (const o of orders || []) {
@@ -88,6 +91,7 @@ async function handleTopProducts(req, res) {
     .sort((a, b) => b.total_qty - a.total_qty || b.total_revenue - a.total_revenue)
     .slice(0, limit);
 
+  markPagedRead(res);
   return res.status(200).json({ status: 'success', data: result });
 }
 
@@ -99,10 +103,11 @@ async function handleRecentOrders(req, res) {
     supabase.from('bulk_orders').select('id, nama_produk, nama_customer, total, status, status_bayar, created_at').order('created_at', { ascending: false }).limit(limit),
   ]);
   if (error) throw error;
-  if (bulkErr && !isMissingBulkSchema(bulkErr)) throw bulkErr;
+  if (bulkErr) throw bulkErr;
   const combined = [...(orders || []), ...(bulkOrders || []).map((order) => ({ ...order, nama_produk: `${order.nama_produk} (Massal)` }))]
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     .slice(0, limit);
+  markPagedRead(res);
   return res.status(200).json({ status: 'success', data: combined });
 }
 
@@ -110,12 +115,7 @@ async function handleFinance(req, res) {
   const range = normalizeRange(req.query.range);
   const bounds = getRangeBounds(range);
 
-  const { data: tx, error } = await supabase
-    .from('finance_transactions')
-    .select('id, tipe, sumber, kategori, keterangan, nominal, akun, created_at')
-    .gte('created_at', bounds.start.toISOString())
-    .lt('created_at', bounds.end.toISOString())
-    .order('created_at', { ascending: false });
+  const { data: tx, error } = await readAllRows(()=>supabase.from('finance_transactions').select('id, tipe, sumber, kategori, keterangan, nominal, akun, created_at',{count:'exact'}).gte('created_at',bounds.start.toISOString()).lt('created_at',bounds.end.toISOString()).order('created_at',{ascending:false}));
   if (error) throw error;
 
   let total_masuk = 0, total_keluar = 0;
@@ -154,6 +154,7 @@ async function handleFinance(req, res) {
     created_at: t.created_at,
   }));
 
+  markPagedRead(res);
   return res.status(200).json({
     status: 'success',
     data: {
@@ -187,11 +188,11 @@ function aggregateOrders(arr) {
 
 async function loadOrderParents(bounds) {
   const [{ data: orders, error }, { data: bulkItems, error: bulkErr }] = await Promise.all([
-    supabase.from('orders').select('status, status_bayar, total, created_at, qty').gte('created_at', bounds.start.toISOString()).lt('created_at', bounds.end.toISOString()),
-    supabase.from('bulk_order_items').select('bulk_order_id, qty, bulk_orders!inner(status,status_bayar,total,created_at)').gte('bulk_orders.created_at', bounds.start.toISOString()).lt('bulk_orders.created_at', bounds.end.toISOString()),
+    readAllRows(()=>supabase.from('orders').select('id, status, status_bayar, total, created_at, qty',{count:'exact'}).gte('created_at', bounds.start.toISOString()).lt('created_at', bounds.end.toISOString())),
+    readAllRows(()=>supabase.from('bulk_order_items').select('id, bulk_order_id, qty, bulk_orders!inner(status,status_bayar,total,created_at)',{count:'exact'}).gte('bulk_orders.created_at', bounds.start.toISOString()).lt('bulk_orders.created_at', bounds.end.toISOString())),
   ]);
   if (error) throw error;
-  if (bulkErr && !isMissingBulkSchema(bulkErr)) throw bulkErr;
+  if (bulkErr) throw bulkErr;
   return [...(orders || []), ...aggregateBulkParents(bulkItems || [])];
 }
 

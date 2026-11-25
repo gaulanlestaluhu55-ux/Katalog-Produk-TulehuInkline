@@ -1,3 +1,4 @@
+import { backendErrorMessage } from './backend-errors.js';
 import {z} from 'zod';
 const uuid=z.string().uuid(), text=z.string().trim().max(2000), name=z.string().trim().min(1).max(160);
 const money=z.number().int().min(0).max(1000000000), positive=money.min(1), qty=z.number().int().min(1).max(10000);
@@ -17,7 +18,7 @@ const schema=shape=>z.object({...common,...shape}).strict();
 export const OPERATIONS={
  create_order:{schema:schema({...customer,...variant,...discount,id_produk:uuid,qty,harga_satuan:money}),description:'Create regular order with explicitly agreed unit price, no initial payment. Product identity comes from catalog.'},
  update_order:{schema:schema({...target,expectedTotal:money,expectedPaid:money,...partial({...customer,...variant,...discount,qty,harga_satuan:money})}),description:'Patch regular order fields, preserve omitted values. Read current order first; require expected total and paid amount. No status or payment changes.'},
- create_bulk_order:{schema:schema({...customer,id_produk:uuid,cuttingan:variant.cuttingan,tambahan_harga_per_pcs:money.optional(),...discount,expectedTotal:money,items:z.array(z.object({size:name,warna:name,lengan:variant.lengan,qty}).strict()).min(1).max(100)}),description:'Create bulk order without DP. Preview first and supply exact expectedTotal.'},
+ create_bulk_order:{schema:schema({...customer,id_produk:uuid,cuttingan:variant.cuttingan,tambahan_harga_per_pcs:money.optional(),...discount,expectedTotal:money,items:z.array(z.object({size:name,warna:name,lengan:variant.lengan,qty}).strict()).min(1).max(100)}),description:'Create bulk order without DP. Identical normalized variants are merged. Preview first and supply exact expectedTotal.'},
  create_product:{schema:schema(product),description:'Create a catalog product.'},
  update_product:{schema:schema({...target,...partial({...product,pinned:z.boolean()})}),description:'Patch catalog product fields; omitted fields preserved.'},
  set_product_status:{schema:schema({...target,aktif:z.boolean(),expectedActive:z.boolean()}),description:'Set exact catalog active status; never toggle blindly.'},
@@ -48,7 +49,7 @@ export function createOperationService({env=process.env,fetchImpl=fetch}={}){
   try{response=await fetchImpl(ORIGIN+'/api/orders?action=mcp-operation-v2',{method:'PATCH',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({operation,...body}),redirect:'error',cache:'no-store',signal:AbortSignal.timeout(20000)});}
   catch{throw Error('Backend operation outcome uncertain. Reuse the same requestId; never create a new ID for retry.');}
   const result=await response.json().catch(()=>null);
-  if(!response.ok||result?.status!=='success'||result.data?.requestId!==body.requestId||result.data?.operation!==operation||result.data?.ok!==true)throw Error('Backend operation failed ('+response.status+'). '+(typeof result?.code==='string'&&/^[A-Z_]{1,40}$/.test(result.code)?result.code+' ':'')+'Read current state; reuse same requestId for retry.');
+  if(!response.ok||result?.status!=='success'||result.data?.requestId!==body.requestId||result.data?.operation!==operation||result.data?.ok!==true)throw Error('Backend operation failed ('+response.status+'). '+(backendErrorMessage(result?.code)?backendErrorMessage(result.code)+' ':'')+'Read current state; reuse same requestId for retry.');
   return result.data;
  };
 }

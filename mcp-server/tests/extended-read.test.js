@@ -25,8 +25,11 @@ test('preview uses real pricing, size and sleeve surcharge, kids price and per-p
   assert.equal(result.items[1].harga_satuan_normal,70000);
   assert.equal(Object.hasOwn(result,'nama_customer'),false);
 });
-test('preview rejects duplicate normalized variants and invalid or financial fields',()=>{
-  assert.throws(()=>validateBulkPreviewInput({...input,items:[input.items[0],{...input.items[0],size:'xxl',warna:'hitam'}]}),/duplikat/);
+test('preview merges normalized duplicates and rejects invalid or financial fields',()=>{
+  const merged=validateBulkPreviewInput({...input,items:[input.items[0],{...input.items[0],size:'xxl',warna:'hitam'}]});
+  assert.equal(merged.items.length,1);
+  assert.equal(merged.items[0].qty,4);
+  assert.equal(previewBulkOrder(merged,product).total,414000);
   for(const bad of [{...input,nominal_dibayar:1000},{...input,nama_customer:'x'},{...input,discount_value:101},{...input,items:[{...input.items[0],qty:0}]}]){
     assert.throws(()=>validateBulkPreviewInput(bad),/tidak valid/);
   }
@@ -38,7 +41,7 @@ function fixture(handler){
   const service=createReadService({env:{INKLINE_BACKEND_ADMIN_TOKEN:'dummy'},fetchImpl:async(url,opts)=>{
     calls.push({url:String(url),opts});
     const result=handler(new URL(url),opts);
-    return result instanceof Response?result:Response.json({status:'success',data:result});
+    return result instanceof Response?result:Response.json({status:'success',data:result},{headers:{'X-Inkline-Read-Contract':'paged-v1'}});
   }});
   return {service,calls};
 }
@@ -52,7 +55,7 @@ test('outstanding includes both order types, excludes cancellations and aggregat
   assert.equal(result.nextOffset,1);
   assert.equal(result.availableFromBackend,3);
   assert.equal(calls.length,2);
-  assert.match(result.completeness,/not yet verified/);
+  assert.match(result.completeness,/Count-checked/);
 });
 test('production queue matches existing active stock states and counts pcs',async()=>{
   const {service}=fixture(url=>url.pathname.endsWith('/bulk-orders')?bulk:regular);

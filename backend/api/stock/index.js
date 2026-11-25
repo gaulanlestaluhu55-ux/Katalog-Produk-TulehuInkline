@@ -1,3 +1,4 @@
+import { readAllRows, markPagedRead } from '../../lib/read-all.js';
 import { supabase } from '../../lib/supabase.js';
 import { handleCors, requireAdmin } from '../../lib/auth.js';
 import { toNumSafe, ACTIVE_ORDER_STATUSES } from '../../lib/helpers.js';
@@ -12,11 +13,11 @@ export default async function handler(req, res) {
 
   // 1. Ambil semua pesanan aktif (Baru/Diproses) yang punya varian size/warna
   const [{ data: orders, error: ordersErr }, { data: bulkItems, error: bulkErr }] = await Promise.all([
-    supabase.from('orders').select('kategori, size, warna, lengan, qty, status').in('status', ACTIVE_ORDER_STATUSES),
-    supabase.from('bulk_order_items').select('size, warna, lengan, qty, bulk_orders!inner(kategori,status)').in('bulk_orders.status', ACTIVE_BULK_STOCK_STATUSES),
+    readAllRows(()=>supabase.from('orders').select('id, kategori, size, warna, lengan, qty, status',{count:'exact'}).in('status', ACTIVE_ORDER_STATUSES)),
+    readAllRows(()=>supabase.from('bulk_order_items').select('id, size, warna, lengan, qty, bulk_orders!inner(kategori,status)',{count:'exact'}).in('bulk_orders.status', ACTIVE_BULK_STOCK_STATUSES)),
   ]);
   if (ordersErr) return res.status(500).json({ status: 'error', message: ordersErr.message });
-  if (bulkErr && !isMissingBulkSchema(bulkErr)) return res.status(500).json({ status: 'error', message: bulkErr.message });
+  if (bulkErr) return res.status(500).json({ status: 'error', message: bulkErr.message });
 
   // 2. Agregasi di JS, dikelompokkan per jenis+size+warna+lengan
   const groups = {};
@@ -44,10 +45,10 @@ export default async function handler(req, res) {
   }
 
   // 3. Gabung sama status checklist + vendor
-  const { data: statusRows, error: statusErr } = await supabase.from('stock_vendor_status').select('*');
+  const { data: statusRows, error: statusErr } = await readAllRows(()=>supabase.from('stock_vendor_status').select('*',{count:'exact'}),{key:'key'});
   if (statusErr) return res.status(500).json({ status: 'error', message: statusErr.message });
 
-  const { data: vendors, error: vendorErr } = await supabase.from('vendors').select('id, nama, no_wa');
+  const { data: vendors, error: vendorErr } = await readAllRows(()=>supabase.from('vendors').select('id, nama, no_wa',{count:'exact'}));
   if (vendorErr) return res.status(500).json({ status: 'error', message: vendorErr.message });
   const vendorMap = Object.fromEntries(vendors.map((v) => [v.id, v]));
 
@@ -70,6 +71,7 @@ export default async function handler(req, res) {
     return (a.jenis + a.size + a.warna + a.lengan).localeCompare(b.jenis + b.size + b.warna + b.lengan);
   });
 
+  markPagedRead(res);
   return res.status(200).json({ status: 'success', data: result });
 }
 

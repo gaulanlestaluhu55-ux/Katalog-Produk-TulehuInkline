@@ -16,7 +16,7 @@ const orderList = z.object({...page,query,status:z.string().max(60).optional(),p
 const empty = z.object({}).strict();
 const idSchema = z.object({id:uuid}).strict();
 const range = z.enum(['1d','1m','12m']).default('1m');
-export const INFO = {serverName:'tulehu-inkline',version:'0.2.0',schemaVersion:'2',mode:'read-only'};
+export const INFO = {serverName:'tulehu-inkline',version:'0.2.1',schemaVersion:'2',mode:'read-only'};
 export function createInklineMcpServer(principal, service = createReadService(), writeService = createStatusWriteService(), operationService = createOperationService(), mediaService = createMediaService()) {
   if (!principal?.ownerId) throw new Error('Authenticated owner required.');
   const server = new McpServer({name:INFO.serverName,version:INFO.version},{capabilities:{tools:{}}});
@@ -61,16 +61,16 @@ export function createInklineMcpServer(principal, service = createReadService(),
     items:z.array(z.object({size:z.string().trim().min(1).max(80),warna:z.string().trim().min(1).max(80),lengan:z.string().trim().min(1).max(80),qty:z.number().int().min(1).max(10000)}).strict()).min(1).max(100)
   }).strict().refine(input=>input.discount_type!=='percent'||input.discount_value<=100,{message:'Percent discount must be <=100.'});
   register('get_business_rules','Read current backend bulk pricing rules, options and production statuses. Actual base price is per catalog product; no changes.',empty,service.businessRules);
-  register('get_outstanding_payments','Read non-cancelled regular and bulk orders with outstanding balance. Observed total covers existing API records only; pagination may be incomplete.',combinedInput,service.outstanding);
+  register('get_outstanding_payments','Read non-cancelled regular and bulk orders with outstanding balance. Totals use count-checked backend reads, not a transactional snapshot.',combinedInput,service.outstanding);
   register('get_production_queue','Read active stock orders: regular Baru/Diproses and bulk Siap Produksi/Diproses. No writes.',combinedInput,service.productionQueue);
-  register('preview_bulk_order','Calculate bulk order pricing using the existing backend calculator and active catalog product. No customer data, payment, order creation or persistence. Merge duplicate variants first.',previewInput,service.previewBulk);
+  register('preview_bulk_order','Calculate bulk order pricing using the existing backend calculator and active catalog product. No customer data, payment, order creation or persistence. Identical normalized variants are automatically merged; maximum 10000 pcs per variant.',previewInput,service.previewBulk);
   register('search_orders','Search regular orders by customer, product or ID.',orderList.extend({query:z.string().trim().min(1).max(120)}),service.listOrders);
   register('search_bulk_orders','Search bulk orders by customer, product or ID.',orderList.extend({query:z.string().trim().min(1).max(120)}),service.listBulkOrders);
   register('search_products','Search catalog products by name, category or ID.',z.object({...page,query:z.string().trim().min(1).max(120),active:z.boolean().optional()}).strict(),service.listProducts);
   register('get_vendor','Read vendor detail by UUID.',idSchema,({id})=>service.getVendor(id));
-  register('get_account_balances','Calculate observed account ledger balances including transfers; not live bank balances and may be incomplete.',empty,service.accountBalances);
+  register('get_account_balances','Calculate observed account ledger balances including transfers; not live bank balances or a transactional snapshot.',empty,service.accountBalances);
   const date=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(v=>Number.isFinite(Date.parse(v))&&new Date(v).toISOString().slice(0,10)===v);
-  register('get_sales_summary','Summarize non-cancelled order totals by inclusive created-date range in WIT (UTC+9), API-limited.',z.object({from:date,to:date,kind:z.enum(['all','regular','bulk']).default('all')}).strict(),service.salesSummary);
+  register('get_sales_summary','Summarize non-cancelled order totals by inclusive created-date range in WIT (UTC+9), count-checked reads.',z.object({from:date,to:date,kind:z.enum(['all','regular','bulk']).default('all')}).strict(),service.salesSummary);
   register('get_finance_report','Read existing finance report with category, monthly, daily and recent transaction breakdown.',z.object({range,limit:z.number().int().min(1).max(50).default(50)}).strict(),({range,limit})=>service.dashboard('finance',range,limit));
   if(canOperate){
     for(const [name,op] of Object.entries(OPERATIONS)){

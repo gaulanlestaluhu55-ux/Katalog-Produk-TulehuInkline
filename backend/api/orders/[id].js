@@ -1,3 +1,4 @@
+import { readAllRows, markPagedRead } from '../../lib/read-all.js';
 import { handleMcpStatus } from '../../lib/mcp-order-status.js';
 import { supabase } from '../../lib/supabase.js';
 import { handleCors, requireAdmin } from '../../lib/auth.js';
@@ -20,12 +21,9 @@ export default async function handler(req, res) {
 
   // B3: riwayat cicilan per order (DP/Pelunasan/Koreksi/Reversal + akun).
   if (req.method === 'GET' && action === 'payments') {
-    const { data, error } = await supabase
-      .from('order_payments')
-      .select('*')
-      .eq('id_pesanan', id)
-      .order('created_at', { ascending: true });
+    const { data, error } = await readAllRows(()=>supabase.from('order_payments').select('*',{count:'exact'}).eq('id_pesanan',id).order('created_at',{ascending:true}));
     if (error) return res.status(500).json({ status: 'error', message: error.message });
+    markPagedRead(res);
     return res.status(200).json({ status: 'success', data: data || [] });
   }
 

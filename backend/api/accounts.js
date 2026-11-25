@@ -1,3 +1,4 @@
+import { readAllRows, markPagedRead } from '../lib/read-all.js';
 import { supabase } from '../lib/supabase.js';
 import { handleCors, requireAdmin } from '../lib/auth.js';
 
@@ -9,8 +10,9 @@ export default async function handler(req, res) {
   if (id) return handleById(req, res, id);
 
   if (req.method === 'GET') {
-    const { data, error } = await supabase.from('accounts').select('*').order('nama', { ascending: true });
+    const { data, error } = await readAllRows(()=>supabase.from('accounts').select('*',{count:'exact'}).order('nama', { ascending: true }));
     if (error) return res.status(500).json({ status: 'error', message: error.message });
+    markPagedRead(res);
     return res.status(200).json({ status: 'success', data });
   }
 

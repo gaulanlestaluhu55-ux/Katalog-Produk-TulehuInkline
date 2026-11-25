@@ -7,7 +7,7 @@ const data=[{id,nama_customer:'Customer A',nama_produk:'Kaos',status:'Diproses',
 function fixture(payload=data) {
   const calls=[];
   const service=createReadService({env:{INKLINE_BACKEND_ADMIN_TOKEN:'dummy'},fetchImpl:async(url,opts)=>{
-    calls.push({url:String(url),opts});return Response.json({status:'success',data:payload});
+    calls.push({url:String(url),opts});return Response.json({status:'success',data:payload},{headers:{'X-Inkline-Read-Contract':'paged-v1'}});
   }});
   return {calls,service};
 }

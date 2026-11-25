@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { buildBulkOrderPayload, validateBulkPreviewInput } from './bulk-orders.js';
+import { buildBulkOrderPayload, validateBulkPreviewInput, bulkValidationCode } from './bulk-orders.js';
 import { normVariant, calculateOrderPricing, pipeList } from './helpers.js';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid=v=>typeof v==='string'&&UUID.test(v);
@@ -80,7 +80,7 @@ async function prepare(db,operation,input){
 }
 export async function executeOperation(db,body,env=process.env){
  let request;
- try{request=validateOperation(body);}catch{return fail(400,'INVALID_INPUT');}
+ try{request=validateOperation(body);}catch(e){return fail(400,bulkValidationCode(e)||'INVALID_INPUT');}
  const {operation,requestId,input,hash}=request;
  const actor=env.MCP_AUDIT_OWNER_ID?.trim();
  if(!actor||actor.length>120||env.MCP_ENABLE_OPERATIONS!=='true')return fail(503,'OPERATIONS_DISABLED');
@@ -100,6 +100,6 @@ export async function executeOperation(db,body,env=process.env){
   if(out?.ok!==true)return fail(409,typeof out?.code==='string'&&/^[A-Z_]{1,40}$/.test(out.code)?out.code:'OPERATION_REJECTED');
   if(out.operation!==operation||out.requestId!==requestId||typeof out.replayed!=='boolean')return fail(500,'INVALID_RECEIPT');
   return {status:200,body:{status:'success',data:out}};
- }catch(e){return fail(['PRODUCT_NOT_FOUND','PRICE_CHANGED','INVALID_PRICING'].includes(e.message)?409:500,['PRODUCT_NOT_FOUND','PRICE_CHANGED','INVALID_PRICING'].includes(e.message)?e.message:'OPERATION_REJECTED_OR_UNCERTAIN');}
+ }catch(e){const code=bulkValidationCode(e)||(['PRODUCT_NOT_FOUND','PRICE_CHANGED','INVALID_PRICING'].includes(e.message)?e.message:null);return fail(code?409:500,code||'OPERATION_REJECTED_OR_UNCERTAIN');}
 }
 export async function handleMcpOperation(db,req,res){const r=await executeOperation(db,req.body);return res.status(r.status).json(r.body);}

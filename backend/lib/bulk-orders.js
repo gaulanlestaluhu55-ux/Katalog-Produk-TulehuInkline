@@ -156,26 +156,29 @@ export function validateBulkPreviewInput(body) {
   const invalid = () => { throw new Error('Input simulasi tidak valid.'); };
   if (!body || typeof body !== 'object' || Array.isArray(body) ||
       Object.keys(body).some(k => !allowed.includes(k)) || typeof body.id_produk !== 'string' || !uuid.test(body.id_produk)) invalid();
-  if (body.cuttingan !== undefined && !['Reguler','Oversize'].includes(body.cuttingan)) invalid();
+  if (body.cuttingan !== undefined && !['Reguler','Oversize'].includes(body.cuttingan)) throw new Error('Cuttingan tidak valid.');
   const extra = body.tambahan_harga_per_pcs ?? 0;
   const discount = body.discount_value ?? 0;
   const type = body.discount_type ?? 'nominal';
   if (!Number.isSafeInteger(extra) || extra < 0 || extra > 10000000 ||
       !Number.isFinite(discount) || discount < 0 || discount > 10000000 ||
       !['nominal','percent'].includes(type) || (type === 'percent' && discount > 100)) invalid();
-  if (!Array.isArray(body.items) || body.items.length < 1 || body.items.length > 100) invalid();
-  const seen = new Set();
-  const items = body.items.map(item => {
+  if (!Array.isArray(body.items) || body.items.length < 1 || body.items.length > 100) throw new Error('Jumlah baris varian harus 1–100.');
+  const merged = new Map();
+  for (const item of body.items) {
     if (!item || typeof item !== 'object' || Array.isArray(item) ||
         Object.keys(item).some(k => !['size','warna','lengan','qty'].includes(k)) ||
-        !Number.isSafeInteger(item.qty) || item.qty < 1 || item.qty > 10000 ||
         ['size','warna','lengan'].some(k => typeof item[k] !== 'string' || !item[k].trim() || item[k].length > 80)) invalid();
+    if(!Number.isSafeInteger(item.qty)||item.qty<1||item.qty>10000)throw new Error('Qty per baris tidak valid (1–10000).');
     const normalized = {size:normVariant('size',item.size),warna:normVariant('warna',item.warna),lengan:normVariant('lengan',item.lengan),qty:item.qty};
     const key = JSON.stringify([normalized.size,normalized.warna,normalized.lengan]);
-    if (seen.has(key)) throw new Error('Varian duplikat. Gabungkan qty untuk varian yang sama.');
-    seen.add(key);
-    return normalized;
-  });
+    const prior=merged.get(key);
+    if(prior){
+      if(prior.qty+normalized.qty>10000)throw new Error('Total qty per varian maksimal 10000.');
+      prior.qty+=normalized.qty;
+    }else merged.set(key,normalized);
+  }
+  const items=[...merged.values()];
   return {id_produk:body.id_produk,cuttingan:body.cuttingan ?? 'Reguler',tambahan_harga_per_pcs:extra,discount_type:type,discount_value:discount,items};
 }
 
@@ -190,4 +193,19 @@ export function previewBulkOrder(body, product) {
   }),{qty_total:0,subtotal:0,total_discount:0,total:0});
   return {contract:'bulk-pricing-v1',preview:true,persisted:false,id_produk:product.id,nama_produk:product.nama,
     cuttingan:payload.cuttingan,items:payload.items,...sums};
+}
+// Only known validation categories can cross the MCP boundary. Never echo raw DB errors.
+export function bulkValidationCode(error){
+ const message=error?.message;
+ if(message==='Input simulasi tidak valid.')return 'BULK_INVALID_INPUT';
+ if(message==='Cuttingan tidak valid.')return 'BULK_INVALID_CUTTING';
+ if(message==='Jumlah baris varian harus 1–100.')return 'BULK_INVALID_ITEMS';
+ if(message==='Qty per baris tidak valid (1–10000).')return 'BULK_INVALID_QTY';
+ if(message==='Total qty per varian maksimal 10000.')return 'BULK_QTY_LIMIT';
+ if(message==='Produk aktif tidak ditemukan.')return 'PRODUCT_NOT_FOUND';
+ if(typeof message==='string'&&/^Ukuran .* tidak tersedia untuk produk ini\.$/.test(message))return 'BULK_SIZE_UNAVAILABLE';
+ if(typeof message==='string'&&/^Warna .* tidak tersedia untuk produk ini\.$/.test(message))return 'BULK_COLOR_UNAVAILABLE';
+ if(message==='Pilihan lengan tidak valid.')return 'BULK_INVALID_SLEEVE';
+ if(['Tipe diskon tidak valid.','Nilai diskon tidak valid.','Diskon persen maksimal 100%.','Diskon nominal tidak boleh melebihi harga satuan.'].includes(message))return 'INVALID_PRICING';
+ return null;
 }

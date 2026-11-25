@@ -57,7 +57,7 @@ test('all new scopes explicitly gated',()=>{
  assert.deepEqual(authorize(req,{...e,MCP_ENABLE_OPERATIONS:'false'}).authInfo.scopes,['mcp:read','mcp:write']);
 });
 test('account ledger balances include transfers, not actual bank balances',async()=>{
- const service=createReadService({env:{INKLINE_BACKEND_ADMIN_TOKEN:'dummy'},fetchImpl:async url=>Response.json({status:'success',data:url.pathname.endsWith('accounts')?[{id,nama:'A'},{nama:'B'}]:[{akun:'A',tipe:'Masuk',nominal:100},{akun:'A',tipe:'Keluar',nominal:30,sumber:'Transfer'},{akun:'B',tipe:'Masuk',nominal:30,sumber:'Transfer'}]})});
+ const service=createReadService({env:{INKLINE_BACKEND_ADMIN_TOKEN:'dummy'},fetchImpl:async url=>Response.json({status:'success',data:url.pathname.endsWith('accounts')?[{id,nama:'A'},{nama:'B'}]:[{akun:'A',tipe:'Masuk',nominal:100},{akun:'A',tipe:'Keluar',nominal:30,sumber:'Transfer'},{akun:'B',tipe:'Masuk',nominal:30,sumber:'Transfer'}]},{headers:{'X-Inkline-Read-Contract':'paged-v1'}})});
  const r=await service.accountBalances();
  assert.deepEqual(r.items.map(x=>x.saldo),[70,30]);
 });

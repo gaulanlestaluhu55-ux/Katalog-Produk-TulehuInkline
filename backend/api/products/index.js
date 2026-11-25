@@ -1,3 +1,4 @@
+import { readAllRows, markPagedRead } from '../../lib/read-all.js';
 import { supabase } from '../../lib/supabase.js';
 import { handleCors, isAdmin, requireAdmin } from '../../lib/auth.js';
 import { pipeList } from '../../lib/helpers.js';
@@ -7,19 +8,20 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     const admin = isAdmin(req);
-    let query = supabase.from('products').select('*').order('pinned', { ascending: false }).order('created_at', { ascending: true });
-    if (!admin) query = query.eq('aktif', true);
-
-    const { data, error } = await query;
+    const {data,error}=await readAllRows(()=>{
+      let query=supabase.from('products').select('*',{count:'exact'}).order('pinned',{ascending:false}).order('created_at',{ascending:true});
+      return admin?query:query.eq('aktif',true);
+    });
     if (error) return res.status(500).json({ status: 'error', message: error.message });
 
     // attach sold_count from completed orders
     if (data && data.length > 0) {
-      const [{ data: soldData }, { data: soldBulkData, error: soldBulkErr }] = await Promise.all([
-        supabase.from('orders').select('id_produk, nama_produk, qty').in('status', ['Selesai', 'Diambil']),
-        supabase.from('bulk_order_items').select('id_produk, nama_produk, qty, bulk_orders!inner(status)').in('bulk_orders.status', ['Selesai Produksi', 'Siap Diambil', 'Diambil']),
+      const [{ data: soldData, error: soldErr }, { data: soldBulkData, error: soldBulkErr }] = await Promise.all([
+        readAllRows(()=>supabase.from('orders').select('id, id_produk, nama_produk, qty',{count:'exact'}).in('status', ['Selesai', 'Diambil'])),
+        readAllRows(()=>supabase.from('bulk_order_items').select('id, id_produk, nama_produk, qty, bulk_orders!inner(status)',{count:'exact'}).in('bulk_orders.status', ['Selesai Produksi', 'Siap Diambil', 'Diambil'])),
       ]);
-      if (soldBulkErr && !isMissingBulkSchema(soldBulkErr)) return res.status(500).json({ status: 'error', message: soldBulkErr.message });
+      if (soldErr) return res.status(500).json({status:'error',message:soldErr.message});
+      if (soldBulkErr) return res.status(500).json({ status: 'error', message: soldBulkErr.message });
 
       const soldMap = {};
       const soldByName = {};
@@ -49,6 +51,7 @@ export default async function handler(req, res) {
       }
     }
 
+    markPagedRead(res);
     return res.status(200).json({ status: 'success', data });
   }
 

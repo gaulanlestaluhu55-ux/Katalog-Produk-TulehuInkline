@@ -1,3 +1,4 @@
+import { backendErrorMessage } from './backend-errors.js';
 const ORIGIN = 'https://katalog-produk-tulehu-inkline.vercel.app';
 const PATHS = new Set(['orders','bulk-orders','products','accounts','finance','stock','vendors','dashboard']);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -16,9 +17,13 @@ export function createReadService({ fetchImpl = fetch, env = process.env } = {})
       response = await fetchImpl(url, { method:isPreview?'PATCH':'GET', headers:{ Authorization:'Bearer ' + adminToken, Accept:'application/json', ...(isPreview?{'Content-Type':'application/json'}:{}) }, ...(isPreview?{body:JSON.stringify(previewBody)}:{}), redirect:'error', cache:'no-store', signal:AbortSignal.timeout(15000) });
     } catch { throw new Error('Backend unavailable. Retry read later.'); }
     if(isPreview && response.status===405) throw new Error('Backend preview endpoint not deployed.');
-    if (!response.ok) throw new Error('Backend request failed (' + response.status + ').');
     const result = await response.json().catch(() => null);
+    if (!response.ok) {
+      const detail=isPreview&&(response.status===400||response.status===404)?backendErrorMessage(result?.code):null;
+      throw new Error('Backend request failed (' + response.status + ').'+(detail?' '+detail:''));
+    }
     if (!result || result.status !== 'success' || !Object.hasOwn(result,'data')) throw new Error('Unexpected backend response.');
+    if(!isPreview&&query.action!=='mcp-rules'&&response.headers.get('X-Inkline-Read-Contract')!=='paged-v1')throw new Error('Backend pagination contract unavailable. Deploy updated backend before reading totals.');
     return result.data;
   }
   function summarizeOrder(row) {
@@ -27,7 +32,7 @@ export function createReadService({ fetchImpl = fetch, env = process.env } = {})
   }
   function page(rows, { limit=20, offset=0 }={}) {
     if (!Array.isArray(rows)) throw new Error('Expected list from backend.');
-    return {items:rows.slice(offset,offset+limit),returned:Math.min(limit,Math.max(0,rows.length-offset)),availableFromBackend:rows.length,nextOffset:offset+limit<rows.length?offset+limit:null,completeness:'Limited to records returned by existing API; server-side pagination is not yet verified.'};
+    return {items:rows.slice(offset,offset+limit),returned:Math.min(limit,Math.max(0,rows.length-offset)),availableFromBackend:rows.length,nextOffset:offset+limit<rows.length?offset+limit:null,completeness:'Count-checked backend pagination completed; not a cross-query transactional snapshot.'};
   }
   function matches(row, fields, value) {
     const q = value?.trim().toLowerCase();
@@ -60,7 +65,7 @@ export function createReadService({ fetchImpl = fetch, env = process.env } = {})
     },
     async outstanding(input) {
       const {rows,loadedCounts}=await combinedOrders(input,row=>row.status!=='Batal'&&row.sisa!==null&&row.sisa!==undefined&&Number.isFinite(Number(row.sisa))&&Number(row.sisa)>0);
-      return {...page(rows,input),observedOutstanding:rows.reduce((sum,row)=>sum+Number(row.sisa),0),loadedCounts,definition:'Non-cancelled orders with recorded sisa > 0; totals cover returned API records only.'};
+      return {...page(rows,input),observedOutstanding:rows.reduce((sum,row)=>sum+Number(row.sisa),0),loadedCounts,definition:'Non-cancelled orders with recorded sisa > 0; totals cover count-checked backend reads, not a transactional snapshot.'};
     },
     async productionQueue(input) {
       const {rows,loadedCounts}=await combinedOrders(input,(row,resource)=>(resource==='orders'?['Baru','Diproses']:['Siap Produksi','Diproses']).includes(row.status));
@@ -102,14 +107,14 @@ export function createReadService({ fetchImpl = fetch, env = process.env } = {})
         if(!balances.has(k))balances.set(k,{akun:k,masuk:0,keluar:0,unregistered:true});
         const b=balances.get(k);b[r.tipe==='Masuk'?'masuk':'keluar']+=Number(r.nominal);
       }
-      return {items:[...balances.values()].map(b=>({...b,saldo:b.masuk-b.keluar})),loadedTransactions:rows.length,completeness:'Observed ledger balances only, including transfer pairs; API truncation not verified. Not live bank balances.'};
+      return {items:[...balances.values()].map(b=>({...b,saldo:b.masuk-b.keluar})),loadedTransactions:rows.length,completeness:'Count-checked ledger reads, including transfer pairs; not a transactional snapshot or live bank balances.'};
     },
     async salesSummary(input){
       const {rows,loadedCounts}=await combinedOrders(input,row=>row.status!=='Batal');
       const start=Date.parse(input.from+'T00:00:00+09:00'),end=Date.parse(input.to+'T00:00:00+09:00')+86400000;
       if(!Number.isFinite(start)||!Number.isFinite(end)||start>=end)throw Error('Backend invalid date range.');
       const filtered=rows.filter(r=>Date.parse(r.created_at)>=start&&Date.parse(r.created_at)<end);
-      return {from:input.from,to:input.to,timezone:'Asia/Jayapura',orders:filtered.length,pieces:filtered.reduce((a,r)=>a+Number(r.order_type==='bulk'?r.qty_total||0:r.qty||0),0),revenue:filtered.reduce((a,r)=>a+Number(r.total||0),0),paid:filtered.reduce((a,r)=>a+Number(r.nominal_dibayar||0),0),outstanding:filtered.reduce((a,r)=>a+Number(r.sisa||0),0),loadedCounts,completeness:'Non-cancelled orders created in selected dates; amounts are current snapshots, limited to returned API records.'};
+      return {from:input.from,to:input.to,timezone:'Asia/Jayapura',orders:filtered.length,pieces:filtered.reduce((a,r)=>a+Number(r.order_type==='bulk'?r.qty_total||0:r.qty||0),0),revenue:filtered.reduce((a,r)=>a+Number(r.total||0),0),paid:filtered.reduce((a,r)=>a+Number(r.nominal_dibayar||0),0),outstanding:filtered.reduce((a,r)=>a+Number(r.sisa||0),0),loadedCounts,completeness:'Non-cancelled orders created in selected dates; count-checked reads, not a transactional snapshot.'};
     },
     listAccounts:()=>read('accounts'),
     async listTransactions(input) {

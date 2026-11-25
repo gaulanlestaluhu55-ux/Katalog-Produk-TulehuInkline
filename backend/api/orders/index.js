@@ -1,3 +1,4 @@
+import { readAllRows, markPagedRead } from '../../lib/read-all.js';
 import { handleMcpUpload } from '../../lib/mcp-media.js';
 import { handleMcpOperation } from '../../lib/mcp-operations.js';
 import { supabase } from '../../lib/supabase.js';
@@ -11,8 +12,9 @@ export default async function handler(req, res) {
   if (req.method === 'PATCH' && req.query.action === 'mcp-operation-v2') return handleMcpOperation(supabase,req,res);
 
   if (req.method === 'GET') {
-    const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+    const { data, error } = await readAllRows(()=>supabase.from('orders').select('*',{count:'exact'}).order('created_at', { ascending: false }));
     if (error) return res.status(500).json({ status: 'error', message: error.message });
+    markPagedRead(res);
     return res.status(200).json({ status: 'success', data });
   }
 

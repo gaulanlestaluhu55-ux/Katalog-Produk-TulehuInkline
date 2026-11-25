@@ -1,7 +1,8 @@
+import { readAllRows, markPagedRead } from '../lib/read-all.js';
 import { handleMcpStatus } from '../lib/mcp-order-status.js';
 import { supabase } from '../lib/supabase.js';
 import { handleCors, requireAdmin } from '../lib/auth.js';
-import { buildBulkOrderPayload, BULK_ORDER_STATUSES, getBulkBusinessRules, validateBulkPreviewInput, previewBulkOrder } from '../lib/bulk-orders.js';
+import { buildBulkOrderPayload, BULK_ORDER_STATUSES, getBulkBusinessRules, validateBulkPreviewInput, previewBulkOrder, bulkValidationCode } from '../lib/bulk-orders.js';
 import { toNumSafe } from '../lib/helpers.js';
 
 export default async function handler(req, res) {
@@ -20,8 +21,8 @@ export default async function handler(req, res) {
 
 async function listOrders(res) {
   const [{ data, error }, { data: items, error: itemErr }] = await Promise.all([
-    supabase.from('bulk_orders').select('*').order('created_at', { ascending: false }),
-    supabase.from('bulk_order_items').select('bulk_order_id,qty'),
+    readAllRows(()=>supabase.from('bulk_orders').select('*',{count:'exact'}).order('created_at', { ascending: false })),
+    readAllRows(()=>supabase.from('bulk_order_items').select('id,bulk_order_id,qty',{count:'exact'})),
   ]);
   if (error) return res.status(500).json({ status: 'error', message: error.message });
   if (itemErr) return res.status(500).json({ status: 'error', message: itemErr.message });
@@ -29,6 +30,7 @@ async function listOrders(res) {
     map[item.bulk_order_id] = (map[item.bulk_order_id] || 0) + Number(item.qty || 0);
     return map;
   }, {});
+  markPagedRead(res);
   return res.status(200).json({ status: 'success', data: (data || []).map((order) => ({ ...order, qty_total: qtyByOrder[order.id] || 0 })) });
 }
 
@@ -64,16 +66,18 @@ async function handleById(req, res, id) {
 
 async function getDetails(res, id, action) {
   if (action === 'payments') {
-    const { data, error } = await supabase.from('bulk_order_payments').select('*').eq('bulk_order_id', id).order('created_at', { ascending: true });
+    const { data, error } = await readAllRows(()=>supabase.from('bulk_order_payments').select('*',{count:'exact'}).eq('bulk_order_id', id).order('created_at', { ascending: true }));
     if (error) return res.status(500).json({ status: 'error', message: error.message });
+    markPagedRead(res);
     return res.status(200).json({ status: 'success', data: data || [] });
   }
   const [{ data: order, error: orderErr }, { data: items, error: itemErr }] = await Promise.all([
     supabase.from('bulk_orders').select('*').eq('id', id).single(),
-    supabase.from('bulk_order_items').select('*').eq('bulk_order_id', id).order('warna').order('lengan').order('size'),
+    readAllRows(()=>supabase.from('bulk_order_items').select('*',{count:'exact'}).eq('bulk_order_id', id).order('warna').order('lengan').order('size')),
   ]);
   if (orderErr || !order) return res.status(404).json({ status: 'error', message: orderErr?.message || 'Pesanan massal tidak ditemukan.' });
   if (itemErr) return res.status(500).json({ status: 'error', message: itemErr.message });
+  markPagedRead(res);
   return res.status(200).json({ status: 'success', data: { ...order, items: items || [] } });
 }
 
@@ -108,12 +112,12 @@ async function updateStatus(req, res, id) {
 async function handlePreview(req,res) {
   let input;
   try {input=validateBulkPreviewInput(req.body);}
-  catch(error){return res.status(400).json({status:'error',message:error.message});}
+  catch(error){return res.status(400).json({status:'error',code:bulkValidationCode(error)||'BULK_INVALID_INPUT'});}
   try {
     const {data:product,error}=await supabase.from('products').select('id,nama,kategori,harga,sizes,colors,aktif').eq('id',input.id_produk).maybeSingle();
     if(error) return res.status(500).json({status:'error',message:'Gagal membaca produk.'});
-    if(!product || product.aktif!==true) return res.status(404).json({status:'error',message:'Produk aktif tidak ditemukan.'});
+    if(!product || product.aktif!==true) return res.status(404).json({status:'error',code:'PRODUCT_NOT_FOUND'});
     try {return res.status(200).json({status:'success',data:previewBulkOrder(input,product)});}
-    catch(error){return res.status(400).json({status:'error',message:error.message});}
+    catch(error){return res.status(400).json({status:'error',code:bulkValidationCode(error)||'BULK_INVALID_INPUT'});}
   } catch {return res.status(500).json({status:'error',message:'Simulasi harga gagal.'});}
 }
